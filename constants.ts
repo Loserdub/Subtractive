@@ -1,15 +1,39 @@
+
 import { SynthParameters, StepSequencePattern, DrumTrackName } from './types';
 
 export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
   osc1: {
     waveform: 'sawtooth',
     detune: 0,
+    enabled: true,
+    gain: 0.5,
   },
   osc2: {
     waveform: 'sawtooth',
     detune: 12, // a nice subtle detune
+    enabled: true,
+    gain: 0.5,
   },
-  oscMix: 0.5,
+  osc3: {
+    waveform: 'square',
+    detune: -1200, // Sub-octave by default
+    enabled: false,
+    gain: 0.5,
+  },
+  osc4: {
+    waveform: 'triangle',
+    detune: 700, // Fifth by default
+    enabled: false,
+    gain: 0.5,
+  },
+  lfo: {
+    waveform: 'sine',
+    rate: 5,
+    depth: 0,
+    delay: 0,
+    fade: 0,
+    target: 'pitch'
+  },
   filter: {
     cutoff: 4000,
     resonance: 5,

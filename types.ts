@@ -1,3 +1,4 @@
+
 export type Waveform = 'sine' | 'square' | 'sawtooth' | 'triangle';
 
 export interface ADSR {
@@ -10,12 +11,27 @@ export interface ADSR {
 export interface OscillatorParams {
   waveform: Waveform;
   detune: number; // In cents
+  enabled: boolean;
+  gain: number; // 0 to 1
+}
+
+export type LFOTarget = 'pitch' | 'filter' | 'amp';
+
+export interface LFOParams {
+  waveform: Waveform;
+  rate: number; // Hz
+  depth: number; // 0 to 1
+  delay: number; // Seconds
+  fade: number; // Seconds (Attack of the LFO)
+  target: LFOTarget;
 }
 
 export interface SynthParameters {
   osc1: OscillatorParams;
   osc2: OscillatorParams;
-  oscMix: number; // 0 for 100% osc1, 1 for 100% osc2
+  osc3: OscillatorParams;
+  osc4: OscillatorParams;
+  lfo: LFOParams;
   filter: {
     cutoff: number;
     resonance: number;

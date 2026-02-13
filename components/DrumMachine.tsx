@@ -15,6 +15,10 @@ interface DrumMachineProps {
   currentStep: number | null;
   currentBank: number;
   onBankSelect: (bankIndex: number) => void;
+  swing: number;
+  onSwingChange: (val: number) => void;
+  trackPitch: number;
+  onTrackPitchChange: (val: number) => void;
 }
 
 const TRACK_STYLES = {
@@ -55,7 +59,11 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
   onStepToggle,
   currentStep,
   currentBank,
-  onBankSelect
+  onBankSelect,
+  swing,
+  onSwingChange,
+  trackPitch,
+  onTrackPitchChange
 }) => {
   const currentTheme = TRACK_STYLES[selectedTrack];
 
@@ -70,8 +78,8 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
       {/* Top Controls: Play/BPM and Track Selectors combined */}
       <div className="w-full flex flex-col xl:flex-row items-center justify-between gap-8 px-2 py-2">
         
-        {/* Play & BPM */}
-        <div className="flex items-center gap-8 shrink-0">
+        {/* Play & BPM & Pitch */}
+        <div className="flex items-center gap-6 shrink-0">
           <button
             onClick={onPlayToggle}
             className={`w-20 h-10 text-xs font-bold font-mono tracking-widest rounded-sm border-2 transition-all duration-100 ${
@@ -83,26 +91,34 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
             {isPlaying ? 'STOP' : 'PLAY'}
           </button>
           <Knob label="Tempo" value={bpm} min={60} max={180} onChange={onBpmChange} />
+          <Knob label="Pitch" value={trackPitch} min={-12} max={12} onChange={onTrackPitchChange} />
         </div>
         
-        {/* Track Selectors - Styled like backlit rubber buttons */}
-        <div className="flex flex-wrap gap-2 justify-center">
-          {DRUM_TRACKS.map((track) => {
-            const isActive = track === selectedTrack;
-            const style = TRACK_STYLES[track];
-            return (
-              <button
-                key={track}
-                onClick={() => onTrackSelect(track)}
-                className={`px-3 py-4 font-bold text-[10px] uppercase rounded-sm transition-all duration-100 w-20 tracking-wider border-b-2 ${
-                  isActive ? style.active : style.inactive
-                }`}
-              >
-                {track}
-              </button>
-            );
-          })}
+        <div className="hidden xl:block w-px h-10 bg-[#333]"></div>
+
+        {/* Track Selectors + Swing */}
+        <div className="flex flex-row items-center gap-6">
+            <div className="flex flex-wrap gap-2 justify-center">
+                {DRUM_TRACKS.map((track) => {
+                    const isActive = track === selectedTrack;
+                    const style = TRACK_STYLES[track];
+                    return (
+                    <button
+                        key={track}
+                        onClick={() => onTrackSelect(track)}
+                        className={`px-3 py-4 font-bold text-[10px] uppercase rounded-sm transition-all duration-100 w-20 tracking-wider border-b-2 ${
+                        isActive ? style.active : style.inactive
+                        }`}
+                    >
+                        {track}
+                    </button>
+                    );
+                })}
+            </div>
+            <Knob label="Swing" value={swing} min={0} max={100} onChange={onSwingChange} />
         </div>
+
+        <div className="hidden xl:block w-px h-10 bg-[#333]"></div>
 
         {/* Bank Selectors */}
         <div className="flex flex-col items-center gap-2 shrink-0">
