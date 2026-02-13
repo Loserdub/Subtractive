@@ -1,0 +1,5 @@
+{
+  "name": "MIDI Subtractive Synthesizer",
+  "description": "A simple subtractive synthesizer instrument controllable via a connected MIDI device. It features a configurable oscillator, filter, and ADSR envelopes for both amplitude and filter cutoff.",
+  "requestFramePermissions": []
+}
