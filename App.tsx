@@ -5,8 +5,10 @@ import { EyeIcon } from './components/Icon';
 
 const App: React.FC = () => {
   return (
-    <div className="min-h-screen bg-[#121212] text-gray-200 flex flex-col items-center justify-center p-4 font-sans selection:bg-white selection:text-black">
-      <div className="w-full max-w-7xl mx-auto">
+    <div className="min-h-screen bg-[#121212] text-gray-200 flex flex-col items-center justify-center p-4 font-sans selection:bg-white selection:text-black relative overflow-hidden">
+      {/* Subtle dirt/noise overlay */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")' }}></div>
+      <div className="w-full max-w-7xl mx-auto relative z-10">
         <header className="flex flex-col items-center mb-8 border-b border-gray-800 pb-6">
           <div className="flex items-center gap-4">
              {/* Logo Graphic */}

@@ -48,6 +48,12 @@ const TRACK_STYLES = {
   }
 };
 
+const Screw = ({ className = "" }: { className?: string }) => (
+  <div className={`absolute w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#aaa] to-[#555] border border-[#222] flex items-center justify-center shadow-[1px_1px_2px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.6)] ${className}`}>
+    <div className="w-full h-[1px] bg-[#222] rotate-45 shadow-[0_1px_0_rgba(255,255,255,0.2)]"></div>
+  </div>
+);
+
 export const DrumMachine: React.FC<DrumMachineProps> = ({
   isPlaying,
   onPlayToggle,
@@ -66,14 +72,22 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
   onTrackPitchChange
 }) => {
   const currentTheme = TRACK_STYLES[selectedTrack];
+  const tapeRotation = React.useRef(Math.random() * 6 - 3).current;
 
   return (
-    <div className="relative bg-[#1a1a1a] rounded-sm border border-[#333] p-6 flex flex-col items-center shadow-xl">
+    <div className="relative bg-[#1e1e1e] rounded-sm border-2 border-[#2a2a2a] p-6 pt-8 flex flex-col items-center shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-10">
        {/* Hardware Screw aesthetic */}
-      <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-[#111] border border-[#222] flex items-center justify-center shadow-inner opacity-50"><div className="w-full h-[1px] bg-[#333] rotate-45"></div></div>
-      <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#111] border border-[#222] flex items-center justify-center shadow-inner opacity-50"><div className="w-full h-[1px] bg-[#333] rotate-12"></div></div>
+      <Screw className="top-2 left-2" />
+      <Screw className="top-2 right-2" />
+      <Screw className="bottom-2 left-2" />
+      <Screw className="bottom-2 right-2" />
       
-      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-6 border-b border-gray-700 pb-1 px-2 w-full text-center">SEQUENCER</h3>
+      <div 
+        className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#e8e0cc] px-4 py-0.5 shadow-[1px_2px_4px_rgba(0,0,0,0.6)] border border-[#d1c7b3] z-20"
+        style={{ transform: `translateX(-50%) rotate(${tapeRotation}deg)` }}
+      >
+         <span className="font-['Caveat'] text-2xl text-[#111] font-bold leading-none tracking-wider">SEQUENCER</span>
+      </div>
 
       {/* Top Controls: Play/BPM and Track Selectors combined */}
       <div className="w-full flex flex-col xl:flex-row items-center justify-between gap-8 px-2 py-2">
@@ -90,8 +104,8 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
           >
             {isPlaying ? 'STOP' : 'PLAY'}
           </button>
-          <Knob label="Tempo" value={bpm} min={60} max={180} onChange={onBpmChange} />
-          <Knob label="Pitch" value={trackPitch} min={-12} max={12} onChange={onTrackPitchChange} />
+          <Knob label="Tempo" value={bpm} min={60} max={180} size={48} onChange={onBpmChange} />
+          <Knob label="Pitch" value={trackPitch} min={-12} max={12} size={48} onChange={onTrackPitchChange} />
         </div>
         
         <div className="hidden xl:block w-px h-10 bg-[#333]"></div>
@@ -115,7 +129,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
                     );
                 })}
             </div>
-            <Knob label="Swing" value={swing} min={0} max={100} onChange={onSwingChange} />
+            <Knob label="Swing" value={swing} min={0} max={100} size={48} onChange={onSwingChange} />
         </div>
 
         <div className="hidden xl:block w-px h-10 bg-[#333]"></div>

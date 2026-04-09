@@ -8,6 +8,7 @@ import { Keyboard } from './Keyboard';
 import { DrumMachine } from './DrumMachine';
 import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN } from '../constants';
 import { SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from './Icon';
+import { WaveformDisplay } from './WaveformDisplay';
 
 interface PanelProps {
   title: string;
@@ -15,17 +16,42 @@ interface PanelProps {
   className?: string;
 }
 
-const Panel: React.FC<PanelProps> = ({ title, children, className = "" }) => (
-  <div className={`relative bg-[#1a1a1a] rounded-sm border border-[#333] p-6 flex flex-col items-center shadow-xl ${className}`}>
-    {/* Hardware Screw aesthetic */}
-    <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-[#111] border border-[#222] flex items-center justify-center shadow-inner opacity-50"><div className="w-full h-[1px] bg-[#333] rotate-45"></div></div>
-    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#111] border border-[#222] flex items-center justify-center shadow-inner opacity-50"><div className="w-full h-[1px] bg-[#333] rotate-12"></div></div>
-    <div className="absolute bottom-2 left-2 w-2 h-2 rounded-full bg-[#111] border border-[#222] flex items-center justify-center shadow-inner opacity-50"><div className="w-full h-[1px] bg-[#333] rotate-90"></div></div>
-    <div className="absolute bottom-2 right-2 w-2 h-2 rounded-full bg-[#111] border border-[#222] flex items-center justify-center shadow-inner opacity-50"><div className="w-full h-[1px] bg-[#333] rotate-[-45deg]"></div></div>
-
-    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-6 border-b border-gray-700 pb-1 px-2">{title}</h3>
-    {children}
+const Screw = ({ className = "" }: { className?: string }) => (
+  <div className={`absolute w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#aaa] to-[#555] border border-[#222] flex items-center justify-center shadow-[1px_1px_2px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.6)] ${className}`}>
+    <div className="w-full h-[1px] bg-[#222] rotate-45 shadow-[0_1px_0_rgba(255,255,255,0.2)]"></div>
   </div>
+);
+
+const Panel: React.FC<PanelProps> = ({ title, children, className = "" }) => {
+  const tapeRotation = useRef(Math.random() * 6 - 3).current;
+  return (
+    <div className={`relative bg-[#1e1e1e] rounded-sm border-2 border-[#2a2a2a] p-6 pt-8 flex flex-col items-center shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-10 ${className}`}>
+      <Screw className="top-2 left-2" />
+      <Screw className="top-2 right-2" />
+      <Screw className="bottom-2 left-2" />
+      <Screw className="bottom-2 right-2" />
+      <div 
+        className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#e8e0cc] px-4 py-0.5 shadow-[1px_2px_4px_rgba(0,0,0,0.6)] border border-[#d1c7b3] z-20"
+        style={{ transform: `translateX(-50%) rotate(${tapeRotation}deg)` }}
+      >
+         <span className="font-['Caveat'] text-2xl text-[#111] font-bold leading-none tracking-wider">{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+};
+
+const PatchCables = () => (
+  <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-70" style={{ filter: 'drop-shadow(3px 5px 4px rgba(0,0,0,0.6))' }}>
+    <path d="M 15% 10% C 5% 40%, 35% 70%, 25% 95%" fill="none" stroke="#111" strokeWidth="8" strokeLinecap="round" />
+    <path d="M 15% 10% C 5% 40%, 35% 70%, 25% 95%" fill="none" stroke="#d93838" strokeWidth="5" strokeLinecap="round" />
+    <path d="M 85% 5% C 95% 30%, 55% 50%, 65% 90%" fill="none" stroke="#111" strokeWidth="8" strokeLinecap="round" />
+    <path d="M 85% 5% C 95% 30%, 55% 50%, 65% 90%" fill="none" stroke="#2274a5" strokeWidth="5" strokeLinecap="round" />
+    <path d="M 35% 5% C 45% 25%, 75% 25%, 55% 95%" fill="none" stroke="#111" strokeWidth="8" strokeLinecap="round" />
+    <path d="M 35% 5% C 45% 25%, 75% 25%, 55% 95%" fill="none" stroke="#f2c94c" strokeWidth="5" strokeLinecap="round" />
+    <path d="M 5% 85% C 15% 55%, 85% 55%, 95% 85%" fill="none" stroke="#111" strokeWidth="8" strokeLinecap="round" />
+    <path d="M 5% 85% C 15% 55%, 85% 55%, 95% 85%" fill="none" stroke="#4caf50" strokeWidth="5" strokeLinecap="round" />
+  </svg>
 );
 
 export const Synth: React.FC = () => {
@@ -165,27 +191,50 @@ export const Synth: React.FC = () => {
   const handleMidiMessage = (message: MIDIMessageEvent) => {
     if (!audioEngine.current) return;
     
-    const [command, note, velocity] = message.data;
-    if (command === 144 && velocity > 0) {
-      audioEngine.current.noteOn(note, velocity);
-      setActiveNotes(prev => new Set(prev).add(note));
-    } else if (command === 128 || (command === 144 && velocity === 0)) {
-      audioEngine.current.noteOff(note);
+    // Check if the message comes from a button press (which might send an array directly) or a real MIDI event
+    const data = message.data;
+    if (!data) return;
+
+    const [status, data1, data2] = data;
+    const command = status & 0xf0; // Mask channel
+    // const channel = status & 0x0f;
+
+    if (command === 144 && data2 > 0) { // Note On
+      audioEngine.current.noteOn(data1, data2);
+      setActiveNotes(prev => new Set(prev).add(data1));
+    } else if (command === 128 || (command === 144 && data2 === 0)) { // Note Off
+      audioEngine.current.noteOff(data1);
       setActiveNotes(prev => {
         const newSet = new Set(prev);
-        newSet.delete(note);
+        newSet.delete(data1);
         return newSet;
       });
+    } else if (command === 176) { // Control Change
+      // Mapping MIDI CC to synth parameters
+      // CC 74: Brightness/Cutoff
+      if (data1 === 74) {
+         // Map 0-127 to 20-20000 Hz logarithmically
+         const min = 20;
+         const max = 20000;
+         const normalized = data2 / 127;
+         const cutoff = min * Math.pow(max / min, normalized);
+         setParams(p => ({ ...p, filter: { ...p.filter, cutoff: cutoff } }));
+      }
+      // CC 1: Modulation Wheel -> LFO Depth
+      else if (data1 === 1) {
+         const depth = data2 / 127;
+         setParams(p => ({ ...p, lfo: { ...p.lfo, depth: depth } }));
+      }
     }
   };
 
-  const handleNoteOn = (note: number) => {
+  const handleNoteOn = useCallback((note: number) => {
     if (!isStarted || !audioEngine.current) return;
     audioEngine.current.noteOn(note, 100);
     setActiveNotes(prev => new Set(prev).add(note));
-  };
+  }, [isStarted]);
   
-  const handleNoteOff = (note: number) => {
+  const handleNoteOff = useCallback((note: number) => {
     if (!isStarted || !audioEngine.current) return;
     audioEngine.current.noteOff(note);
     setActiveNotes(prev => {
@@ -193,7 +242,7 @@ export const Synth: React.FC = () => {
       newSet.delete(note);
       return newSet;
     });
-  };
+  }, [isStarted]);
 
   const setOscWaveform = (osc: 'osc1' | 'osc2' | 'osc3' | 'osc4', waveform: Waveform) => {
     setParams(p => ({ ...p, [osc]: { ...p[osc], waveform } }));
@@ -255,13 +304,22 @@ export const Synth: React.FC = () => {
                     })}
                 </div>
 
-                {/* Middle Section: LCD Display and Volume */}
-                <div className="flex flex-col flex-1 justify-between gap-2">
-                    {/* LCD Display */}
-                    <div className="bg-[#081008] border-2 border-[#222] rounded-sm px-2 py-1 shadow-[inset_0_0_10px_rgba(0,0,0,0.8)] flex items-center justify-center h-10 w-full overflow-hidden">
-                        <span className="font-mono text-[#44ff44] text-[10px] tracking-widest uppercase shadow-[0_0_8px_rgba(68,255,68,0.4)] opacity-90">
+                {/* Middle Section: LCD Display, Visualizer, Volume */}
+                <div className="flex flex-col flex-1 justify-between gap-1 min-w-[80px]">
+                    {/* LCD Display - Smaller height */}
+                    <div className="bg-[#081008] border border-[#222] rounded-sm px-1 py-0.5 shadow-inner flex items-center justify-center h-5 w-full overflow-hidden">
+                        <span className="font-mono text-[#44ff44] text-[9px] tracking-widest uppercase opacity-80">
                             {oscParams.waveform}
                         </span>
+                    </div>
+
+                    {/* Visualizer */}
+                    <div className="flex-1 w-full min-h-[36px] my-0.5">
+                        <WaveformDisplay 
+                          waveform={oscParams.waveform} 
+                          isPlaying={oscParams.enabled} 
+                          amplitudeScale={oscParams.gain}
+                        />
                     </div>
 
                     {/* Volume Slider */}
@@ -289,7 +347,7 @@ export const Synth: React.FC = () => {
                         value={oscParams.detune} 
                         min={-2400} 
                         max={2400} 
-                        size={32}
+                        size={40}
                         onChange={v => setParams(p => ({ ...p, [oscKey]: { ...p[oscKey], detune: v } }))} 
                     />
                  </div>
@@ -314,7 +372,8 @@ export const Synth: React.FC = () => {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      <PatchCables />
       
       {/* Top Section: Oscillators, Filter, Envelopes */}
       <div className="flex flex-col xl:flex-row gap-8 items-stretch">
@@ -340,10 +399,10 @@ export const Synth: React.FC = () => {
                 <Panel title="VCF" className="flex-1 justify-between">
                     <div className="flex flex-col gap-6 h-full justify-center py-2">
                         {/* Logarithmic Cutoff for better feel */}
-                        <Knob label="Cutoff" value={params.filter.cutoff} min={20} max={20000} logarithmic onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))} />
-                        <Knob label="Resonance" value={params.filter.resonance} min={0} max={40} onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))} />
+                        <Knob label="Cutoff" value={params.filter.cutoff} min={20} max={20000} size={64} logarithmic onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))} />
+                        <Knob label="Resonance" value={params.filter.resonance} min={0} max={40} size={56} onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))} />
                         {/* Increased EG Int max for stronger modulation effect */}
-                        <Knob label="EG Int" value={params.filterEnvelope.amount} min={0} max={20000} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, amount: v } }))} />
+                        <Knob label="EG Int" value={params.filterEnvelope.amount} min={0} max={10000} size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, amount: v } }))} />
                     </div>
                 </Panel>
             </div>
@@ -352,10 +411,10 @@ export const Synth: React.FC = () => {
             {/* Envelopes & LFO */}
             <div className="flex flex-col gap-8 sm:w-2/3">
                 <Panel title="LFO" className="justify-center">
-                    <div className="flex flex-col gap-3">
-                         <div className="flex flex-row items-center w-full gap-4">
-                            {/* LFO Waveform */}
-                             <div className="flex flex-col gap-1 bg-[#0a0a0a] p-1 rounded-sm border border-[#222]">
+                    <div className="flex flex-col gap-3 w-full">
+                         <div className="flex flex-row items-stretch w-full gap-4">
+                            {/* LFO Waveform Buttons */}
+                             <div className="flex flex-col gap-1 bg-[#0a0a0a] p-1 rounded-sm border border-[#222] justify-between">
                                 {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
                                     const isActive = params.lfo.waveform === w;
                                     const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
@@ -363,7 +422,7 @@ export const Synth: React.FC = () => {
                                     <button 
                                         key={w} 
                                         onClick={() => setLfoWaveform(w)} 
-                                        className={`p-1.5 rounded-sm transition-all duration-100 flex items-center justify-center
+                                        className={`p-1.5 rounded-sm transition-all duration-100 flex items-center justify-center flex-1
                                             ${isActive 
                                                 ? 'bg-[#333] text-white shadow-[0_0_5px_rgba(255,255,255,0.2)] border border-gray-600' 
                                                 : 'text-gray-600 hover:text-gray-400 hover:bg-[#222]'
@@ -374,18 +433,37 @@ export const Synth: React.FC = () => {
                                     );
                                 })}
                             </div>
+
+                            {/* Middle: LFO Visualizer */}
+                            <div className="flex flex-col flex-1 justify-between gap-1 min-w-[60px]">
+                                {/* LCD */}
+                                <div className="bg-[#081008] border border-[#222] rounded-sm px-1 py-0.5 shadow-inner flex items-center justify-center h-5 w-full overflow-hidden">
+                                    <span className="font-mono text-[#4488ff] text-[9px] tracking-widest uppercase opacity-80">
+                                        {params.lfo.waveform}
+                                    </span>
+                                </div>
+                                {/* Visualizer */}
+                                <div className="flex-1 w-full min-h-[40px] my-0.5">
+                                    <WaveformDisplay 
+                                        waveform={params.lfo.waveform} 
+                                        isPlaying={activeNotes.size > 0}
+                                        amplitudeScale={params.lfo.depth}
+                                        color="#3b82f6" // Blue
+                                    />
+                                </div>
+                            </div>
                             
-                            {/* Controls */}
-                            <div className="flex flex-wrap gap-2">
-                                 <Knob label="Rate" value={params.lfo.rate} min={0.1} max={20} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} />
-                                 <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} />
-                                 <Knob label="Delay" value={params.lfo.delay} min={0} max={2} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, delay: v } }))} />
-                                 <Knob label="Fade" value={params.lfo.fade} min={0} max={2} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, fade: v } }))} />
+                            {/* Controls - Grid for compactness */}
+                            <div className="grid grid-cols-2 gap-2">
+                                 <Knob label="Rate" value={params.lfo.rate} min={0.1} max={20} size={42} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} />
+                                 <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={42} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} />
+                                 <Knob label="Delay" value={params.lfo.delay} min={0} max={2} size={42} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, delay: v } }))} />
+                                 <Knob label="Fade" value={params.lfo.fade} min={0} max={2} size={42} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, fade: v } }))} />
                             </div>
                          </div>
                          
                         {/* Target Selector */}
-                        <div className="flex items-center gap-2 text-[9px] font-mono uppercase tracking-wide border-t border-[#333] pt-2 w-full">
+                        <div className="flex items-center gap-2 text-[9px] font-mono uppercase tracking-wide border-t border-[#333] pt-2 w-full justify-center">
                             <span className="text-gray-500 mr-2">Target:</span>
                             {(['pitch', 'filter', 'amp'] as LFOTarget[]).map(target => (
                                 <button
@@ -406,21 +484,21 @@ export const Synth: React.FC = () => {
 
                 <Panel title="AMP EG" className="flex-1 justify-center">
                     <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
-                        <Knob label="Attack" value={params.ampEnvelope.attack} min={0.001} max={2} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))} />
-                        <Knob label="Decay" value={params.ampEnvelope.decay} min={0.001} max={2} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))} />
-                        <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0} max={1} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} />
-                        <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} />
+                        <Knob label="Attack" value={params.ampEnvelope.attack} min={0.001} max={2} size={48} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))} />
+                        <Knob label="Decay" value={params.ampEnvelope.decay} min={0.001} max={2} size={48} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))} />
+                        <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0} max={1} size={48} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} />
+                        <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5} size={48} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} />
                     </div>
                 </Panel>
                 
                 <Panel title="FILTER EG" className="flex-1 justify-center">
                     <div className="flex flex-wrap justify-center gap-x-4 gap-y-2">
                         {/* Finer control for Attack and Decay (max 1s) */}
-                        <Knob label="Attack" value={params.filterEnvelope.attack} min={0.001} max={1} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))} />
-                        <Knob label="Decay" value={params.filterEnvelope.decay} min={0.001} max={1} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))} />
-                        <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0} max={1} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} />
+                        <Knob label="Attack" value={params.filterEnvelope.attack} min={0.001} max={1} size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))} />
+                        <Knob label="Decay" value={params.filterEnvelope.decay} min={0.001} max={1} size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))} />
+                        <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0} max={1} size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} />
                         {/* Extended Release range (max 10s) */}
-                        <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} />
+                        <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} />
                     </div>
                 </Panel>
             </div>

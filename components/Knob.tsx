@@ -16,7 +16,7 @@ export const Knob: React.FC<KnobProps> = ({ label, value, min, max, onChange, si
   const onChangeRef = useRef(onChange);
 
   // Calculate pointer height based on size
-  const pointerHeight = size * 0.32;
+  const pointerHeight = size * 0.25;
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -91,12 +91,15 @@ export const Knob: React.FC<KnobProps> = ({ label, value, min, max, onChange, si
     <div className="flex flex-col items-center select-none group" style={{ width: size + 16 }}>
       <div
         ref={knobRef}
-        className="relative flex items-center justify-center rounded-full bg-[#181818] shadow-[0_4px_6px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] active:scale-95 transition-transform duration-100"
+        className="relative flex items-center justify-center rounded-full shadow-[0_6px_10px_rgba(0,0,0,0.7)] active:scale-95 transition-transform duration-100"
         onMouseDown={handleMouseDown}
         style={{ cursor: 'ns-resize', width: size, height: size }}
       >
-        {/* Outer Ring/Base for aesthetics */}
-        <div className="absolute inset-0 rounded-full border border-[#333] opacity-50"></div>
+        {/* Outer ribbed edge */}
+        <div className="absolute inset-0 rounded-full border border-[#0a0a0a]" style={{ background: 'repeating-conic-gradient(#2a2a2a 0 4deg, #151515 4deg 8deg)' }}></div>
+        
+        {/* Inner smooth cap */}
+        <div className="absolute inset-[15%] rounded-full bg-gradient-to-br from-[#3a3a3a] to-[#111] shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-[#111]"></div>
 
         {/* The Rotatable Knob Face */}
         <div 
@@ -104,7 +107,7 @@ export const Knob: React.FC<KnobProps> = ({ label, value, min, max, onChange, si
             style={{ transform: `rotate(${rotation}deg)` }}
         >
             {/* White Indicator Line */}
-            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[2px] bg-white shadow-[0_0_2px_rgba(255,255,255,0.5)] rounded-full" style={{ height: pointerHeight }}></div>
+            <div className="absolute top-[15%] left-1/2 -translate-x-1/2 w-[3px] bg-white shadow-[0_0_4px_rgba(255,255,255,0.8)] rounded-full" style={{ height: pointerHeight }}></div>
         </div>
         
         {/* Invisible overlay for value readout on hover */}
@@ -112,7 +115,7 @@ export const Knob: React.FC<KnobProps> = ({ label, value, min, max, onChange, si
             {formatValue(value)}
         </div>
       </div>
-      <span className="mt-2 text-[9px] font-bold text-gray-400 uppercase tracking-widest font-mono text-center leading-tight">{label}</span>
+      <span className="mt-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest font-mono text-center leading-tight">{label}</span>
     </div>
   );
 };

@@ -18,6 +18,7 @@ interface ActiveNote {
   amp: GainNode;
   tremoloGain: GainNode;
   lfoTarget: string;
+  velocity: number; // Store normalized velocity (0-1)
 }
 
 export class AudioEngine {
@@ -75,8 +76,10 @@ export class AudioEngine {
         // Update Base Cutoff
         note.filter.frequency.setTargetAtTime(this.params.filter.cutoff, now, 0.01);
         note.filter.Q.setTargetAtTime(this.params.filter.resonance, now, 0.01);
-        // Update Envelope Amount
-        note.filterEnvGain.gain.setTargetAtTime(this.params.filterEnvelope.amount, now, 0.01);
+        
+        // Update Envelope Amount - Scale by the note's velocity
+        // We use detune for the filter envelope so it's logarithmic (cents)
+        note.filterEnvGain.gain.setTargetAtTime(this.params.filterEnvelope.amount * note.velocity, now, 0.01);
 
         // --- LFO ---
         // Update basic LFO params
@@ -90,12 +93,6 @@ export class AudioEngine {
             note.lfoTarget = this.params.lfo.target;
         } else {
              // Just update depth if target hasn't changed.
-             // NOTE: This will override the envelope of the LFO (fade in) if we aren't careful.
-             // But usually it's acceptable for live knob tweaking to jump to the new value 
-             // or we can calculate the current scalar based on time.
-             // For simplicity, we update the peak value target logic.
-             // To preserve the Fade, we would need to know if the Fade is complete.
-             // Simplification: Live depth changes apply immediately, potentially overriding fade if midway.
              this.updateLfoDepth(note, this.params.lfo.target, now);
         }
     }
@@ -123,11 +120,6 @@ export class AudioEngine {
       else if (target === 'filter') maxGain = depth * 4800;
       else if (target === 'amp') maxGain = depth * 0.5;
 
-      // If we are just updating params, we ideally shouldn't break the fade-in.
-      // However, managing the exact state of the cancelable ramp is complex.
-      // We will set the target, which works well if fade is finished. 
-      // If fade is in progress, this might jump or speed up. 
-      // For this synth, immediate response to knob is priority.
       note.lfoGain.gain.setTargetAtTime(maxGain, time, 0.1);
   }
 
@@ -172,10 +164,11 @@ export class AudioEngine {
     filterEnvSource.start(now);
 
     const filterEnvGain = this.audioContext.createGain();
-    filterEnvGain.gain.setValueAtTime(this.params.filterEnvelope.amount, now);
+    // Scale filter envelope amount by velocity
+    filterEnvGain.gain.setValueAtTime(this.params.filterEnvelope.amount * velocityGain, now);
     
     filterEnvSource.connect(filterEnvGain);
-    filterEnvGain.connect(filter.frequency);
+    filterEnvGain.connect(filter.detune);
 
     // Oscillators
     const masterHeadroom = 0.25;
@@ -234,7 +227,8 @@ export class AudioEngine {
         osc4: osc4Obj.osc, osc4Gain: osc4Obj.gain,
         lfoOsc, lfoGain, tremoloGain,
         filter, filterEnvSource, filterEnvGain, amp,
-        lfoTarget: this.params.lfo.target
+        lfoTarget: this.params.lfo.target,
+        velocity: velocityGain // Store for updates
     };
 
     // Connect LFO based on current target
