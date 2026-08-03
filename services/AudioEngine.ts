@@ -1,4 +1,3 @@
-
 import { SynthParameters } from '../types';
 
 interface ActiveNote {
@@ -23,6 +22,8 @@ interface ActiveNote {
 
 export class AudioEngine {
   private audioContext: AudioContext | null = null;
+  private masterGainNode: GainNode | null = null;
+  private analyserNode: AnalyserNode | null = null;
   private activeNotes = new Map<number, ActiveNote>();
   private params: SynthParameters;
 
@@ -38,89 +39,104 @@ export class AudioEngine {
     if (this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
     }
+
+    // Master Gain & Analyser Node Pipeline
+    this.masterGainNode = this.audioContext.createGain();
+    this.masterGainNode.gain.setValueAtTime(this.params.masterGain ?? 0.8, this.audioContext.currentTime);
+
+    this.analyserNode = this.audioContext.createAnalyser();
+    this.analyserNode.fftSize = 1024;
+    this.analyserNode.smoothingTimeConstant = 0.8;
+
+    this.masterGainNode.connect(this.analyserNode);
+    this.analyserNode.connect(this.audioContext.destination);
   }
   
   public getContext(): AudioContext | null {
-      return this.audioContext;
+    return this.audioContext;
+  }
+
+  public getAnalyser(): AnalyserNode | null {
+    return this.analyserNode;
   }
 
   public updateParams(newParams: SynthParameters) {
-    // Check if LFO targets or timing changed significantly enough to warrant re-triggering? 
-    // Usually for LFO Delay/Fade we only apply it on Note On. Live changes to delay/fade usually don't affect running notes.
-    // However, live changes to Rate/Depth should.
-    
     this.params = newParams;
     if (!this.audioContext) return;
 
     const now = this.audioContext.currentTime;
+
+    // Master Gain
+    if (this.masterGainNode) {
+      this.masterGainNode.gain.setTargetAtTime(this.params.masterGain ?? 0.8, now, 0.01);
+    }
+
     // Update params for all currently playing notes
     for (const note of this.activeNotes.values()) {
-        // --- Oscillators ---
-        if (note.osc1.type !== this.params.osc1.waveform) note.osc1.type = this.params.osc1.waveform;
-        if (note.osc2.type !== this.params.osc2.waveform) note.osc2.type = this.params.osc2.waveform;
-        if (note.osc3.type !== this.params.osc3.waveform) note.osc3.type = this.params.osc3.waveform;
-        if (note.osc4.type !== this.params.osc4.waveform) note.osc4.type = this.params.osc4.waveform;
+      // --- Oscillators ---
+      if (note.osc1.type !== this.params.osc1.waveform) note.osc1.type = this.params.osc1.waveform;
+      if (note.osc2.type !== this.params.osc2.waveform) note.osc2.type = this.params.osc2.waveform;
+      if (note.osc3.type !== this.params.osc3.waveform) note.osc3.type = this.params.osc3.waveform;
+      if (note.osc4.type !== this.params.osc4.waveform) note.osc4.type = this.params.osc4.waveform;
 
-        note.osc1.detune.setValueAtTime(this.params.osc1.detune, now);
-        note.osc2.detune.setValueAtTime(this.params.osc2.detune, now);
-        note.osc3.detune.setValueAtTime(this.params.osc3.detune, now);
-        note.osc4.detune.setValueAtTime(this.params.osc4.detune, now);
+      note.osc1.detune.setValueAtTime(this.params.osc1.detune, now);
+      note.osc2.detune.setValueAtTime(this.params.osc2.detune, now);
+      note.osc3.detune.setValueAtTime(this.params.osc3.detune, now);
+      note.osc4.detune.setValueAtTime(this.params.osc4.detune, now);
 
-        const masterHeadroom = 0.25;
-        note.osc1Gain.gain.setTargetAtTime(this.params.osc1.enabled ? this.params.osc1.gain * masterHeadroom : 0, now, 0.01);
-        note.osc2Gain.gain.setTargetAtTime(this.params.osc2.enabled ? this.params.osc2.gain * masterHeadroom : 0, now, 0.01);
-        note.osc3Gain.gain.setTargetAtTime(this.params.osc3.enabled ? this.params.osc3.gain * masterHeadroom : 0, now, 0.01);
-        note.osc4Gain.gain.setTargetAtTime(this.params.osc4.enabled ? this.params.osc4.gain * masterHeadroom : 0, now, 0.01);
+      const masterHeadroom = 0.25;
+      note.osc1Gain.gain.setTargetAtTime(this.params.osc1.enabled ? this.params.osc1.gain * masterHeadroom : 0, now, 0.01);
+      note.osc2Gain.gain.setTargetAtTime(this.params.osc2.enabled ? this.params.osc2.gain * masterHeadroom : 0, now, 0.01);
+      note.osc3Gain.gain.setTargetAtTime(this.params.osc3.enabled ? this.params.osc3.gain * masterHeadroom : 0, now, 0.01);
+      note.osc4Gain.gain.setTargetAtTime(this.params.osc4.enabled ? this.params.osc4.gain * masterHeadroom : 0, now, 0.01);
 
-        // --- Filter ---
-        // Update Base Cutoff
-        note.filter.frequency.setTargetAtTime(this.params.filter.cutoff, now, 0.01);
-        note.filter.Q.setTargetAtTime(this.params.filter.resonance, now, 0.01);
-        
-        // Update Envelope Amount - Scale by the note's velocity
-        // We use detune for the filter envelope so it's logarithmic (cents)
-        note.filterEnvGain.gain.setTargetAtTime(this.params.filterEnvelope.amount * note.velocity, now, 0.01);
+      // --- Filter ---
+      if (note.filter.type !== (this.params.filter.type || 'lowpass')) {
+        note.filter.type = (this.params.filter.type || 'lowpass') as BiquadFilterType;
+      }
+      note.filter.frequency.setTargetAtTime(this.params.filter.cutoff, now, 0.01);
+      note.filter.Q.setTargetAtTime(this.params.filter.resonance, now, 0.01);
+      
+      // Update Envelope Amount
+      note.filterEnvGain.gain.setTargetAtTime(this.params.filterEnvelope.amount * note.velocity, now, 0.01);
 
-        // --- LFO ---
-        // Update basic LFO params
-        if (note.lfoOsc.type !== this.params.lfo.waveform) note.lfoOsc.type = this.params.lfo.waveform;
-        note.lfoOsc.frequency.setTargetAtTime(this.params.lfo.rate, now, 0.01);
+      // --- LFO ---
+      if (note.lfoOsc.type !== this.params.lfo.waveform) note.lfoOsc.type = this.params.lfo.waveform;
+      note.lfoOsc.frequency.setTargetAtTime(this.params.lfo.rate, now, 0.01);
 
-        // Handle Target Switching
-        if (note.lfoTarget !== this.params.lfo.target) {
-            note.lfoGain.disconnect();
-            this.connectLfoToTarget(note, this.params.lfo.target, now);
-            note.lfoTarget = this.params.lfo.target;
-        } else {
-             // Just update depth if target hasn't changed.
-             this.updateLfoDepth(note, this.params.lfo.target, now);
-        }
+      if (note.lfoTarget !== this.params.lfo.target) {
+        note.lfoGain.disconnect();
+        this.connectLfoToTarget(note, this.params.lfo.target, now);
+        note.lfoTarget = this.params.lfo.target;
+      } else {
+        this.updateLfoDepth(note, this.params.lfo.target, now);
+      }
     }
   }
 
   private connectLfoToTarget(note: ActiveNote, target: string, time: number) {
-      if (target === 'pitch') {
-          note.lfoGain.connect(note.osc1.detune);
-          note.lfoGain.connect(note.osc2.detune);
-          note.lfoGain.connect(note.osc3.detune);
-          note.lfoGain.connect(note.osc4.detune);
-      } else if (target === 'filter') {
-          note.lfoGain.connect(note.filter.detune); 
-      } else if (target === 'amp') {
-          note.lfoGain.connect(note.tremoloGain.gain);
-      }
-      this.updateLfoDepth(note, target, time);
+    if (target === 'pitch') {
+      note.lfoGain.connect(note.osc1.detune);
+      note.lfoGain.connect(note.osc2.detune);
+      note.lfoGain.connect(note.osc3.detune);
+      note.lfoGain.connect(note.osc4.detune);
+    } else if (target === 'filter') {
+      note.lfoGain.connect(note.filter.detune); 
+    } else if (target === 'amp') {
+      note.lfoGain.connect(note.tremoloGain.gain);
+    }
+    this.updateLfoDepth(note, target, time);
   }
 
   private updateLfoDepth(note: ActiveNote, target: string, time: number) {
-      let maxGain = 0;
-      const depth = this.params.lfo.depth;
+    let maxGain = 0;
+    const depth = this.params.lfo.depth;
 
-      if (target === 'pitch') maxGain = depth * 1200;
-      else if (target === 'filter') maxGain = depth * 4800;
-      else if (target === 'amp') maxGain = depth * 0.5;
+    if (target === 'pitch') maxGain = depth * 1200;
+    else if (target === 'filter') maxGain = depth * 4800;
+    else if (target === 'amp') maxGain = depth * 0.5;
 
-      note.lfoGain.gain.setTargetAtTime(maxGain, time, 0.1);
+    note.lfoGain.gain.setTargetAtTime(maxGain, time, 0.1);
   }
 
   private midiToFrequency(note: number): number {
@@ -143,7 +159,11 @@ export class AudioEngine {
     // Amp Section
     const tremoloGain = this.audioContext.createGain();
     tremoloGain.gain.setValueAtTime(1, now);
-    tremoloGain.connect(this.audioContext.destination);
+    if (this.masterGainNode) {
+      tremoloGain.connect(this.masterGainNode);
+    } else {
+      tremoloGain.connect(this.audioContext.destination);
+    }
 
     const amp = this.audioContext.createGain();
     amp.gain.setValueAtTime(0, now);
@@ -151,20 +171,17 @@ export class AudioEngine {
 
     // Filter Section
     const filter = this.audioContext.createBiquadFilter();
-    filter.type = 'lowpass';
+    filter.type = (this.params.filter.type || 'lowpass') as BiquadFilterType;
     filter.Q.setValueAtTime(this.params.filter.resonance, now);
-    // Base Cutoff
     filter.frequency.setValueAtTime(this.params.filter.cutoff, now);
     filter.connect(amp);
 
     // Filter Envelope Generation
-    // We use a ConstantSourceNode to generate the 0-1 ADSR curve
     const filterEnvSource = this.audioContext.createConstantSource();
     filterEnvSource.offset.setValueAtTime(0, now);
     filterEnvSource.start(now);
 
     const filterEnvGain = this.audioContext.createGain();
-    // Scale filter envelope amount by velocity
     filterEnvGain.gain.setValueAtTime(this.params.filterEnvelope.amount * velocityGain, now);
     
     filterEnvSource.connect(filterEnvGain);
@@ -173,18 +190,18 @@ export class AudioEngine {
     // Oscillators
     const masterHeadroom = 0.25;
     const createOsc = (params: any) => {
-        const osc = this.audioContext!.createOscillator();
-        osc.type = params.waveform;
-        osc.frequency.setValueAtTime(frequency, now);
-        osc.detune.setValueAtTime(params.detune, now);
-        
-        const gain = this.audioContext!.createGain();
-        const targetGain = params.enabled ? params.gain * masterHeadroom : 0;
-        gain.gain.setValueAtTime(targetGain, now);
-        
-        osc.connect(gain).connect(filter);
-        osc.start(now);
-        return { osc, gain };
+      const osc = this.audioContext!.createOscillator();
+      osc.type = params.waveform;
+      osc.frequency.setValueAtTime(frequency, now);
+      osc.detune.setValueAtTime(params.detune, now);
+      
+      const gain = this.audioContext!.createGain();
+      const targetGain = params.enabled ? params.gain * masterHeadroom : 0;
+      gain.gain.setValueAtTime(targetGain, now);
+      
+      osc.connect(gain).connect(filter);
+      osc.start(now);
+      return { osc, gain };
     };
 
     const osc1Obj = createOsc(this.params.osc1);
@@ -199,48 +216,45 @@ export class AudioEngine {
     
     const lfoGain = this.audioContext.createGain();
     
-    // Calculate LFO Max Depth Value
     let maxLfoDepthVal = 0;
     if (this.params.lfo.target === 'pitch') maxLfoDepthVal = this.params.lfo.depth * 1200;
     else if (this.params.lfo.target === 'filter') maxLfoDepthVal = this.params.lfo.depth * 4800;
     else if (this.params.lfo.target === 'amp') maxLfoDepthVal = this.params.lfo.depth * 0.5;
 
-    // Schedule LFO Delay and Fade
     const delayTime = this.params.lfo.delay;
     const fadeTime = this.params.lfo.fade;
     
     lfoGain.gain.setValueAtTime(0, now);
     lfoGain.gain.setValueAtTime(0, now + delayTime);
     if (fadeTime > 0) {
-        lfoGain.gain.linearRampToValueAtTime(maxLfoDepthVal, now + delayTime + fadeTime);
+      lfoGain.gain.linearRampToValueAtTime(maxLfoDepthVal, now + delayTime + fadeTime);
     } else {
-        lfoGain.gain.setValueAtTime(maxLfoDepthVal, now + delayTime);
+      lfoGain.gain.setValueAtTime(maxLfoDepthVal, now + delayTime);
     }
 
     lfoOsc.connect(lfoGain);
     lfoOsc.start(now);
 
     const activeNote: ActiveNote = { 
-        osc1: osc1Obj.osc, osc1Gain: osc1Obj.gain,
-        osc2: osc2Obj.osc, osc2Gain: osc2Obj.gain,
-        osc3: osc3Obj.osc, osc3Gain: osc3Obj.gain,
-        osc4: osc4Obj.osc, osc4Gain: osc4Obj.gain,
-        lfoOsc, lfoGain, tremoloGain,
-        filter, filterEnvSource, filterEnvGain, amp,
-        lfoTarget: this.params.lfo.target,
-        velocity: velocityGain // Store for updates
+      osc1: osc1Obj.osc, osc1Gain: osc1Obj.gain,
+      osc2: osc2Obj.osc, osc2Gain: osc2Obj.gain,
+      osc3: osc3Obj.osc, osc3Gain: osc3Obj.gain,
+      osc4: osc4Obj.osc, osc4Gain: osc4Obj.gain,
+      lfoOsc, lfoGain, tremoloGain,
+      filter, filterEnvSource, filterEnvGain, amp,
+      lfoTarget: this.params.lfo.target,
+      velocity: velocityGain
     };
 
-    // Connect LFO based on current target
     if (this.params.lfo.target === 'pitch') {
-        lfoGain.connect(osc1Obj.osc.detune);
-        lfoGain.connect(osc2Obj.osc.detune);
-        lfoGain.connect(osc3Obj.osc.detune);
-        lfoGain.connect(osc4Obj.osc.detune);
+      lfoGain.connect(osc1Obj.osc.detune);
+      lfoGain.connect(osc2Obj.osc.detune);
+      lfoGain.connect(osc3Obj.osc.detune);
+      lfoGain.connect(osc4Obj.osc.detune);
     } else if (this.params.lfo.target === 'filter') {
-        lfoGain.connect(filter.detune);
+      lfoGain.connect(filter.detune);
     } else if (this.params.lfo.target === 'amp') {
-        lfoGain.connect(tremoloGain.gain);
+      lfoGain.connect(tremoloGain.gain);
     }
 
     // --- Amp Envelope Schedule ---
@@ -251,13 +265,9 @@ export class AudioEngine {
     amp.gain.linearRampToValueAtTime(sustainAmp, now + ampAttack + ampDecay);
 
     // --- Filter Envelope Schedule ---
-    // Note: base cutoff is already set on filter.frequency.
-    // We only modulate the ConstantSourceNode (0 to 1)
     const { attack: filterAttack, decay: filterDecay, sustain: filterSustain } = this.params.filterEnvelope;
-    
-    // offset starts at 0
-    filterEnvSource.offset.linearRampToValueAtTime(1, now + filterAttack); // Peak at 1 (full amount)
-    filterEnvSource.offset.linearRampToValueAtTime(filterSustain, now + filterAttack + filterDecay); // Sustain Level
+    filterEnvSource.offset.linearRampToValueAtTime(1, now + filterAttack);
+    filterEnvSource.offset.linearRampToValueAtTime(filterSustain, now + filterAttack + filterDecay);
 
     this.activeNotes.set(note, activeNote);
   }
@@ -272,13 +282,11 @@ export class AudioEngine {
     
     const now = this.audioContext.currentTime;
     
-    // Amp Release
     const { release: ampRelease } = this.params.ampEnvelope;
     n.amp.gain.cancelScheduledValues(now);
     n.amp.gain.setValueAtTime(n.amp.gain.value, now);
     n.amp.gain.linearRampToValueAtTime(0, now + ampRelease);
 
-    // Filter Envelope Release
     const { release: filterRelease } = this.params.filterEnvelope;
     n.filterEnvSource.offset.cancelScheduledValues(now);
     n.filterEnvSource.offset.setValueAtTime(n.filterEnvSource.offset.value, now);
@@ -292,7 +300,6 @@ export class AudioEngine {
     n.lfoOsc.stop(stopTime);
     n.filterEnvSource.stop(stopTime);
 
-    // Garbage collection
     n.osc1.onended = () => {
       n.osc1.disconnect();
       n.osc2.disconnect();

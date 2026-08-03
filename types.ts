@@ -1,5 +1,6 @@
 
 export type Waveform = 'sine' | 'square' | 'sawtooth' | 'triangle';
+export type FilterType = 'lowpass' | 'highpass' | 'bandpass' | 'notch';
 
 export interface ADSR {
   attack: number;
@@ -27,6 +28,7 @@ export interface LFOParams {
 }
 
 export interface SynthParameters {
+  masterGain: number;
   osc1: OscillatorParams;
   osc2: OscillatorParams;
   osc3: OscillatorParams;
@@ -35,6 +37,7 @@ export interface SynthParameters {
   filter: {
     cutoff: number;
     resonance: number;
+    type: FilterType;
   };
   ampEnvelope: ADSR;
   filterEnvelope: ADSR & {
@@ -46,3 +49,4 @@ export interface SynthParameters {
 export type DrumTrackName = 'kick' | 'snare' | 'hihat' | 'crash';
 export type DrumPattern = number[]; // Array of 0s and 1s for 16 steps
 export type StepSequencePattern = Record<DrumTrackName, DrumPattern>;
+

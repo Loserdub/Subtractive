@@ -1,0 +1,158 @@
+/* Subtractive Synthesizer Design System & Skeuomorphic Styling */
+
+@layer base {
+  :root {
+    --chassis-bg: #121418;
+    --panel-bg: #1a1d24;
+    --panel-border: #2c3240;
+    --oled-bg: #070e14;
+    --oled-border: #1a2838;
+    --cyan-glow: #00e5ff;
+    --amber-glow: #ffaa00;
+    --emerald-glow: #00ff66;
+    --red-glow: #ff3344;
+  }
+
+  html, body {
+    height: 100%;
+    height: 100dvh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    background-color: #080a0e;
+    color: #e2e8f0;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #11141a;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3140;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3e485e;
+}
+
+/* Monospaced Display Typography */
+.font-mono-lcd {
+  font-family: 'Share Tech Mono', 'JetBrains Mono', monospace;
+}
+.font-brand {
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* Skeuomorphic Panel Frame */
+.synth-chassis {
+  background: radial-gradient(circle at 50% 0%, #1e232d 0%, #0d0f14 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 50px rgba(0, 0, 0, 0.9);
+}
+
+.synth-panel {
+  background: linear-gradient(180deg, #1d212a 0%, #161920 100%);
+  border: 1px solid #2e3545;
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.07),
+    inset 0 -1px 3px rgba(0, 0, 0, 0.8),
+    0 4px 20px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.panel-bevel {
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), inset 0 -1px 1px rgba(255,255,255,0.05);
+}
+
+/* OLED Screen Glass */
+.oled-screen {
+  background: radial-gradient(circle at 50% 30%, #0d1a24 0%, #04090e 100%);
+  border: 1px solid #1c2b3a;
+  box-shadow: 
+    inset 0 2px 8px rgba(0, 0, 0, 0.9),
+    0 0 12px rgba(0, 229, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.oled-screen::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Hex Screw Details */
+.synth-screw {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #717888 0%, #222630 100%);
+  border: 1px solid #14171f;
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.5);
+  position: relative;
+}
+.synth-screw::after {
+  content: "";
+  position: absolute;
+  top: 50%; left: 15%; right: 15%;
+  height: 1px;
+  background: #151820;
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* Active LED Glow Effects */
+.led-glow-cyan {
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.7), 0 0 20px rgba(0, 229, 255, 0.3);
+}
+.led-glow-amber {
+  box-shadow: 0 0 10px rgba(255, 170, 0, 0.7), 0 0 20px rgba(255, 170, 0, 0.3);
+}
+.led-glow-emerald {
+  box-shadow: 0 0 10px rgba(0, 255, 102, 0.7), 0 0 20px rgba(0, 255, 102, 0.3);
+}
+.led-glow-red {
+  box-shadow: 0 0 10px rgba(255, 51, 68, 0.7), 0 0 20px rgba(255, 51, 68, 0.3);
+}
+
+/* Touch Action Lock Utility */
+.touch-lock {
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+}
+
+/* Piano Keybed Styling */
+.key-white {
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 85%, #cbd5e1 100%);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(0,0,0,0.1);
+}
+.key-white.active {
+  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+  transform: translateY(3px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.key-black {
+  background: linear-gradient(180deg, #222733 0%, #11141c 85%, #090b0f 100%);
+  box-shadow: 2px 4px 8px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.2);
+}
+.key-black.active {
+  background: linear-gradient(180deg, #090b0f 0%, #1a202c 100%);
+  transform: translateY(2px);
+  box-shadow: 1px 2px 4px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.5);
+}

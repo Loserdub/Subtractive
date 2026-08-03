@@ -1,37 +1,102 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full overflow-hidden select-none">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>React MIDI Synth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="Free browser-native polyphonic subtractive synthesizer & 16-step rhythm sequencer featuring real-time Web Audio API DSP synthesis, CRT oscilloscope, multi-touch virtual piano keybed, and Web MIDI support. Built by Justin Ray / Trust Node Logic." />
+    <meta name="keywords" content="subtractive synthesizer, web audio synth, browser synth, polyphonic synthesizer, web audio dsp, web midi synthesizer, step sequencer, virtual analog synth, trust node logic, justin ray, loserdub, browser music tools" />
+    <meta name="author" content="Justin Ray — Trust Node Logic" />
+    <link rel="canonical" href="https://loserdub.github.io/Subtractive/" />
+
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Subtractive — Polyphonic Analog Modelling Synthesizer" />
+    <meta property="og:description" content="Free browser-native polyphonic subtractive synthesizer & step sequencer. Built by Justin Ray / Trust Node Logic." />
+    <meta property="og:url" content="https://loserdub.github.io/Subtractive/" />
+    <meta property="og:site_name" content="Trust Node Logic" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@TheInnerVision" />
+    <meta name="twitter:creator" content="@TheInnerVision" />
+    <meta name="twitter:title" content="Subtractive — Polyphonic Analog Modelling Synthesizer" />
+    <meta name="twitter:description" content="Free browser-native polyphonic subtractive synthesizer & step sequencer. Built by Justin Ray / Trust Node Logic." />
+
+    <!-- JSON-LD Knowledge Graph Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://loserdub.github.io/Subtractive/#webapp",
+          "name": "Subtractive Synthesizer",
+          "alternateName": "Subtractive Polyphonic Analog Modelling Synthesizer",
+          "url": "https://loserdub.github.io/Subtractive/",
+          "applicationCategory": "MultimediaApplication",
+          "operatingSystem": "Any",
+          "browserRequirements": "Requires Web Audio API & Web MIDI support",
+          "description": "Free browser-native polyphonic subtractive synthesizer and 16-step rhythm sequencer featuring real-time Web Audio API DSP synthesis, custom rotary knobs, CRT oscilloscope, multi-touch virtual piano keybed, and Web MIDI controller support.",
+          "keywords": "subtractive synthesizer, web audio synth, browser synth, polyphonic synth, web audio dsp, web midi synthesizer, step sequencer, virtual analog synth, trust node logic, justin ray, loserdub",
+          "featureList": [
+            "Polyphonic 4-Oscillator Subtractive Synthesis",
+            "Voltage Controlled Filter (VCF) with Lowpass, Highpass, Bandpass, Notch modes",
+            "Dual ADSR Envelopes for Filter and Amplitude Modulation",
+            "Low Frequency Oscillator (LFO) with multi-target routing",
+            "16-Step Rhythm Drum Machine Sequencer",
+            "Real-Time Web Audio Oscilloscope & Spectrum Analyzer",
+            "Multi-Touch Virtual Piano Keybed with Pitch & Modulation Wheels",
+            "Web MIDI Controller Support"
+          ],
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+          },
+          "creator": {
+            "@type": "Person",
+            "@id": "https://trustnodelogic.com/#justin-ray",
+            "name": "Justin Ray",
+            "url": "https://trustnodelogic.com/",
+            "sameAs": [
+              "https://trustnodelogic.com/",
+              "https://x.com/TheInnerVision",
+              "https://youtube.com/@loserdub",
+              "https://www.linkedin.com/in/jray-me/",
+              "https://network.landr.com/users/vision-hybrid",
+              "https://github.com/loserdub"
+            ]
+          },
+          "publisher": {
+            "@type": "Organization",
+            "@id": "https://trustnodelogic.com/#organization",
+            "name": "Trust Node Logic",
+            "url": "https://trustnodelogic.com/"
+          },
+          "inLanguage": "en-US"
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://trustnodelogic.com/#website",
+          "url": "https://trustnodelogic.com/",
+          "name": "Trust Node Logic",
+          "publisher": {
+            "@id": "https://trustnodelogic.com/#justin-ray"
+          }
+        }
+      ]
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Orbitron:wght@500;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      body {
-        background-color: #111827; /* Tailwind gray-900 */
-        color: #e5e7eb; /* Tailwind gray-200 */
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-      }
-      .cursor-ns-resize {
-        cursor: ns-resize;
-      }
-    </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://esm.sh/react@^19.1.0/",
-    "react": "https://esm.sh/react@^19.1.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.1.0/"
-  }
-}
-</script>
-<link rel="stylesheet" href="/index.css">
-</head>
-  <body class="bg-gray-900">
-    <div id="root"></div>
+    <link rel="stylesheet" href="/index.css">
+  </head>
+  <body class="bg-[#090b0e] text-gray-200 h-full overflow-hidden font-sans antialiased touch-none">
+    <div id="root" class="h-full w-full overflow-hidden"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

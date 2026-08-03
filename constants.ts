@@ -2,29 +2,30 @@
 import { SynthParameters, StepSequencePattern, DrumTrackName } from './types';
 
 export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
+  masterGain: 0.8,
   osc1: {
     waveform: 'sawtooth',
     detune: 0,
     enabled: true,
-    gain: 0.5,
+    gain: 0.6,
   },
   osc2: {
     waveform: 'sawtooth',
-    detune: 12, // a nice subtle detune
+    detune: 12, // subtle detune
     enabled: true,
     gain: 0.5,
   },
   osc3: {
     waveform: 'square',
-    detune: -1200, // Sub-octave by default
+    detune: -1200, // Sub-octave
     enabled: false,
-    gain: 0.5,
+    gain: 0.4,
   },
   osc4: {
     waveform: 'triangle',
-    detune: 700, // Fifth by default
+    detune: 700, // Fifth
     enabled: false,
-    gain: 0.5,
+    gain: 0.3,
   },
   lfo: {
     waveform: 'sine',
@@ -35,23 +36,91 @@ export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
     target: 'pitch'
   },
   filter: {
-    cutoff: 4000,
-    resonance: 5,
+    cutoff: 3500,
+    resonance: 4,
+    type: 'lowpass',
   },
   ampEnvelope: {
     attack: 0.01,
-    decay: 0.2,
+    decay: 0.25,
     sustain: 0.7,
-    release: 0.5,
+    release: 0.4,
   },
   filterEnvelope: {
     attack: 0.02,
-    decay: 0.3,
-    sustain: 0.4,
-    release: 0.4,
-    amount: 3000,
+    decay: 0.4,
+    sustain: 0.3,
+    release: 0.5,
+    amount: 3200,
   },
 };
+
+export interface PresetPatch {
+  name: string;
+  category: string;
+  params: SynthParameters;
+}
+
+export const SYNTH_PRESETS: PresetPatch[] = [
+  {
+    name: 'Analog Init',
+    category: 'Basic',
+    params: { ...DEFAULT_SYNTH_PARAMS }
+  },
+  {
+    name: 'Resonant Lead',
+    category: 'Lead',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      osc1: { waveform: 'sawtooth', detune: -7, enabled: true, gain: 0.7 },
+      osc2: { waveform: 'square', detune: 7, enabled: true, gain: 0.6 },
+      filter: { cutoff: 1800, resonance: 14, type: 'lowpass' },
+      filterEnvelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 0.3, amount: 6000 },
+      ampEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.8, release: 0.3 }
+    }
+  },
+  {
+    name: 'Deep Sub Bass',
+    category: 'Bass',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      osc1: { waveform: 'square', detune: 0, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'sine', detune: -1200, enabled: true, gain: 0.9 },
+      osc3: { waveform: 'triangle', detune: -2400, enabled: true, gain: 0.5 },
+      osc4: { waveform: 'sawtooth', detune: 0, enabled: false, gain: 0.2 },
+      filter: { cutoff: 800, resonance: 2, type: 'lowpass' },
+      filterEnvelope: { attack: 0.01, decay: 0.25, sustain: 0.1, release: 0.2, amount: 2000 },
+      ampEnvelope: { attack: 0.002, decay: 0.3, sustain: 0.6, release: 0.2 }
+    }
+  },
+  {
+    name: 'Warm Poly Pad',
+    category: 'Pad',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      osc1: { waveform: 'sawtooth', detune: -10, enabled: true, gain: 0.5 },
+      osc2: { waveform: 'sawtooth', detune: 10, enabled: true, gain: 0.5 },
+      osc3: { waveform: 'triangle', detune: 0, enabled: true, gain: 0.4 },
+      filter: { cutoff: 2200, resonance: 3, type: 'lowpass' },
+      ampEnvelope: { attack: 0.6, decay: 1.2, sustain: 0.8, release: 1.5 },
+      filterEnvelope: { attack: 0.8, decay: 1.0, sustain: 0.6, release: 1.2, amount: 2500 },
+      lfo: { waveform: 'sine', rate: 3.5, depth: 0.15, delay: 0.3, fade: 0.5, target: 'filter' }
+    }
+  },
+  {
+    name: 'Filter Sweep Synth',
+    category: 'FX',
+    params: {
+      ...DEFAULT_SYNTH_PARAMS,
+      osc1: { waveform: 'sawtooth', detune: -15, enabled: true, gain: 0.6 },
+      osc2: { waveform: 'square', detune: 15, enabled: true, gain: 0.6 },
+      filter: { cutoff: 500, resonance: 18, type: 'bandpass' },
+      filterEnvelope: { attack: 0.4, decay: 0.8, sustain: 0.3, release: 0.6, amount: 8000 },
+      ampEnvelope: { attack: 0.1, decay: 0.5, sustain: 0.7, release: 0.8 },
+      lfo: { waveform: 'triangle', rate: 6, depth: 0.4, delay: 0, fade: 0, target: 'filter' }
+    }
+  }
+];
 
 export const KEYBOARD_LAYOUT = [
   { note: 'C4', midi: 60, type: 'white' },
