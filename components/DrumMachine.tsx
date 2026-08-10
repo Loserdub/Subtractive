@@ -53,37 +53,58 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
   const currentTheme = TRACK_THEMES[selectedTrack];
 
   return (
-    <div className="synth-panel rounded-sm p-4 pt-7 flex flex-col items-center w-full touch-lock select-none">
+    <div className="synth-panel rounded-sm p-3 pt-6 md:p-4 md:pt-7 flex flex-col items-center w-full touch-lock select-none">
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
       <Screw className="bottom-2 right-2" />
       
       {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-4 py-0.5 shadow-md z-20 flex items-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]" />
-        <span className="font-mono text-xs font-bold text-gray-300 tracking-[0.2em] uppercase">RHYTHM SEQUENCER</span>
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-3 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden">
+        <div className="w-1.5 h-1.5 rounded-full bg-[#ffaa00] shadow-[0_0_6px_#ffaa00] shrink-0" />
+        <span className="font-mono text-[10px] md:text-xs font-bold text-gray-300 tracking-[0.15em] uppercase truncate">RHYTHM SEQUENCER</span>
       </div>
 
       {/* Control Bar: Play/Stop, BPM, Track Select, Swing, Bank Select */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-4 px-2 py-1">
+      <div className="w-full flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 px-1 py-1">
         
-        {/* Play & Tempo Group */}
-        <div className="flex items-center gap-3">
+        {/* Play & Tempo & Swing */}
+        <div className="flex items-center justify-between w-full sm:w-auto gap-2">
           <LEDButton
             label={isPlaying ? 'STOP' : 'PLAY'}
             active={isPlaying}
             onClick={onPlayToggle}
             color={isPlaying ? 'emerald' : 'cyan'}
-            size="lg"
+            size="md"
+            className="px-3 py-1.5 text-xs"
           />
-          <Knob label="Tempo" value={bpm} min={60} max={180} size={44} onChange={onBpmChange} unit="BPM" color="amber" />
-          <Knob label="Swing" value={swing} min={0} max={100} size={44} onChange={onSwingChange} unit="%" color="emerald" />
+          <Knob label="Tempo" value={bpm} min={60} max={180} size={36} onChange={onBpmChange} unit="BPM" color="amber" />
+          <Knob label="Swing" value={swing} min={0} max={100} size={36} onChange={onSwingChange} unit="%" color="emerald" />
+
+          {/* Pattern Bank Selectors */}
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-[7px] text-gray-400 uppercase font-mono tracking-widest">Bank</span>
+            <div className="flex gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
+              {[0, 1, 2, 3].map((bankIndex) => (
+                <button
+                  key={bankIndex}
+                  onClick={() => onBankSelect(bankIndex)}
+                  className={`w-6 h-5 rounded-sm font-mono font-bold text-[10px] transition-all ${
+                    currentBank === bankIndex
+                      ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                      : 'bg-[#181e2b] text-gray-400 hover:text-white border border-[#2b3548]'
+                  }`}
+                >
+                  {bankIndex + 1}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Track Selection & Per-Track Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-1">
             {DRUM_TRACKS.map((track) => {
               const isActive = track === selectedTrack;
               const theme = TRACK_THEMES[track];
@@ -94,19 +115,20 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
                   active={isActive}
                   onClick={() => onTrackSelect(track)}
                   color={theme.color}
-                  size="md"
+                  size="sm"
+                  className="text-[8px] px-1.5 py-1"
                 />
               );
             })}
           </div>
 
-          <div className="flex items-center gap-2 border-l border-[#202738] pl-3">
+          <div className="flex items-center gap-1.5 border-l border-[#202738] pl-2">
             <Knob
-              label="Volume"
+              label="Vol"
               value={trackSettings.volume}
               min={0}
               max={1}
-              size={40}
+              size={32}
               onChange={(v) => onTrackSettingsChange(selectedTrack, { volume: v })}
               unit="%"
               color="cyan"
@@ -116,7 +138,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
               value={trackSettings.pan}
               min={-1}
               max={1}
-              size={40}
+              size={32}
               onChange={(v) => onTrackSettingsChange(selectedTrack, { pan: v })}
               color="emerald"
             />
@@ -125,7 +147,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
               value={trackSettings.decay}
               min={0.2}
               max={3.0}
-              size={40}
+              size={32}
               onChange={(v) => onTrackSettingsChange(selectedTrack, { decay: v })}
               color="amber"
             />
@@ -134,7 +156,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
               value={trackSettings.pitch}
               min={-12}
               max={12}
-              size={40}
+              size={32}
               onChange={(v) => onTrackSettingsChange(selectedTrack, { pitch: v })}
               unit="st"
               color="red"
@@ -142,31 +164,11 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
           </div>
         </div>
 
-        {/* Pattern Bank Selectors */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[8px] text-gray-400 uppercase font-mono tracking-widest">Bank</span>
-          <div className="flex gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
-            {[0, 1, 2, 3].map((bankIndex) => (
-              <button
-                key={bankIndex}
-                onClick={() => onBankSelect(bankIndex)}
-                className={`w-7 h-6 rounded-sm font-mono font-bold text-xs transition-all ${
-                  currentBank === bankIndex
-                    ? 'bg-[#ffaa00] text-black shadow-[0_0_8px_#ffaa00]'
-                    : 'bg-[#181e2b] text-gray-400 hover:text-white border border-[#2b3548]'
-                }`}
-              >
-                {bankIndex + 1}
-              </button>
-            ))}
-          </div>
-        </div>
-
       </div>
 
       {/* 16-Step Sequencer 3-State LED Grid */}
-      <div className="w-full bg-[#080b10] border border-[#1e2738] rounded-sm py-4 mt-3 flex justify-center relative shadow-inner overflow-x-auto">
-        <div className="flex flex-row gap-1.5 md:gap-2.5 justify-center min-w-max px-3">
+      <div className="w-full bg-[#080b10] border border-[#1e2738] rounded-sm py-2.5 mt-2 flex justify-center relative shadow-inner overflow-x-auto">
+        <div className="flex flex-row gap-1 sm:gap-1.5 md:gap-2 justify-center min-w-max px-2">
           {pattern[selectedTrack].map((stepVal, index) => {
             const isNormal = stepVal === 1;
             const isAccent = stepVal === 2;
@@ -176,9 +178,9 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
 
             let stepBg = 'bg-[#141a26] border-[#253044]';
             if (isAccent) {
-              stepBg = isPlayingStep ? 'bg-white text-black border-white shadow-[0_0_16px_white]' : currentTheme.accentBg;
+              stepBg = isPlayingStep ? 'bg-white text-black border-white shadow-[0_0_12px_white]' : currentTheme.accentBg;
             } else if (isNormal) {
-              stepBg = isPlayingStep ? 'bg-[#00e5ff] border-white shadow-[0_0_12px_#00e5ff]' : currentTheme.activeBg;
+              stepBg = isPlayingStep ? 'bg-[#00e5ff] border-white shadow-[0_0_10px_#00e5ff]' : currentTheme.activeBg;
             } else if (isPlayingStep) {
               stepBg = 'bg-[#3b475e] border-white';
             } else if (stepGroup % 2 === 0) {
@@ -189,25 +191,23 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
               <button
                 key={`${selectedTrack}-${index}`}
                 onClick={() => onStepToggle(selectedTrack, index)}
-                className={`w-6 h-10 md:w-8 md:h-12 rounded-sm transition-all duration-75 relative border flex flex-col items-center justify-between p-1 touch-lock ${stepBg}`}
+                className={`w-5 h-9 sm:w-6 sm:h-10 md:w-8 md:h-12 rounded-sm transition-all duration-75 relative border flex flex-col items-center justify-between p-0.5 md:p-1 touch-lock ${stepBg}`}
                 aria-label={`Step ${index + 1} for ${selectedTrack}`}
               >
-                {/* Embedded LED Bulb */}
                 <div 
-                  className={`w-2.5 h-1 rounded-full transition-all ${
+                  className={`w-2 h-1 rounded-full transition-all ${
                     isAccent
-                      ? 'bg-white shadow-[0_0_10px_white]'
+                      ? 'bg-white shadow-[0_0_8px_white]'
                       : isNormal 
-                        ? 'bg-white/80 shadow-[0_0_6px_white]' 
+                        ? 'bg-white/80 shadow-[0_0_5px_white]' 
                         : 'bg-black/40'
                   }`} 
                 />
 
-                {/* Step Marker / Accent Label */}
                 {isAccent ? (
-                  <span className="text-[9px] font-mono font-black tracking-tighter uppercase">ACC</span>
+                  <span className="text-[7px] md:text-[9px] font-mono font-black tracking-tighter uppercase">ACC</span>
                 ) : isDownbeat ? (
-                  <span className="text-[8px] text-gray-400 font-mono font-bold">
+                  <span className="text-[7px] md:text-[8px] text-gray-400 font-mono font-bold">
                     {index + 1}
                   </span>
                 ) : null}

@@ -30,16 +30,16 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
   };
 
   return (
-    <div className="synth-panel rounded-sm p-4 pt-7 flex flex-col items-center select-none touch-lock w-full h-full">
+    <div className="synth-panel rounded-sm p-3 pt-6 md:p-4 md:pt-7 flex flex-col items-center select-none touch-lock w-full h-full">
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
       <Screw className="bottom-2 right-2" />
       
       {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-3 py-0.5 shadow-md z-20 flex items-center gap-2">
-        <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] shadow-[0_0_6px_#00e5ff]" />
-        <span className="font-mono text-xs font-bold text-gray-200 tracking-[0.2em] uppercase">ARPEGGIATOR</span>
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden">
+        <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] shadow-[0_0_6px_#00e5ff] shrink-0" />
+        <span className="font-mono text-[10px] md:text-xs font-bold text-gray-200 tracking-[0.15em] uppercase truncate">ARPEGGIATOR</span>
       </div>
 
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full h-full pt-1">

@@ -13,7 +13,6 @@ import { SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from './Icon';
 import { WaveformDisplay } from './WaveformDisplay';
 import { VUMeter } from './VUMeter';
 
-
 interface PanelProps {
   title: string;
   badgeColor?: 'cyan' | 'amber' | 'emerald' | 'red';
@@ -34,16 +33,16 @@ const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, cla
   };
 
   return (
-    <div className={`synth-panel rounded-sm p-4 pt-7 flex flex-col items-center select-none touch-lock ${className}`}>
+    <div className={`synth-panel rounded-sm p-3 pt-6 md:p-4 md:pt-7 flex flex-col items-center select-none touch-lock ${className}`}>
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
       <Screw className="bottom-2 right-2" />
       
       {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-3 py-0.5 shadow-md z-20 flex items-center gap-2">
-        <div className={`w-1.5 h-1.5 rounded-full ${badgeGlows[badgeColor]}`} />
-        <span className="font-mono text-xs font-bold text-gray-200 tracking-[0.2em] uppercase">{title}</span>
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden">
+        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${badgeGlows[badgeColor]}`} />
+        <span className="font-mono text-[10px] md:text-xs font-bold text-gray-200 tracking-[0.15em] uppercase truncate">{title}</span>
       </div>
       {children}
     </div>
@@ -56,7 +55,11 @@ export const Synth: React.FC = () => {
   const [midiStatus, setMidiStatus] = useState<string>('Engine Standby');
   const [isStarted, setIsStarted] = useState(false);
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
-  const [activeTab, setActiveTab] = useState<'vco' | 'vcf' | 'env' | 'fxarp' | 'seq' | 'keys'>('vco');
+  
+  // Explicit mobile tabs
+  type MobileTab = 'vco' | 'vcf' | 'env' | 'fx' | 'arp' | 'seq' | 'keys';
+  const [activeTab, setActiveTab] = useState<MobileTab>('vco');
+  const [selectedMobileOsc, setSelectedMobileOsc] = useState<'osc1' | 'osc2' | 'osc3' | 'osc4'>('osc1');
   const [visualizerMode, setVisualizerMode] = useState<'oscilloscope' | 'spectrum'>('oscilloscope');
   
   // Drum Machine State
@@ -279,7 +282,7 @@ export const Synth: React.FC = () => {
   const renderOscControl = (oscKey: 'osc1' | 'osc2' | 'osc3' | 'osc4', label: string) => {
     const oscParams = params[oscKey];
     return (
-      <div className="flex flex-col gap-2 border border-[#202738] p-2.5 rounded-sm bg-[#0e121a] w-full relative">
+      <div className="flex flex-col gap-2 border border-[#202738] p-2 rounded-sm bg-[#0e121a] w-full relative">
         <div className="flex items-center gap-2 mb-1 w-full justify-between px-1 border-b border-[#202738] pb-1">
           <span className="text-gray-400 text-[10px] font-mono font-bold tracking-widest">{label}</span>
           <ToggleSwitch 
@@ -290,7 +293,7 @@ export const Synth: React.FC = () => {
           />
         </div>
         
-        <div className="flex flex-row items-stretch w-full gap-3 px-1">
+        <div className="flex flex-row items-stretch w-full gap-2 px-0.5">
           {/* Waveform Selector */}
           <div className="flex flex-col gap-1 bg-[#07090e] p-1 rounded-sm border border-[#1b2230] h-full justify-between shrink-0">
             {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
@@ -301,30 +304,30 @@ export const Synth: React.FC = () => {
                   key={w} 
                   type="button"
                   onClick={() => setOscWaveform(oscKey, w)} 
-                  className={`p-1 rounded-sm transition-all flex items-center justify-center h-6 w-6
+                  className={`p-1 rounded-sm transition-all flex items-center justify-center h-5 w-5 md:h-6 md:w-6
                     ${isActive 
                       ? 'bg-[#00e5ff] text-black shadow-[0_0_8px_#00e5ff]' 
                       : 'text-gray-500 hover:text-gray-200 hover:bg-[#1a2130]'
                     }`}
                 >
-                  <Icon className="w-3.5 h-3.5"/>
+                  <Icon className="w-3 h-3 md:w-3.5 md:h-3.5"/>
                 </button>
               );
             })}
           </div>
 
           {/* LCD Waveform Preview */}
-          <div className="flex flex-col flex-1 justify-between gap-1 min-w-[70px]">
-            <div className="oled-screen rounded-sm px-1.5 py-0.5 flex items-center justify-between h-5 w-full">
-              <span className="font-mono-lcd text-[#00e5ff] text-[9px] uppercase tracking-wider">
+          <div className="flex flex-col flex-1 justify-between gap-1 min-w-[60px]">
+            <div className="oled-screen rounded-sm px-1 py-0.5 flex items-center justify-between h-4 md:h-5 w-full">
+              <span className="font-mono-lcd text-[#00e5ff] text-[8px] md:text-[9px] uppercase tracking-wider">
                 {oscParams.waveform}
               </span>
-              <span className="font-mono-lcd text-gray-400 text-[8px]">
+              <span className="font-mono-lcd text-gray-400 text-[7px] md:text-[8px]">
                 {Math.round(oscParams.gain * 100)}%
               </span>
             </div>
 
-            <div className="flex-1 w-full min-h-[32px] my-0.5">
+            <div className="flex-1 w-full min-h-[28px] my-0.5">
               <WaveformDisplay 
                 waveform={oscParams.waveform} 
                 isPlaying={oscParams.enabled} 
@@ -338,7 +341,7 @@ export const Synth: React.FC = () => {
               value={oscParams.gain} 
               min={0} 
               max={1} 
-              size={36} 
+              size={32} 
               onChange={v => setParams(p => ({ ...p, [oscKey]: { ...p[oscKey], gain: v } }))} 
               unit="%"
               color="cyan"
@@ -346,13 +349,13 @@ export const Synth: React.FC = () => {
           </div>
 
           {/* Detune Knob */}
-          <div className="flex items-center justify-center border-l border-[#202738] pl-2">
+          <div className="flex items-center justify-center border-l border-[#202738] pl-1.5">
             <Knob 
               label="Detune" 
               value={oscParams.detune} 
               min={-2400} 
               max={2400} 
-              size={40}
+              size={36}
               onChange={v => setParams(p => ({ ...p, [oscKey]: { ...p[oscKey], detune: v } }))} 
               unit="cents"
               color="amber"
@@ -365,21 +368,21 @@ export const Synth: React.FC = () => {
 
   if (!isStarted) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center p-6 bg-[#080b0f]">
-        <div className="synth-panel max-w-lg w-full p-8 rounded-sm text-center flex flex-col items-center">
+      <div className="h-full w-full flex flex-col items-center justify-center p-4 bg-[#080b0f]">
+        <div className="synth-panel max-w-lg w-full p-6 md:p-8 rounded-sm text-center flex flex-col items-center">
           <Screw className="top-2 left-2" />
           <Screw className="top-2 right-2" />
           <Screw className="bottom-2 left-2" />
           <Screw className="bottom-2 right-2" />
           
-          <div className="w-12 h-12 rounded-full bg-[#00e5ff]/10 border border-[#00e5ff] flex items-center justify-center mb-4 led-glow-cyan">
-            <div className="w-4 h-4 rounded-full bg-[#00e5ff]" />
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#00e5ff]/10 border border-[#00e5ff] flex items-center justify-center mb-3 led-glow-cyan">
+            <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#00e5ff]" />
           </div>
 
-          <h2 className="text-2xl font-brand font-black text-white tracking-widest uppercase mb-2">
+          <h2 className="text-xl md:text-2xl font-brand font-black text-white tracking-widest uppercase mb-1 md:mb-2">
             SUBTRACTIVE SYNTH
           </h2>
-          <p className="text-gray-400 font-mono text-xs mb-6 tracking-wide">
+          <p className="text-gray-400 font-mono text-[11px] md:text-xs mb-5 tracking-wide">
             Polyphonic Analog Modelling Engine • Master FX • Precision Sequencer
           </p>
 
@@ -389,10 +392,10 @@ export const Synth: React.FC = () => {
             onClick={handleStart}
             color="cyan"
             size="lg"
-            className="w-full py-3 text-sm tracking-widest"
+            className="w-full py-2.5 md:py-3 text-xs md:text-sm tracking-widest"
           />
 
-          <span className="mt-4 text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+          <span className="mt-3 text-[9px] md:text-[10px] font-mono text-gray-500 uppercase tracking-widest">
             {midiStatus}
           </span>
         </div>
@@ -401,64 +404,65 @@ export const Synth: React.FC = () => {
   }
 
   return (
-    <div className="h-full w-full flex flex-col justify-between overflow-hidden bg-[#080a0e] p-2 md:p-4 gap-3">
+    <div className="h-full w-full flex flex-col justify-between overflow-hidden bg-[#080a0e] p-1.5 md:p-3 gap-2 md:gap-3">
       
-      {/* Top Header & OLED Display Box */}
-      <header className="synth-panel p-3 rounded-sm flex flex-col md:flex-row items-center justify-between gap-3 shrink-0">
+      {/* Top Header & OLED Display Box (Ultra Compact on Mobile) */}
+      <header className="synth-panel p-2 md:p-3 rounded-sm flex flex-wrap md:flex-row items-center justify-between gap-2 shrink-0">
         
-        {/* Branding & Status */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-[#00e5ff] text-black font-brand font-black text-lg flex items-center justify-center rounded-sm transform skew-x-[-6deg]">
+        {/* Branding */}
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 md:w-8 md:h-8 bg-[#00e5ff] text-black font-brand font-black text-sm md:text-lg flex items-center justify-center rounded-sm transform skew-x-[-6deg]">
             S
           </div>
           <div>
-            <h1 className="font-brand font-bold text-lg text-white tracking-widest uppercase leading-none">
+            <h1 className="font-brand font-bold text-sm md:text-lg text-white tracking-widest uppercase leading-none">
               SUBTRACTIVE
             </h1>
-            <p className="text-[9px] font-mono text-gray-400 tracking-widest uppercase mt-0.5">
+            <p className="hidden md:block text-[9px] font-mono text-gray-400 tracking-widest uppercase mt-0.5">
               ANALOG MODELING SYNTH
             </p>
           </div>
         </div>
 
         {/* OLED Parameter Status Screen */}
-        <div className="oled-screen px-4 py-2 rounded-sm flex items-center gap-6 w-full md:w-auto justify-between shadow-inner">
+        <div className="oled-screen px-2.5 py-1 md:px-4 md:py-2 rounded-sm flex items-center gap-2 md:gap-6 flex-1 md:flex-initial justify-between shadow-inner">
           <div className="flex flex-col">
-            <span className="text-[8px] font-mono text-gray-400 uppercase">Patch Preset</span>
+            <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase">Patch</span>
             <select
               value={selectedPresetName}
               onChange={(e) => loadPreset(e.target.value)}
-              className="bg-transparent text-[#00e5ff] font-mono-lcd text-xs focus:outline-none cursor-pointer"
+              className="bg-transparent text-[#00e5ff] font-mono-lcd text-[10px] md:text-xs focus:outline-none cursor-pointer max-w-[110px] md:max-w-none truncate"
             >
               {SYNTH_PRESETS.map(p => (
                 <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#00e5ff]">
-                  {p.name} ({p.category})
+                  {p.name}
                 </option>
               ))}
             </select>
           </div>
 
           <div className="flex flex-col">
-            <span className="text-[8px] font-mono text-gray-400 uppercase">Mode / Cutoff</span>
-            <span className="text-[#ffaa00] font-mono-lcd text-xs">
-              {params.voiceMode.toUpperCase()} • {Math.round(params.filter.cutoff)}Hz
+            <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase">Mode / Cutoff</span>
+            <span className="text-[#ffaa00] font-mono-lcd text-[10px] md:text-xs">
+              {params.voiceMode.substring(0, 4).toUpperCase()} • {Math.round(params.filter.cutoff)}Hz
             </span>
           </div>
 
-          <div className="hidden sm:flex flex-col">
-            <span className="text-[8px] font-mono text-gray-400 uppercase">Voices Active</span>
+          <div className="hidden lg:flex flex-col">
+            <span className="text-[8px] font-mono text-gray-400 uppercase">Voices</span>
             <span className="text-[#00ff66] font-mono-lcd text-xs">
               {activeNotes.size} Active
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <LEDButton
               label="OSC"
               active={visualizerMode === 'oscilloscope'}
               onClick={() => setVisualizerMode('oscilloscope')}
               color="cyan"
               size="sm"
+              className="text-[8px] px-1 py-0.5"
             />
             <LEDButton
               label="FFT"
@@ -466,19 +470,20 @@ export const Synth: React.FC = () => {
               onClick={() => setVisualizerMode('spectrum')}
               color="amber"
               size="sm"
+              className="text-[8px] px-1 py-0.5"
             />
           </div>
         </div>
 
         {/* Master Volume & Stereo VU Meter */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 shrink-0">
           <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
           <Knob 
-            label="Master Vol" 
+            label="Vol" 
             value={params.masterGain ?? 0.8} 
             min={0} 
             max={1} 
-            size={44} 
+            size={36} 
             onChange={v => setParams(p => ({ ...p, masterGain: v }))} 
             unit="%"
             color="emerald"
@@ -488,12 +493,13 @@ export const Synth: React.FC = () => {
       </header>
 
       {/* Mobile Tab Navigation Bar (< 768px) */}
-      <div className="md:hidden flex items-center justify-between gap-1 bg-[#10141d] p-1 rounded-sm border border-[#252d3d] shrink-0">
+      <div className="md:hidden flex items-center justify-between gap-0.5 bg-[#10141d] p-1 rounded-sm border border-[#252d3d] shrink-0 overflow-x-auto">
         {[
           { id: 'vco', label: 'VCO' },
           { id: 'vcf', label: 'VCF' },
-          { id: 'env', label: 'ENV/LFO' },
-          { id: 'fxarp', label: 'FX/ARP' },
+          { id: 'env', label: 'ENV' },
+          { id: 'fx', label: 'FX' },
+          { id: 'arp', label: 'ARP' },
           { id: 'seq', label: 'SEQ' },
           { id: 'keys', label: 'KEYS' },
         ].map((tab) => (
@@ -504,25 +510,23 @@ export const Synth: React.FC = () => {
             onClick={() => setActiveTab(tab.id as any)}
             color={activeTab === tab.id ? 'cyan' : 'white'}
             size="sm"
-            className="flex-1 text-[9px] px-1"
+            className="flex-1 text-[8px] px-1 py-1 min-w-[36px]"
           />
         ))}
       </div>
 
       {/* Main Synth Modules Layout (Desktop Rack / Mobile Tabbed View) */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 pr-1">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden space-y-2 md:space-y-3 pr-0.5">
         
-        {/* VCO & Voice Mode Section */}
-        <div className={`grid grid-cols-1 xl:grid-cols-12 gap-3 ${activeTab === 'vco' || activeTab === 'vcf' ? 'block' : 'hidden md:grid'}`}>
-          
-          {/* Left: VCO Oscillators Rack (7 cols on XL) */}
-          <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className={`xl:col-span-7 ${activeTab === 'vco' ? 'block' : 'hidden md:flex'}`}>
-            {/* Voice Mode & Global Tone Controls */}
-            <div className="flex flex-wrap items-center justify-between gap-3 w-full bg-[#0a0d14] p-2 rounded-sm border border-[#1e2636] mb-3">
+        {/* VCO Section */}
+        <div className={`grid grid-cols-1 xl:grid-cols-12 gap-3 ${activeTab === 'vco' ? 'block' : 'hidden md:grid'}`}>
+          <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="xl:col-span-12">
+            
+            {/* Voice Mode & Tone Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2 w-full bg-[#0a0d14] p-2 rounded-sm border border-[#1e2636] mb-2 md:mb-3">
               
-              {/* Voice Mode Selector */}
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[8px] font-mono text-gray-400 uppercase">Voice Mode</span>
+                <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase">Voice Mode</span>
                 <div className="flex gap-1">
                   {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
                     <LEDButton
@@ -532,74 +536,61 @@ export const Synth: React.FC = () => {
                       onClick={() => setParams(p => ({ ...p, voiceMode: mode }))}
                       color="cyan"
                       size="sm"
-                      className="text-[8px]"
+                      className="text-[7px] md:text-[8px] px-1.5"
                     />
                   ))}
                 </div>
               </div>
 
-              {/* Glide Knob */}
-              <Knob
-                label="Glide"
-                value={params.glide}
-                min={0}
-                max={0.5}
-                size={36}
-                onChange={(v) => setParams(p => ({ ...p, glide: v }))}
-                unit="s"
-                color="cyan"
-              />
-
-              {/* Sub-Oscillator & Noise Level Knobs */}
-              <Knob
-                label="Sub Osc"
-                value={params.subGain}
-                min={0}
-                max={1}
-                size={36}
-                onChange={(v) => setParams(p => ({ ...p, subGain: v }))}
-                unit="%"
-                color="amber"
-              />
-              
-              <Knob
-                label="Noise"
-                value={params.noiseGain}
-                min={0}
-                max={1}
-                size={36}
-                onChange={(v) => setParams(p => ({ ...p, noiseGain: v }))}
-                unit="%"
-                color="emerald"
-              />
-
-              {/* Pulse Width Knob */}
-              <Knob
-                label="Pulse Width"
-                value={params.pwm}
-                min={0.1}
-                max={0.9}
-                size={36}
-                onChange={(v) => setParams(p => ({ ...p, pwm: v }))}
-                unit="%"
-                color="red"
-              />
+              <Knob label="Glide" value={params.glide} min={0} max={0.5} size={32} onChange={(v) => setParams(p => ({ ...p, glide: v }))} unit="s" color="cyan" />
+              <Knob label="Sub Osc" value={params.subGain} min={0} max={1} size={32} onChange={(v) => setParams(p => ({ ...p, subGain: v }))} unit="%" color="amber" />
+              <Knob label="Noise" value={params.noiseGain} min={0} max={1} size={32} onChange={(v) => setParams(p => ({ ...p, noiseGain: v }))} unit="%" color="emerald" />
+              <Knob label="PWM" value={params.pwm} min={0.1} max={0.9} size={32} onChange={(v) => setParams(p => ({ ...p, pwm: v }))} unit="%" color="red" />
 
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-              {renderOscControl('osc1', 'OSC 1')}
-              {renderOscControl('osc2', 'OSC 2')}
-              {renderOscControl('osc3', 'OSC 3')}
-              {renderOscControl('osc4', 'OSC 4')}
+            {/* Mobile Sub-Oscillator Tab Switcher */}
+            <div className="md:hidden flex items-center justify-center gap-1 w-full mb-2">
+              {(['osc1', 'osc2', 'osc3', 'osc4'] as const).map(osc => (
+                <button
+                  key={osc}
+                  onClick={() => setSelectedMobileOsc(osc)}
+                  className={`px-2 py-1 text-[9px] font-mono font-bold rounded-sm border transition-all ${
+                    selectedMobileOsc === osc
+                      ? 'bg-[#00e5ff] text-black border-[#00e5ff]'
+                      : 'bg-[#121620] text-gray-400 border-[#222a3a]'
+                  }`}
+                >
+                  {osc.toUpperCase()}
+                </button>
+              ))}
             </div>
+
+            {/* Oscillator Grid (1 on mobile based on tab, all on desktop) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 w-full">
+              <div className={selectedMobileOsc === 'osc1' ? 'block' : 'hidden md:block'}>
+                {renderOscControl('osc1', 'OSC 1')}
+              </div>
+              <div className={selectedMobileOsc === 'osc2' ? 'block' : 'hidden md:block'}>
+                {renderOscControl('osc2', 'OSC 2')}
+              </div>
+              <div className={selectedMobileOsc === 'osc3' ? 'block' : 'hidden md:block'}>
+                {renderOscControl('osc3', 'OSC 3')}
+              </div>
+              <div className={selectedMobileOsc === 'osc4' ? 'block' : 'hidden md:block'}>
+                {renderOscControl('osc4', 'OSC 4')}
+              </div>
+            </div>
+
           </Panel>
+        </div>
 
-          {/* Right: VCF Filter & Main Oscilloscope Screen (5 cols on XL) */}
-          <div className={`xl:col-span-5 flex flex-col gap-3 ${activeTab === 'vcf' ? 'block' : 'hidden md:flex'}`}>
+        {/* VCF Section */}
+        <div className={`grid grid-cols-1 gap-3 ${activeTab === 'vcf' ? 'block' : 'hidden md:grid'}`}>
+          <div className="flex flex-col gap-3 w-full">
             
             {/* Oscilloscope Screen */}
-            <div className="oled-screen p-2 rounded-sm h-32 w-full flex flex-col justify-between">
+            <div className="oled-screen p-2 rounded-sm h-32 md:h-36 w-full flex flex-col justify-between">
               <div className="flex items-center justify-between px-1">
                 <span className="font-mono-lcd text-[9px] text-[#00e5ff] uppercase tracking-widest">
                   MAIN AUDIO OUTPUT
@@ -619,10 +610,8 @@ export const Synth: React.FC = () => {
             </div>
 
             {/* VCF Filter Module */}
-            <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="flex-1">
+            <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="w-full">
               <div className="flex flex-col gap-3 w-full">
-                
-                {/* Filter Type Buttons */}
                 <div className="flex items-center justify-center gap-1.5 w-full bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
                   {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
                     <LEDButton
@@ -632,19 +621,18 @@ export const Synth: React.FC = () => {
                       onClick={() => setFilterType(type)}
                       color="amber"
                       size="sm"
-                      className="flex-1 text-[9px]"
+                      className="flex-1 text-[8px] md:text-[9px]"
                     />
                   ))}
                 </div>
 
-                {/* Filter Knobs */}
                 <div className="flex items-center justify-around gap-2 pt-2">
                   <Knob 
                     label="Cutoff" 
                     value={params.filter.cutoff} 
                     min={20} 
                     max={20000} 
-                    size={56} 
+                    size={52} 
                     logarithmic 
                     onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))} 
                     unit="Hz"
@@ -655,7 +643,7 @@ export const Synth: React.FC = () => {
                     value={params.filter.resonance} 
                     min={0} 
                     max={40} 
-                    size={48} 
+                    size={44} 
                     onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))} 
                     color="cyan"
                   />
@@ -664,27 +652,23 @@ export const Synth: React.FC = () => {
                     value={params.filterEnvelope.amount} 
                     min={0} 
                     max={10000} 
-                    size={44} 
+                    size={40} 
                     onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, amount: v } }))} 
                     color="emerald"
                   />
                 </div>
-
               </div>
             </Panel>
 
           </div>
-
         </div>
 
-        {/* LFO & Envelopes Section */}
+        {/* Envelopes & LFO Section */}
         <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${activeTab === 'env' ? 'block' : 'hidden md:grid'}`}>
           
           {/* LFO Module */}
           <Panel title="LFO — LOW FREQUENCY OSCILLATOR" badgeColor="emerald">
             <div className="flex flex-col gap-3 w-full">
-              
-              {/* LFO Waveforms & Display */}
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1 bg-[#090c12] p-1 rounded-sm border border-[#1d2535]">
                   {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
@@ -717,22 +701,20 @@ export const Synth: React.FC = () => {
                 </div>
               </div>
 
-              {/* LFO Knobs */}
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <Knob 
                   label={params.lfo.sync ? "Division" : "Rate"} 
                   value={params.lfo.rate} 
                   min={0.1} 
                   max={20} 
-                  size={40} 
+                  size={36} 
                   onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} 
                   unit={params.lfo.sync ? "" : "Hz"} 
                   color="emerald" 
                 />
-                <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
+                <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={36} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
               </div>
 
-              {/* LFO Sync Button */}
               <div className="flex items-center justify-between gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
                 <LEDButton
                   label="BPM SYNC"
@@ -755,7 +737,6 @@ export const Synth: React.FC = () => {
                 )}
               </div>
 
-              {/* LFO Target Buttons */}
               <div className="flex items-center gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636] justify-center">
                 {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
                   <LEDButton
@@ -765,50 +746,49 @@ export const Synth: React.FC = () => {
                     onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, target } }))}
                     color="emerald"
                     size="sm"
-                    className="flex-1 text-[8px]"
+                    className="flex-1 text-[7px] md:text-[8px]"
                   />
                 ))}
               </div>
-
             </div>
           </Panel>
 
           {/* AMP Envelope Module */}
           <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan">
             <div className="flex items-center justify-around w-full h-full pt-2">
-              <Knob label="Attack" value={params.ampEnvelope.attack} min={0.001} max={2} size={44} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))} unit="s" color="cyan" />
-              <Knob label="Decay" value={params.ampEnvelope.decay} min={0.001} max={2} size={44} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))} unit="s" color="cyan" />
-              <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0} max={1} size={44} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} unit="%" color="cyan" />
-              <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5} size={44} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} unit="s" color="cyan" />
+              <Knob label="Attack" value={params.ampEnvelope.attack} min={0.001} max={2} size={40} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))} unit="s" color="cyan" />
+              <Knob label="Decay" value={params.ampEnvelope.decay} min={0.001} max={2} size={40} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))} unit="s" color="cyan" />
+              <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0} max={1} size={40} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} unit="%" color="cyan" />
+              <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5} size={40} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} unit="s" color="cyan" />
             </div>
           </Panel>
 
           {/* FILTER Envelope Module */}
           <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber">
             <div className="flex items-center justify-around w-full h-full pt-2">
-              <Knob label="Attack" value={params.filterEnvelope.attack} min={0.001} max={1} size={44} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))} unit="s" color="amber" />
-              <Knob label="Decay" value={params.filterEnvelope.decay} min={0.001} max={1} size={44} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))} unit="s" color="amber" />
-              <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0} max={1} size={44} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} unit="%" color="amber" />
-              <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={44} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} unit="s" color="amber" />
+              <Knob label="Attack" value={params.filterEnvelope.attack} min={0.001} max={1} size={40} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))} unit="s" color="amber" />
+              <Knob label="Decay" value={params.filterEnvelope.decay} min={0.001} max={1} size={40} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))} unit="s" color="amber" />
+              <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0} max={1} size={40} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} unit="%" color="amber" />
+              <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={40} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} unit="s" color="amber" />
             </div>
           </Panel>
 
         </div>
 
-        {/* Master FX & Arpeggiator Section */}
-        <div className={`grid grid-cols-1 xl:grid-cols-12 gap-3 ${activeTab === 'fxarp' ? 'block' : 'hidden md:grid'}`}>
-          <div className="xl:col-span-8">
-            <MasterFXPanel
-              fx={params.fx}
-              onChange={(fx) => setParams(p => ({ ...p, fx }))}
-            />
-          </div>
-          <div className="xl:col-span-4">
-            <ArpeggiatorPanel
-              arp={params.arpeggiator}
-              onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
-            />
-          </div>
+        {/* Master FX Section */}
+        <div className={`w-full ${activeTab === 'fx' ? 'block' : 'hidden md:block'}`}>
+          <MasterFXPanel
+            fx={params.fx}
+            onChange={(fx) => setParams(p => ({ ...p, fx }))}
+          />
+        </div>
+
+        {/* Arpeggiator Section */}
+        <div className={`w-full ${activeTab === 'arp' ? 'block' : 'hidden md:block'}`}>
+          <ArpeggiatorPanel
+            arp={params.arpeggiator}
+            onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
+          />
         </div>
 
         {/* Sequencer Module */}
@@ -832,10 +812,21 @@ export const Synth: React.FC = () => {
           />
         </div>
 
+        {/* Mobile Keys Centered Screen View */}
+        <div className={`w-full h-full flex flex-col justify-center items-center py-2 ${activeTab === 'keys' ? 'block md:hidden' : 'hidden'}`}>
+          <div className="w-full flex-1 flex flex-col justify-center min-h-[220px]">
+            <Keyboard 
+              onNoteOn={handleNoteOn} 
+              onNoteOff={handleNoteOff} 
+              activeNotes={activeNotes} 
+            />
+          </div>
+        </div>
+
       </main>
 
-      {/* Virtual Keyboard Footer (< 768px shown when active tab is 'keys' or on desktop) */}
-      <footer className={`shrink-0 ${activeTab === 'keys' ? 'block' : 'hidden md:block'}`}>
+      {/* Desktop Virtual Keyboard Footer */}
+      <footer className="shrink-0 hidden md:block">
         <Keyboard 
           onNoteOn={handleNoteOn} 
           onNoteOff={handleNoteOff} 

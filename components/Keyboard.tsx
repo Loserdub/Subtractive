@@ -212,7 +212,7 @@ export const Keyboard: React.FC<KeyboardProps> = ({
       </div>
 
       {/* Main Piano Keybed */}
-      <div className="relative flex-1 h-36 md:h-40 bg-[#07090d] p-1 rounded-sm border border-[#202736] overflow-hidden shadow-2xl">
+      <div className="relative w-full h-36 md:h-40 min-h-[144px] bg-[#07090d] p-1 rounded-sm border border-[#202736] overflow-hidden shadow-2xl">
         
         {/* White Keys Row */}
         <div className="absolute top-1 left-1 right-1 bottom-1 flex gap-[2px]">
