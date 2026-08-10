@@ -85,22 +85,33 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
           }
           ctx.shadowBlur = 0;
         } else {
-          // Time Domain Oscilloscope
+          // Time Domain Oscilloscope with Zero-Crossing Trigger Stabilization
           analyser.getByteTimeDomainData(dataArray);
+
+          // Find first positive-slope zero crossing (<= 128 to > 128)
+          let triggerOffset = 0;
+          for (let i = 0; i < Math.floor(dataArray.length / 2); i++) {
+            if (dataArray[i] <= 128 && dataArray[i + 1] > 128) {
+              triggerOffset = i;
+              break;
+            }
+          }
+
           ctx.beginPath();
           ctx.strokeStyle = color;
           ctx.lineWidth = 2 * dpr;
           ctx.lineJoin = 'round';
           ctx.lineCap = 'round';
 
-          const sliceWidth = width / dataArray.length;
+          const displaySamples = dataArray.length - triggerOffset;
+          const sliceWidth = width / displaySamples;
           let x = 0;
 
-          for (let i = 0; i < dataArray.length; i++) {
+          for (let i = triggerOffset; i < dataArray.length; i++) {
             const v = dataArray[i] / 128.0;
             const y = (v * height) / 2;
 
-            if (i === 0) ctx.moveTo(x, y);
+            if (i === triggerOffset) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
 
             x += sliceWidth;

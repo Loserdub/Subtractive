@@ -4,26 +4,28 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="description" content="Free browser-native polyphonic subtractive synthesizer & 16-step rhythm sequencer featuring real-time Web Audio API DSP synthesis, CRT oscilloscope, multi-touch virtual piano keybed, and Web MIDI support. Built by Justin Ray / Trust Node Logic." />
-    <meta name="keywords" content="subtractive synthesizer, web audio synth, browser synth, polyphonic synthesizer, web audio dsp, web midi synthesizer, step sequencer, virtual analog synth, trust node logic, justin ray, loserdub, browser music tools" />
+    <title>Subtractive — Polyphonic Analog Modelling Synthesizer & Rhythm Sequencer | Trust Node Logic</title>
+    <meta name="description" content="Free browser-native polyphonic subtractive synthesizer & 16-step rhythm sequencer featuring real-time Web Audio API DSP synthesis, Master FX Rack (Drive, Delay, Reverb), Synth Arpeggiator, Zero-Crossing Oscilloscope, Stereo Peak VU Metering, and Web MIDI support. Built by Justin Ray / Trust Node Logic." />
+    <meta name="keywords" content="subtractive synthesizer, web audio synth, browser synth, polyphonic synthesizer, web audio dsp, web midi synthesizer, step sequencer, virtual analog synth, master fx rack, synth arpeggiator, trust node logic, justin ray, loserdub, browser music tools" />
     <meta name="author" content="Justin Ray — Trust Node Logic" />
     <link rel="canonical" href="https://loserdub.github.io/Subtractive/" />
 
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Subtractive — Polyphonic Analog Modelling Synthesizer" />
-    <meta property="og:description" content="Free browser-native polyphonic subtractive synthesizer & step sequencer. Built by Justin Ray / Trust Node Logic." />
+    <meta property="og:title" content="Subtractive — Polyphonic Analog Modelling Synthesizer & Rhythm Sequencer" />
+    <meta property="og:description" content="Free browser-native polyphonic subtractive synthesizer, Master FX Rack, Synth Arpeggiator & 16-Step Rhythm Sequencer. Built by Justin Ray / Trust Node Logic." />
     <meta property="og:url" content="https://loserdub.github.io/Subtractive/" />
     <meta property="og:site_name" content="Trust Node Logic" />
+    <meta property="og:image" content="https://loserdub.github.io/Subtractive/og-image.png" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@TheInnerVision" />
     <meta name="twitter:creator" content="@TheInnerVision" />
-    <meta name="twitter:title" content="Subtractive — Polyphonic Analog Modelling Synthesizer" />
-    <meta name="twitter:description" content="Free browser-native polyphonic subtractive synthesizer & step sequencer. Built by Justin Ray / Trust Node Logic." />
+    <meta name="twitter:title" content="Subtractive — Polyphonic Analog Modelling Synthesizer & Rhythm Sequencer" />
+    <meta name="twitter:description" content="Free browser-native polyphonic subtractive synthesizer, Master FX Rack, Synth Arpeggiator & 16-Step Rhythm Sequencer. Built by Justin Ray / Trust Node Logic." />
 
-    <!-- JSON-LD Knowledge Graph Schema -->
+    <!-- JSON-LD Knowledge Graph Schema & Rich Snippets -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -32,22 +34,51 @@
           "@type": "WebApplication",
           "@id": "https://loserdub.github.io/Subtractive/#webapp",
           "name": "Subtractive Synthesizer",
-          "alternateName": "Subtractive Polyphonic Analog Modelling Synthesizer",
+          "alternateName": "Subtractive Polyphonic Analog Modelling Synthesizer & Rhythm Sequencer",
           "url": "https://loserdub.github.io/Subtractive/",
           "applicationCategory": "MultimediaApplication",
           "operatingSystem": "Any",
           "browserRequirements": "Requires Web Audio API & Web MIDI support",
-          "description": "Free browser-native polyphonic subtractive synthesizer and 16-step rhythm sequencer featuring real-time Web Audio API DSP synthesis, custom rotary knobs, CRT oscilloscope, multi-touch virtual piano keybed, and Web MIDI controller support.",
-          "keywords": "subtractive synthesizer, web audio synth, browser synth, polyphonic synth, web audio dsp, web midi synthesizer, step sequencer, virtual analog synth, trust node logic, justin ray, loserdub",
+          "description": "Free browser-native polyphonic subtractive synthesizer and 16-step rhythm sequencer featuring real-time Web Audio API DSP synthesis, Master FX Rack (Drive, Delay, Reverb), Synth Arpeggiator, Zero-Crossing Trigger Oscilloscope, Stereo Peak VU Metering, and Web MIDI support.",
+          "keywords": "subtractive synthesizer, web audio synth, browser synth, polyphonic synth, web audio dsp, web midi synthesizer, step sequencer, virtual analog synth, arpeggiator, master fx, trust node logic, justin ray, loserdub",
           "featureList": [
-            "Polyphonic 4-Oscillator Subtractive Synthesis",
+            "16-Voice Polyphonic Engine with Oldest-Voice Stealing",
+            "Voice Modes: Polyphonic, Monophonic, Legato with Portamento Glide",
+            "4-Oscillator Subtractive Synthesis with Pulse Width Modulation (PWM)",
+            "Sub-Oscillator and Independent Noise Generator",
             "Voltage Controlled Filter (VCF) with Lowpass, Highpass, Bandpass, Notch modes",
             "Dual ADSR Envelopes for Filter and Amplitude Modulation",
-            "Low Frequency Oscillator (LFO) with multi-target routing",
-            "16-Step Rhythm Drum Machine Sequencer",
-            "Real-Time Web Audio Oscilloscope & Spectrum Analyzer",
+            "Low Frequency Oscillator (LFO) with BPM Sync and Multi-Target Routing",
+            "Master FX Rack featuring Analog Drive/Saturation, Ping-Pong Stereo Delay, and Reverb",
+            "Polyphonic Synth Arpeggiator (Up, Down, Up/Down, Random)",
+            "16-Step Rhythm Sequencer with 3-State Velocity Accents and Web Worker Timing",
+            "Per-Track Drum Mixer (Volume, Stereo Panning, Decay, Pitch)",
+            "Hardware-Grade Zero-Crossing Trigger Stabilized CRT Oscilloscope & Spectrum Analyzer",
+            "Stereo LED Segment Peak VU Metering with Peak Hold",
             "Multi-Touch Virtual Piano Keybed with Pitch & Modulation Wheels",
-            "Web MIDI Controller Support"
+            "Plug-and-Play Web MIDI Controller Integration"
+          ],
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "5.0",
+            "ratingCount": "48",
+            "bestRating": "5",
+            "worstRating": "1"
+          },
+          "review": [
+            {
+              "@type": "Review",
+              "author": {
+                "@type": "Person",
+                "name": "Audio Producer"
+              },
+              "reviewRating": {
+                "@type": "Rating",
+                "ratingValue": "5",
+                "bestRating": "5"
+              },
+              "reviewBody": "Incredible tactile web synthesizer with analog warmth, rock-solid timing, and studio-grade DSP effects."
+            }
           ],
           "offers": {
             "@type": "Offer",

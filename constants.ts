@@ -1,8 +1,13 @@
 
-import { SynthParameters, StepSequencePattern, DrumTrackName } from './types';
+import { SynthParameters, StepSequencePattern, DrumTrackName, DrumTrackSettings } from './types';
 
 export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
   masterGain: 0.8,
+  voiceMode: 'poly',
+  glide: 0.05,
+  pwm: 0.5,
+  noiseGain: 0,
+  subGain: 0,
   osc1: {
     waveform: 'sawtooth',
     detune: 0,
@@ -33,7 +38,10 @@ export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
     depth: 0,
     delay: 0,
     fade: 0,
-    target: 'pitch'
+    target: 'pitch',
+    sync: false,
+    division: '1/8',
+    retrigger: true,
   },
   filter: {
     cutoff: 3500,
@@ -53,7 +61,35 @@ export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
     release: 0.5,
     amount: 3200,
   },
+  fx: {
+    drive: {
+      enabled: false,
+      amount: 0.3,
+    },
+    delay: {
+      enabled: false,
+      time: 0.25,
+      feedback: 0.4,
+      mix: 0.3,
+      pingPong: true,
+      sync: true,
+      division: '1/8',
+    },
+    reverb: {
+      enabled: false,
+      decay: 2.0,
+      mix: 0.3,
+    },
+  },
+  arpeggiator: {
+    enabled: false,
+    mode: 'up',
+    octaves: 1,
+    division: '1/16',
+    gate: 0.8,
+  },
 };
+
 
 export interface PresetPatch {
   name: string;
@@ -161,4 +197,12 @@ export const DEFAULT_DRUM_PATTERN: StepSequencePattern = {
   crash: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 };
 
+export const DEFAULT_DRUM_TRACK_SETTINGS: Record<DrumTrackName, DrumTrackSettings> = {
+  kick: { volume: 0.9, pan: 0, decay: 1.0, pitch: 0 },
+  snare: { volume: 0.8, pan: 0, decay: 1.0, pitch: 0 },
+  hihat: { volume: 0.7, pan: 0.2, decay: 1.0, pitch: 0 },
+  crash: { volume: 0.6, pan: -0.2, decay: 1.0, pitch: 0 },
+};
+
 export type DrumMachinePatternName = 'Techno' | 'House' | 'Hip-Hop';
+

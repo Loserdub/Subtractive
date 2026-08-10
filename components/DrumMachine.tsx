@@ -1,7 +1,7 @@
 import React from 'react';
 import { Knob } from './Knob';
 import { LEDButton } from './Switch';
-import { StepSequencePattern, DrumTrackName } from '../types';
+import { StepSequencePattern, DrumTrackName, DrumTrackSettings } from '../types';
 import { DRUM_TRACKS } from '../constants';
 
 interface DrumMachineProps {
@@ -18,15 +18,15 @@ interface DrumMachineProps {
   onBankSelect: (bankIndex: number) => void;
   swing: number;
   onSwingChange: (val: number) => void;
-  trackPitch: number;
-  onTrackPitchChange: (val: number) => void;
+  trackSettings: DrumTrackSettings;
+  onTrackSettingsChange: (track: DrumTrackName, settings: Partial<DrumTrackSettings>) => void;
 }
 
-const TRACK_THEMES: Record<DrumTrackName, { color: 'cyan' | 'amber' | 'emerald' | 'red'; activeBg: string }> = {
-  kick: { color: 'cyan', activeBg: 'bg-[#002f3d] border-[#00e5ff] text-[#00e5ff]' },
-  snare: { color: 'red', activeBg: 'bg-[#3d000a] border-[#ff3344] text-[#ff3344]' },
-  hihat: { color: 'emerald', activeBg: 'bg-[#003d19] border-[#00ff66] text-[#00ff66]' },
-  crash: { color: 'amber', activeBg: 'bg-[#3d2900] border-[#ffaa00] text-[#ffaa00]' },
+const TRACK_THEMES: Record<DrumTrackName, { color: 'cyan' | 'amber' | 'emerald' | 'red'; activeBg: string; accentBg: string }> = {
+  kick: { color: 'cyan', activeBg: 'bg-[#002f3d] border-[#00e5ff] text-[#00e5ff]', accentBg: 'bg-[#00e5ff] text-black shadow-[0_0_12px_#00e5ff]' },
+  snare: { color: 'red', activeBg: 'bg-[#3d000a] border-[#ff3344] text-[#ff3344]', accentBg: 'bg-[#ff3344] text-white shadow-[0_0_12px_#ff3344]' },
+  hihat: { color: 'emerald', activeBg: 'bg-[#003d19] border-[#00ff66] text-[#00ff66]', accentBg: 'bg-[#00ff66] text-black shadow-[0_0_12px_#00ff66]' },
+  crash: { color: 'amber', activeBg: 'bg-[#3d2900] border-[#ffaa00] text-[#ffaa00]', accentBg: 'bg-[#ffaa00] text-black shadow-[0_0_12px_#ffaa00]' },
 };
 
 const Screw = ({ className = "" }: { className?: string }) => (
@@ -47,8 +47,8 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
   onBankSelect,
   swing,
   onSwingChange,
-  trackPitch,
-  onTrackPitchChange
+  trackSettings,
+  onTrackSettingsChange
 }) => {
   const currentTheme = TRACK_THEMES[selectedTrack];
 
@@ -69,7 +69,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
       <div className="w-full flex flex-wrap items-center justify-between gap-4 px-2 py-1">
         
         {/* Play & Tempo Group */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <LEDButton
             label={isPlaying ? 'STOP' : 'PLAY'}
             active={isPlaying}
@@ -78,27 +78,68 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
             size="lg"
           />
           <Knob label="Tempo" value={bpm} min={60} max={180} size={44} onChange={onBpmChange} unit="BPM" color="amber" />
-          <Knob label="Pitch" value={trackPitch} min={-12} max={12} size={44} onChange={onTrackPitchChange} unit="semitones" color="cyan" />
+          <Knob label="Swing" value={swing} min={0} max={100} size={44} onChange={onSwingChange} unit="%" color="emerald" />
         </div>
 
-        {/* Track Selection Buttons */}
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] text-gray-400 font-mono uppercase tracking-widest mr-1 hidden sm:inline">Track:</span>
-          {DRUM_TRACKS.map((track) => {
-            const isActive = track === selectedTrack;
-            const theme = TRACK_THEMES[track];
-            return (
-              <LEDButton
-                key={track}
-                label={track}
-                active={isActive}
-                onClick={() => onTrackSelect(track)}
-                color={theme.color}
-                size="md"
-              />
-            );
-          })}
-          <Knob label="Swing" value={swing} min={0} max={100} size={44} onChange={onSwingChange} unit="%" color="emerald" />
+        {/* Track Selection & Per-Track Controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            {DRUM_TRACKS.map((track) => {
+              const isActive = track === selectedTrack;
+              const theme = TRACK_THEMES[track];
+              return (
+                <LEDButton
+                  key={track}
+                  label={track}
+                  active={isActive}
+                  onClick={() => onTrackSelect(track)}
+                  color={theme.color}
+                  size="md"
+                />
+              );
+            })}
+          </div>
+
+          <div className="flex items-center gap-2 border-l border-[#202738] pl-3">
+            <Knob
+              label="Volume"
+              value={trackSettings.volume}
+              min={0}
+              max={1}
+              size={40}
+              onChange={(v) => onTrackSettingsChange(selectedTrack, { volume: v })}
+              unit="%"
+              color="cyan"
+            />
+            <Knob
+              label="Pan"
+              value={trackSettings.pan}
+              min={-1}
+              max={1}
+              size={40}
+              onChange={(v) => onTrackSettingsChange(selectedTrack, { pan: v })}
+              color="emerald"
+            />
+            <Knob
+              label="Decay"
+              value={trackSettings.decay}
+              min={0.2}
+              max={3.0}
+              size={40}
+              onChange={(v) => onTrackSettingsChange(selectedTrack, { decay: v })}
+              color="amber"
+            />
+            <Knob
+              label="Pitch"
+              value={trackSettings.pitch}
+              min={-12}
+              max={12}
+              size={40}
+              onChange={(v) => onTrackSettingsChange(selectedTrack, { pitch: v })}
+              unit="st"
+              color="red"
+            />
+          </div>
         </div>
 
         {/* Pattern Bank Selectors */}
@@ -123,22 +164,21 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
 
       </div>
 
-      {/* 16-Step Sequencer LED Grid */}
+      {/* 16-Step Sequencer 3-State LED Grid */}
       <div className="w-full bg-[#080b10] border border-[#1e2738] rounded-sm py-4 mt-3 flex justify-center relative shadow-inner overflow-x-auto">
         <div className="flex flex-row gap-1.5 md:gap-2.5 justify-center min-w-max px-3">
-          {pattern[selectedTrack].map((step, index) => {
-            const isStepOn = step === 1;
+          {pattern[selectedTrack].map((stepVal, index) => {
+            const isNormal = stepVal === 1;
+            const isAccent = stepVal === 2;
             const isPlayingStep = index === currentStep;
             const stepGroup = Math.floor(index / 4);
             const isDownbeat = index % 4 === 0;
 
             let stepBg = 'bg-[#141a26] border-[#253044]';
-            if (isStepOn) {
-              if (isPlayingStep) {
-                stepBg = 'bg-[#00e5ff] border-white shadow-[0_0_12px_#00e5ff]';
-              } else {
-                stepBg = currentTheme.activeBg;
-              }
+            if (isAccent) {
+              stepBg = isPlayingStep ? 'bg-white text-black border-white shadow-[0_0_16px_white]' : currentTheme.accentBg;
+            } else if (isNormal) {
+              stepBg = isPlayingStep ? 'bg-[#00e5ff] border-white shadow-[0_0_12px_#00e5ff]' : currentTheme.activeBg;
             } else if (isPlayingStep) {
               stepBg = 'bg-[#3b475e] border-white';
             } else if (stepGroup % 2 === 0) {
@@ -154,19 +194,23 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
               >
                 {/* Embedded LED Bulb */}
                 <div 
-                  className={`w-2 h-1 rounded-full transition-all ${
-                    isStepOn 
-                      ? 'bg-white shadow-[0_0_6px_white]' 
-                      : 'bg-black/40'
+                  className={`w-2.5 h-1 rounded-full transition-all ${
+                    isAccent
+                      ? 'bg-white shadow-[0_0_10px_white]'
+                      : isNormal 
+                        ? 'bg-white/80 shadow-[0_0_6px_white]' 
+                        : 'bg-black/40'
                   }`} 
                 />
 
-                {/* Step Number */}
-                {isDownbeat && (
+                {/* Step Marker / Accent Label */}
+                {isAccent ? (
+                  <span className="text-[9px] font-mono font-black tracking-tighter uppercase">ACC</span>
+                ) : isDownbeat ? (
                   <span className="text-[8px] text-gray-400 font-mono font-bold">
                     {index + 1}
                   </span>
-                )}
+                ) : null}
               </button>
             );
           })}

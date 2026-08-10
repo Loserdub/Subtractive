@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget } from '../types';
+import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings } from '../types';
 import { AudioEngine } from '../services/AudioEngine';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
 import { Knob } from './Knob';
 import { Keyboard } from './Keyboard';
 import { DrumMachine } from './DrumMachine';
+import { MasterFXPanel } from './MasterFXPanel';
+import { ArpeggiatorPanel } from './ArpeggiatorPanel';
 import { LEDButton, ToggleSwitch } from './Switch';
-import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN, SYNTH_PRESETS } from '../constants';
+import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN, DEFAULT_DRUM_TRACK_SETTINGS, SYNTH_PRESETS } from '../constants';
 import { SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from './Icon';
 import { WaveformDisplay } from './WaveformDisplay';
+import { VUMeter } from './VUMeter';
+
 
 interface PanelProps {
   title: string;
@@ -52,7 +56,7 @@ export const Synth: React.FC = () => {
   const [midiStatus, setMidiStatus] = useState<string>('Engine Standby');
   const [isStarted, setIsStarted] = useState(false);
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
-  const [activeTab, setActiveTab] = useState<'vco' | 'vcf' | 'env' | 'seq' | 'keys'>('vco');
+  const [activeTab, setActiveTab] = useState<'vco' | 'vcf' | 'env' | 'fxarp' | 'seq' | 'keys'>('vco');
   const [visualizerMode, setVisualizerMode] = useState<'oscilloscope' | 'spectrum'>('oscilloscope');
   
   // Drum Machine State
@@ -66,12 +70,9 @@ export const Synth: React.FC = () => {
   const [isDrumMachinePlaying, setIsDrumMachinePlaying] = useState(false);
   const [bpm, setBpm] = useState(DEFAULT_BPM);
   const [swing, setSwing] = useState(0);
-  const [drumPitches, setDrumPitches] = useState<Record<DrumTrackName, number>>({
-    kick: 0,
-    snare: 0,
-    hihat: 0,
-    crash: 0
-  });
+  const [drumSettings, setDrumSettings] = useState<Record<DrumTrackName, DrumTrackSettings>>(
+    JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS))
+  );
   const [currentStep, setCurrentStep] = useState<number | null>(null);
 
   const audioEngine = useRef<AudioEngine | null>(null);
@@ -88,12 +89,14 @@ export const Synth: React.FC = () => {
       return;
     }
     audioEngine.current = engine;
+    audioEngine.current.setBpm(bpm);
     
     drumMachineEngine.current = new DrumMachineEngine(audioContext, (step) => setCurrentStep(step));
     drumMachineEngine.current.setPattern(drumPattern);
     drumMachineEngine.current.setSwing(swing);
-    Object.entries(drumPitches).forEach(([track, pitch]) => {
-      drumMachineEngine.current?.setTrackPitch(track as DrumTrackName, pitch);
+    drumMachineEngine.current.setBpm(bpm);
+    Object.entries(drumSettings).forEach(([track, settings]) => {
+      drumMachineEngine.current?.setTrackSettings(track as DrumTrackName, settings);
     });
 
     setIsStarted(true);
@@ -129,7 +132,7 @@ export const Synth: React.FC = () => {
     } catch (error) {
       setMidiStatus('MIDI Locked (Using Keys)');
     }
-  }, [isStarted, params, drumPattern, swing, drumPitches]);
+  }, [isStarted, params, drumPattern, swing, drumSettings, bpm]);
 
   useEffect(() => {
     if (audioEngine.current) {
@@ -138,6 +141,9 @@ export const Synth: React.FC = () => {
   }, [params]);
 
   useEffect(() => {
+    if (audioEngine.current) {
+      audioEngine.current.setBpm(bpm);
+    }
     if (drumMachineEngine.current) {
       drumMachineEngine.current.setBpm(bpm);
     }
@@ -163,11 +169,14 @@ export const Synth: React.FC = () => {
     }
   };
   
-  const handleDrumPitchChange = (val: number) => {
-    const newPitches = { ...drumPitches, [selectedTrack]: val };
-    setDrumPitches(newPitches);
+  const handleDrumTrackSettingsChange = (track: DrumTrackName, settings: Partial<DrumTrackSettings>) => {
+    const newSettings = {
+      ...drumSettings,
+      [track]: { ...drumSettings[track], ...settings }
+    };
+    setDrumSettings(newSettings);
     if (drumMachineEngine.current) {
-      drumMachineEngine.current.setTrackPitch(selectedTrack, val);
+      drumMachineEngine.current.setTrackSettings(track, settings);
     }
   };
   
@@ -176,15 +185,17 @@ export const Synth: React.FC = () => {
     const currentPattern = { ...newBanks[currentBankIndex] };
     const newTrackPattern = [...currentPattern[track]];
     
-    const isOn = newTrackPattern[stepIndex] === 0;
-    newTrackPattern[stepIndex] = isOn ? 1 : 0;
+    // 3-state cycle: 0 -> 1 -> 2 -> 0
+    const currentVal = newTrackPattern[stepIndex] || 0;
+    const nextVal = (currentVal + 1) % 3;
+    newTrackPattern[stepIndex] = nextVal;
     
     currentPattern[track] = newTrackPattern;
     newBanks[currentBankIndex] = currentPattern;
     
     setBanks(newBanks);
 
-    if (isOn && drumMachineEngine.current) {
+    if (nextVal > 0 && drumMachineEngine.current) {
       drumMachineEngine.current.playSound(track);
     }
   };
@@ -369,7 +380,7 @@ export const Synth: React.FC = () => {
             SUBTRACTIVE SYNTH
           </h2>
           <p className="text-gray-400 font-mono text-xs mb-6 tracking-wide">
-            Polyphonic Analog Modelling Engine • Tactile Interface
+            Polyphonic Analog Modelling Engine • Master FX • Precision Sequencer
           </p>
 
           <LEDButton
@@ -428,9 +439,9 @@ export const Synth: React.FC = () => {
           </div>
 
           <div className="flex flex-col">
-            <span className="text-[8px] font-mono text-gray-400 uppercase">Cutoff / Res</span>
+            <span className="text-[8px] font-mono text-gray-400 uppercase">Mode / Cutoff</span>
             <span className="text-[#ffaa00] font-mono-lcd text-xs">
-              {Math.round(params.filter.cutoff)}Hz • Q:{params.filter.resonance.toFixed(1)}
+              {params.voiceMode.toUpperCase()} • {Math.round(params.filter.cutoff)}Hz
             </span>
           </div>
 
@@ -459,8 +470,9 @@ export const Synth: React.FC = () => {
           </div>
         </div>
 
-        {/* Master Volume */}
-        <div className="flex items-center gap-4">
+        {/* Master Volume & Stereo VU Meter */}
+        <div className="flex items-center gap-3">
+          <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
           <Knob 
             label="Master Vol" 
             value={params.masterGain ?? 0.8} 
@@ -481,6 +493,7 @@ export const Synth: React.FC = () => {
           { id: 'vco', label: 'VCO' },
           { id: 'vcf', label: 'VCF' },
           { id: 'env', label: 'ENV/LFO' },
+          { id: 'fxarp', label: 'FX/ARP' },
           { id: 'seq', label: 'SEQ' },
           { id: 'keys', label: 'KEYS' },
         ].map((tab) => (
@@ -491,7 +504,7 @@ export const Synth: React.FC = () => {
             onClick={() => setActiveTab(tab.id as any)}
             color={activeTab === tab.id ? 'cyan' : 'white'}
             size="sm"
-            className="flex-1 text-[10px]"
+            className="flex-1 text-[9px] px-1"
           />
         ))}
       </div>
@@ -499,12 +512,82 @@ export const Synth: React.FC = () => {
       {/* Main Synth Modules Layout (Desktop Rack / Mobile Tabbed View) */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden space-y-3 pr-1">
         
-        {/* VCO & VCF Section */}
+        {/* VCO & Voice Mode Section */}
         <div className={`grid grid-cols-1 xl:grid-cols-12 gap-3 ${activeTab === 'vco' || activeTab === 'vcf' ? 'block' : 'hidden md:grid'}`}>
           
           {/* Left: VCO Oscillators Rack (7 cols on XL) */}
-          <Panel title="VCO — OSCILLATORS" badgeColor="cyan" className={`xl:col-span-7 ${activeTab === 'vco' ? 'block' : 'hidden md:flex'}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full pt-1">
+          <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className={`xl:col-span-7 ${activeTab === 'vco' ? 'block' : 'hidden md:flex'}`}>
+            {/* Voice Mode & Global Tone Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-3 w-full bg-[#0a0d14] p-2 rounded-sm border border-[#1e2636] mb-3">
+              
+              {/* Voice Mode Selector */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[8px] font-mono text-gray-400 uppercase">Voice Mode</span>
+                <div className="flex gap-1">
+                  {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
+                    <LEDButton
+                      key={mode}
+                      label={mode.toUpperCase()}
+                      active={params.voiceMode === mode}
+                      onClick={() => setParams(p => ({ ...p, voiceMode: mode }))}
+                      color="cyan"
+                      size="sm"
+                      className="text-[8px]"
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Glide Knob */}
+              <Knob
+                label="Glide"
+                value={params.glide}
+                min={0}
+                max={0.5}
+                size={36}
+                onChange={(v) => setParams(p => ({ ...p, glide: v }))}
+                unit="s"
+                color="cyan"
+              />
+
+              {/* Sub-Oscillator & Noise Level Knobs */}
+              <Knob
+                label="Sub Osc"
+                value={params.subGain}
+                min={0}
+                max={1}
+                size={36}
+                onChange={(v) => setParams(p => ({ ...p, subGain: v }))}
+                unit="%"
+                color="amber"
+              />
+              
+              <Knob
+                label="Noise"
+                value={params.noiseGain}
+                min={0}
+                max={1}
+                size={36}
+                onChange={(v) => setParams(p => ({ ...p, noiseGain: v }))}
+                unit="%"
+                color="emerald"
+              />
+
+              {/* Pulse Width Knob */}
+              <Knob
+                label="Pulse Width"
+                value={params.pwm}
+                min={0.1}
+                max={0.9}
+                size={36}
+                onChange={(v) => setParams(p => ({ ...p, pwm: v }))}
+                unit="%"
+                color="red"
+              />
+
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
               {renderOscControl('osc1', 'OSC 1')}
               {renderOscControl('osc2', 'OSC 2')}
               {renderOscControl('osc3', 'OSC 3')}
@@ -636,13 +719,45 @@ export const Synth: React.FC = () => {
 
               {/* LFO Knobs */}
               <div className="grid grid-cols-2 gap-2 pt-1">
-                <Knob label="Rate" value={params.lfo.rate} min={0.1} max={20} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} unit="Hz" color="emerald" />
+                <Knob 
+                  label={params.lfo.sync ? "Division" : "Rate"} 
+                  value={params.lfo.rate} 
+                  min={0.1} 
+                  max={20} 
+                  size={40} 
+                  onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} 
+                  unit={params.lfo.sync ? "" : "Hz"} 
+                  color="emerald" 
+                />
                 <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
               </div>
 
+              {/* LFO Sync Button */}
+              <div className="flex items-center justify-between gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
+                <LEDButton
+                  label="BPM SYNC"
+                  active={params.lfo.sync}
+                  onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, sync: !p.lfo.sync } }))}
+                  color="emerald"
+                  size="sm"
+                  className="text-[8px]"
+                />
+                {params.lfo.sync && (
+                  <select
+                    value={params.lfo.division}
+                    onChange={(e) => setParams(p => ({ ...p, lfo: { ...p.lfo, division: e.target.value } }))}
+                    className="bg-[#141a26] text-[#00ff66] font-mono text-[9px] px-1 py-0.5 rounded border border-[#202738]"
+                  >
+                    {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
               {/* LFO Target Buttons */}
-              <div className="flex items-center gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636] justify-center mt-1">
-                {(['pitch', 'filter', 'amp'] as LFOTarget[]).map(target => (
+              <div className="flex items-center gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636] justify-center">
+                {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
                   <LEDButton
                     key={target}
                     label={target.toUpperCase()}
@@ -650,7 +765,7 @@ export const Synth: React.FC = () => {
                     onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, target } }))}
                     color="emerald"
                     size="sm"
-                    className="flex-1 text-[9px]"
+                    className="flex-1 text-[8px]"
                   />
                 ))}
               </div>
@@ -680,6 +795,22 @@ export const Synth: React.FC = () => {
 
         </div>
 
+        {/* Master FX & Arpeggiator Section */}
+        <div className={`grid grid-cols-1 xl:grid-cols-12 gap-3 ${activeTab === 'fxarp' ? 'block' : 'hidden md:grid'}`}>
+          <div className="xl:col-span-8">
+            <MasterFXPanel
+              fx={params.fx}
+              onChange={(fx) => setParams(p => ({ ...p, fx }))}
+            />
+          </div>
+          <div className="xl:col-span-4">
+            <ArpeggiatorPanel
+              arp={params.arpeggiator}
+              onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
+            />
+          </div>
+        </div>
+
         {/* Sequencer Module */}
         <div className={`w-full ${activeTab === 'seq' ? 'block' : 'hidden md:block'}`}>
           <DrumMachine
@@ -696,8 +827,8 @@ export const Synth: React.FC = () => {
             onBankSelect={setCurrentBankIndex}
             swing={swing}
             onSwingChange={setSwing}
-            trackPitch={drumPitches[selectedTrack]}
-            onTrackPitchChange={handleDrumPitchChange}
+            trackSettings={drumSettings[selectedTrack]}
+            onTrackSettingsChange={handleDrumTrackSettingsChange}
           />
         </div>
 
