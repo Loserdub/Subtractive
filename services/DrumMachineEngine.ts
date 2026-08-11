@@ -15,11 +15,17 @@ export class DrumMachineEngine {
   
   private swing = 0; // 0 to 100
   private trackSettings: Record<DrumTrackName, DrumTrackSettings> = JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS));
+  private outputNode: AudioNode | null = null;
 
-  constructor(audioContext: AudioContext, onStepChange?: (step: number) => void) {
+  constructor(audioContext: AudioContext, onStepChange?: (step: number) => void, outputNode?: AudioNode | null) {
     this.audioContext = audioContext;
     this.onStepChange = onStepChange;
+    this.outputNode = outputNode || null;
     this.initWorker();
+  }
+
+  public setOutputNode(node: AudioNode | null) {
+    this.outputNode = node;
   }
 
   private initWorker() {
@@ -70,7 +76,7 @@ export class DrumMachineEngine {
     const trackGain = this.audioContext.createGain();
     trackGain.gain.setValueAtTime(settings.volume, time);
 
-    let destinationNode: AudioNode = this.audioContext.destination;
+    let destinationNode: AudioNode = this.outputNode || this.audioContext.destination;
     
     if (this.audioContext.createStereoPanner) {
       const panner = this.audioContext.createStereoPanner();

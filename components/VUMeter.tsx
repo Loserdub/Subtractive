@@ -22,9 +22,12 @@ export const VUMeter: React.FC<VUMeterProps> = ({ getPeakLevels, className = "" 
   useEffect(() => {
     const update = () => {
       const levels = typeof getPeakLevels === 'function' ? (getPeakLevels() || { left: 0, right: 0 }) : { left: 0, right: 0 };
-      const left = levels.left || 0;
-      const right = levels.right || 0;
+      const rawLeft = levels.left || 0;
+      const rawRight = levels.right || 0;
 
+      // Apply perceptual curve (exponent 0.42) so audible lower-amplitude signals light up LEDs dynamically
+      const left = rawLeft > 0 ? Math.min(1, Math.pow(rawLeft, 0.42)) : 0;
+      const right = rawRight > 0 ? Math.min(1, Math.pow(rawRight, 0.42)) : 0;
 
       // Smooth decay
       setLeftLevel(prev => Math.max(left, prev * 0.82));

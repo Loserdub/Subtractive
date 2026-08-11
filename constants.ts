@@ -140,7 +140,7 @@ export const SYNTH_PRESETS: PresetPatch[] = [
       filter: { cutoff: 2200, resonance: 3, type: 'lowpass' },
       ampEnvelope: { attack: 0.6, decay: 1.2, sustain: 0.8, release: 1.5 },
       filterEnvelope: { attack: 0.8, decay: 1.0, sustain: 0.6, release: 1.2, amount: 2500 },
-      lfo: { waveform: 'sine', rate: 3.5, depth: 0.15, delay: 0.3, fade: 0.5, target: 'filter' }
+      lfo: { ...DEFAULT_SYNTH_PARAMS.lfo, waveform: 'sine', rate: 3.5, depth: 0.15, delay: 0.3, fade: 0.5, target: 'filter' }
     }
   },
   {
@@ -153,7 +153,7 @@ export const SYNTH_PRESETS: PresetPatch[] = [
       filter: { cutoff: 500, resonance: 18, type: 'bandpass' },
       filterEnvelope: { attack: 0.4, decay: 0.8, sustain: 0.3, release: 0.6, amount: 8000 },
       ampEnvelope: { attack: 0.1, decay: 0.5, sustain: 0.7, release: 0.8 },
-      lfo: { waveform: 'triangle', rate: 6, depth: 0.4, delay: 0, fade: 0, target: 'filter' }
+      lfo: { ...DEFAULT_SYNTH_PARAMS.lfo, waveform: 'triangle', rate: 6, depth: 0.4, delay: 0, fade: 0, target: 'filter' }
     }
   }
 ];

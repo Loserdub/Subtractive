@@ -232,8 +232,15 @@ export class AudioEngine {
       if (absR > maxR) maxR = absR;
     }
 
-    this.peakLeft = Math.max(maxL, this.peakLeft * 0.85);
-    this.peakRight = Math.max(maxR, this.peakRight * 0.85);
+    // If channel 1 is muted/empty due to mono signal routing, mirror channel 0 so VU meter reflects mono output
+    if (maxR < 0.001 && maxL > 0) {
+      maxR = maxL;
+    } else if (maxL < 0.001 && maxR > 0) {
+      maxL = maxR;
+    }
+
+    this.peakLeft = Math.max(maxL, this.peakLeft * 0.75);
+    this.peakRight = Math.max(maxR, this.peakRight * 0.75);
 
     return { left: this.peakLeft, right: this.peakRight };
   }
@@ -325,6 +332,10 @@ export class AudioEngine {
 
   public getAnalyser(): AnalyserNode | null {
     return this.analyserNode;
+  }
+
+  public getMasterGainNode(): GainNode | null {
+    return this.masterGainNode;
   }
 
   public updateParams(newParams: SynthParameters) {

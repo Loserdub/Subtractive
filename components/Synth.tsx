@@ -94,7 +94,7 @@ export const Synth: React.FC = () => {
     audioEngine.current = engine;
     audioEngine.current.setBpm(bpm);
     
-    drumMachineEngine.current = new DrumMachineEngine(audioContext, (step) => setCurrentStep(step));
+    drumMachineEngine.current = new DrumMachineEngine(audioContext, (step) => setCurrentStep(step), engine.getMasterGainNode());
     drumMachineEngine.current.setPattern(drumPattern);
     drumMachineEngine.current.setSwing(swing);
     drumMachineEngine.current.setBpm(bpm);

@@ -1,9 +1,10 @@
 import React from 'react';
 import { Synth } from './components/Synth';
+import { ViewportController } from './components/ViewportController';
 
 const App: React.FC = () => {
   return (
-    <div className="h-full h-[100dvh] w-full overflow-hidden synth-chassis text-gray-200 flex flex-col font-sans touch-lock relative">
+    <div className="h-full h-[100dvh] w-full overflow-hidden synth-chassis text-gray-200 flex flex-col font-sans relative">
       {/* Subtle Analog Texture Overlay */}
       <div 
         className="absolute inset-0 opacity-[0.03] pointer-events-none z-0" 
@@ -12,7 +13,9 @@ const App: React.FC = () => {
         }} 
       />
       <div className="relative z-10 h-full w-full overflow-hidden flex flex-col">
-        <Synth />
+        <ViewportController>
+          <Synth />
+        </ViewportController>
       </div>
     </div>
   );
