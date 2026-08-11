@@ -74,6 +74,29 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
     setPanY(0);
   }, []);
 
+  // Fit view to 100% visible height & width
+  const handleFit = useCallback(() => {
+    if (wrapperRef.current && contentRef.current) {
+      const containerHeight = contentRef.current.scrollHeight || 900;
+      const windowHeight = wrapperRef.current.clientHeight || window.innerHeight;
+      const fitZoom = Math.min(1.0, Math.max(0.45, +(windowHeight / (containerHeight + 20)).toFixed(2)));
+      setZoom(fitZoom);
+      setPanX(0);
+      setPanY(0);
+    } else {
+      setZoom(0.85);
+      setPanX(0);
+      setPanY(0);
+    }
+  }, []);
+
+  // Auto-fit on initial mount for desktop
+  useEffect(() => {
+    if (window.innerWidth >= 1024) {
+      handleFit();
+    }
+  }, [handleFit]);
+
   // Zoom in / out handlers
   const handleZoomIn = useCallback(() => {
     setZoom(prev => Math.min(2.5, +(prev + 0.15).toFixed(2)));
@@ -300,6 +323,16 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
           🖐 <span className="hidden sm:inline">PAN</span>
         </button>
 
+        {/* Fit to Viewport Button */}
+        <button
+          type="button"
+          onClick={handleFit}
+          title="Fit synth to screen height & width"
+          className="px-2 py-0.5 rounded bg-[#18202e] hover:bg-[#263248] text-[#00e5ff] border border-[#2d384e] text-[9px] font-mono font-bold transition-all"
+        >
+          FIT
+        </button>
+
         {/* Reset View Button */}
         <button
           type="button"
@@ -307,7 +340,7 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
           title="Reset Zoom & Pan to 100%"
           className="px-2 py-0.5 rounded bg-[#18202e] hover:bg-[#263248] text-[#00ff66] border border-[#2d384e] text-[9px] font-mono font-bold transition-all"
         >
-          RESET
+          100%
         </button>
       </nav>
 
