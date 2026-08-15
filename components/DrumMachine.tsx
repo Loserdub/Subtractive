@@ -53,7 +53,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
   const currentTheme = TRACK_THEMES[selectedTrack];
 
   return (
-    <div className="synth-panel rounded-sm p-3 pt-6 md:p-4 md:pt-7 flex flex-col items-center w-full touch-lock select-none">
+    <div className="synth-panel rounded-sm p-3 pt-6 md:p-4 md:pt-7 flex flex-col items-center w-full select-none overflow-hidden">
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
@@ -167,7 +167,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
       </div>
 
       {/* 16-Step Sequencer 3-State LED Grid */}
-      <div className="w-full bg-[#080b10] border border-[#1e2738] rounded-sm py-2.5 mt-2 flex justify-center relative shadow-inner overflow-x-auto">
+      <div className="w-full bg-[#080b10] border border-[#1e2738] rounded-sm py-2.5 mt-2 relative shadow-inner" style={{ overflowX: 'auto', touchAction: 'pan-x' }}>
         <div className="flex flex-row gap-1 sm:gap-1.5 md:gap-2 justify-center min-w-max px-2">
           {pattern[selectedTrack].map((stepVal, index) => {
             const isNormal = stepVal === 1;

@@ -36,6 +36,33 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
+
+  /*
+   * Mobile section panels — each tab gets an absolutely-positioned full-height
+   * container that scrolls independently. Only the active one is shown.
+   * This prevents content height from one section affecting another's layout.
+   */
+  .mobile-section-panel {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    padding: 0.375rem;
+    /* Smooth cross-section transition */
+    transition: opacity 0.12s ease;
+  }
+  .mobile-section-active {
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+  }
+  .mobile-section-hidden {
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
 }
 
 /* Custom Scrollbars */

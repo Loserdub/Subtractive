@@ -555,35 +555,29 @@ export const Synth: React.FC = () => {
       </div>
 
       {/* ── Main Synth Modules Layout ── */}
-      {/* Desktop: side-by-side console grid. Mobile: tabbed scrollable panels */}
-      <main className="flex-1 overflow-y-auto md:overflow-hidden flex flex-col min-h-0 gap-1.5 md:gap-2">
-        
-        {/* ────────────────── UPPER BAY: VCO | VCF | ENV ────────────────── */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-2">
-          
+      {/*
+        Desktop: side-by-side console grid inside a non-scrolling container.
+        Mobile: each tab is a full-height isolated panel that scrolls independently.
+                The main container itself does NOT scroll — only the active tab panel does.
+                This makes tab switching feel instant and prevents bleed between sections.
+      */}
+      <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-1.5 md:gap-2">
+
+        {/* ════════════════════ DESKTOP LAYOUT (md+) ════════════════════ */}
+        {/* Upper bay: VCO | VCF | ENV */}
+        <div className="hidden md:flex flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-2">
+
           {/* VCO Panel */}
-          <div className={`md:col-span-5 md:h-full flex flex-col min-h-0 ${
-            activeTab === 'vco' ? 'block' : 'hidden md:flex'
-          }`}>
-            {/* Mobile: scrollable, auto height. Desktop: full flex height */}
-            <div className="mobile-tab-panel md:overflow-hidden md:h-full">
+          <div className="md:col-span-5 md:h-full flex flex-col min-h-0">
+            <div className="md:overflow-hidden md:h-full">
             <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="md:h-full flex flex-col justify-between">
-              
               {/* Voice Mode & Tone Controls */}
               <div className="flex flex-wrap items-center justify-between gap-2 w-full bg-[#0a0d14] p-2 rounded-sm border border-[#1e2636]">
                 <div className="flex flex-col items-center gap-0.5">
                   <span className="text-[7px] font-mono text-gray-400 uppercase">Voice Mode</span>
                   <div className="flex gap-1">
                     {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
-                      <LEDButton
-                        key={mode}
-                        label={mode.toUpperCase()}
-                        active={params.voiceMode === mode}
-                        onClick={() => setParams(p => ({ ...p, voiceMode: mode }))}
-                        color="cyan"
-                        size="sm"
-                        className="text-[8px] px-2 py-1"
-                      />
+                      <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => ({ ...p, voiceMode: mode }))} color="cyan" size="sm" className="text-[8px] px-2 py-1" />
                     ))}
                   </div>
                 </div>
@@ -592,50 +586,20 @@ export const Synth: React.FC = () => {
                 <Knob label="Noise"   value={params.noiseGain} min={0}   max={1}   size={38} onChange={(v) => setParams(p => ({ ...p, noiseGain: v }))} unit="%"  color="emerald" />
                 <Knob label="PWM"     value={params.pwm}       min={0.1} max={0.9} size={38} onChange={(v) => setParams(p => ({ ...p, pwm: v }))}         unit="%"  color="red"     />
               </div>
-
-              {/* Mobile OSC Selector */}
-              <div className="md:hidden flex items-center justify-center gap-1.5 w-full my-2">
-                {(['osc1', 'osc2', 'osc3', 'osc4'] as const).map(osc => (
-                  <button
-                    key={osc}
-                    onClick={() => setSelectedMobileOsc(osc)}
-                    className={`min-h-[36px] px-3 text-[9px] font-mono font-bold rounded-sm border flex-1 transition-all ${
-                      selectedMobileOsc === osc
-                        ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
-                        : 'bg-[#121620] text-gray-400 border-[#222a3a] active:bg-[#1e2633]'
-                    }`}
-                  >
-                    {osc.toUpperCase()}
-                  </button>
-                ))}
-              </div>
-
-              {/* Oscillator Grid */}
+              {/* Oscillator Grid (desktop: all 4 visible) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1.5 w-full md:flex-1 md:min-h-0">
-                <div className={selectedMobileOsc === 'osc1' ? 'block' : 'hidden md:block'}>
-                  {renderOscControl('osc1', 'OSC 1')}
-                </div>
-                <div className={selectedMobileOsc === 'osc2' ? 'block' : 'hidden md:block'}>
-                  {renderOscControl('osc2', 'OSC 2')}
-                </div>
-                <div className={selectedMobileOsc === 'osc3' ? 'block' : 'hidden md:block'}>
-                  {renderOscControl('osc3', 'OSC 3')}
-                </div>
-                <div className={selectedMobileOsc === 'osc4' ? 'block' : 'hidden md:block'}>
-                  {renderOscControl('osc4', 'OSC 4')}
-                </div>
+                {renderOscControl('osc1', 'OSC 1')}
+                {renderOscControl('osc2', 'OSC 2')}
+                {renderOscControl('osc3', 'OSC 3')}
+                {renderOscControl('osc4', 'OSC 4')}
               </div>
-
             </Panel>
             </div>
           </div>
 
           {/* VCF Panel + Visualizer */}
-          <div className={`md:col-span-4 md:h-full flex flex-col gap-1.5 md:min-h-0 ${
-            activeTab === 'vcf' ? 'block' : 'hidden md:flex'
-          }`}>
-            <div className="mobile-tab-panel md:overflow-hidden md:h-full flex flex-col gap-1.5">
-
+          <div className="md:col-span-4 md:h-full flex flex-col gap-1.5 md:min-h-0">
+            <div className="md:overflow-hidden md:h-full flex flex-col gap-1.5">
             {/* Oscilloscope Screen */}
             <div className="oled-screen p-1.5 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
               <div className="flex items-center justify-between px-1 mb-1">
@@ -646,36 +610,16 @@ export const Synth: React.FC = () => {
                 </div>
               </div>
               <div className="flex-1 w-full">
-                <WaveformDisplay
-                  analyser={audioEngine.current?.getAnalyser() || null}
-                  isPlaying={activeNotes.size > 0 || isDrumMachinePlaying}
-                  color="#00e5ff"
-                  mode={visualizerMode}
-                />
+                <WaveformDisplay analyser={audioEngine.current?.getAnalyser() || null} isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} color="#00e5ff" mode={visualizerMode} />
               </div>
             </div>
-
-            {/* VCF Filter Module */}
             <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="md:flex-1 w-full flex flex-col justify-between">
               <div className="flex flex-col gap-3 w-full justify-between">
-                {/* Filter type buttons — full width, finger-safe */}
                 <div className="grid grid-cols-4 gap-1 w-full">
                   {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setFilterType(type)}
-                      className={`min-h-[40px] text-[9px] font-mono font-bold rounded-sm border transition-all ${
-                        (params.filter.type || 'lowpass') === type
-                          ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]'
-                          : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]'
-                      }`}
-                    >
-                      {type.toUpperCase()}
-                    </button>
+                    <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[40px] text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
                   ))}
                 </div>
-
                 <div className="flex items-center justify-around gap-2 py-2">
                   <Knob label="Cutoff"    value={params.filter.cutoff}          min={20}  max={20000} size={50} logarithmic onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))}                       unit="Hz" color="amber"   />
                   <Knob label="Resonance" value={params.filter.resonance}       min={0}   max={40}    size={44}             onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))}                    color="cyan"    />
@@ -683,17 +627,12 @@ export const Synth: React.FC = () => {
                 </div>
               </div>
             </Panel>
-
             </div>
           </div>
 
           {/* ENV Panel: LFO + AMP ADSR + FILTER ADSR */}
-          <div className={`md:col-span-3 md:h-full flex flex-col gap-1.5 md:min-h-0 ${
-            activeTab === 'env' ? 'block' : 'hidden md:flex'
-          }`}>
-            <div className="mobile-tab-panel md:overflow-hidden md:h-full flex flex-col gap-1.5">
-
-            {/* LFO Module */}
+          <div className="md:col-span-3 md:h-full flex flex-col gap-1.5 md:min-h-0">
+            <div className="md:overflow-hidden md:h-full flex flex-col gap-1.5">
             <Panel title="LFO — MODULATION" badgeColor="emerald" className="md:flex-1 flex flex-col justify-between">
               <div className="flex flex-col gap-2 w-full justify-between">
                 <div className="flex items-center gap-2">
@@ -702,27 +641,16 @@ export const Synth: React.FC = () => {
                       const isActive = params.lfo.waveform === w;
                       const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
                       return (
-                        <button 
-                          key={w} type="button" onClick={() => setLfoWaveform(w)} 
-                          className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[28px] min-w-[28px] ${
-                            isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200'
-                          }`}
-                        >
-                          <Icon className="w-3.5 h-3.5"/>
-                        </button>
+                        <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[28px] min-w-[28px] ${ isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200' }`}><Icon className="w-3.5 h-3.5"/></button>
                       );
                     })}
                   </div>
-                  <div className="flex-1 h-12">
-                    <WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" />
-                  </div>
+                  <div className="flex-1 h-12"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
                 </div>
-
                 <div className="flex items-center justify-around gap-1">
                   <Knob label={params.lfo.sync ? "Division" : "Rate"} value={params.lfo.rate} min={0.1} max={20} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} unit={params.lfo.sync ? "" : "Hz"} color="emerald" />
                   <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={40} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
                 </div>
-
                 <div className="flex items-center justify-between gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
                   <LEDButton label="BPM SYNC" active={params.lfo.sync} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[8px] px-2 py-1" />
                   {params.lfo.sync && (
@@ -731,7 +659,6 @@ export const Synth: React.FC = () => {
                     </select>
                   )}
                 </div>
-
                 <div className="flex items-center gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
                   {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
                     <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, target } }))} color="emerald" size="sm" className="flex-1 text-[8px] px-1 py-1" />
@@ -739,8 +666,6 @@ export const Synth: React.FC = () => {
                 </div>
               </div>
             </Panel>
-
-            {/* AMP ADSR */}
             <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan" className="md:flex-1 flex flex-col justify-between">
               <div className="flex items-center justify-around w-full py-2">
                 <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={40} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))}  unit="s" color="cyan" />
@@ -749,8 +674,6 @@ export const Synth: React.FC = () => {
                 <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={40} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} unit="s" color="cyan" />
               </div>
             </Panel>
-
-            {/* FILTER ADSR */}
             <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber" className="md:flex-1 flex flex-col justify-between">
               <div className="flex items-center justify-around w-full py-2">
                 <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={40} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))}  unit="s" color="amber" />
@@ -759,32 +682,28 @@ export const Synth: React.FC = () => {
                 <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={40} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} unit="s" color="amber" />
               </div>
             </Panel>
-
             </div>
           </div>
 
         </div>
 
-        {/* ────────────────── LOWER BAY: FX | ARP | SEQ ────────────────── */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-2">
-          
+        {/* Lower bay: FX | ARP | SEQ */}
+        <div className="hidden md:grid flex-1 min-h-0 grid-cols-1 md:grid-cols-12 gap-1.5 md:gap-2">
           {/* Master FX */}
-          <div className={`md:col-span-4 md:h-full ${ activeTab === 'fx' ? 'block' : 'hidden md:block' }`}>
-            <div className="mobile-tab-panel md:overflow-visible md:h-full">
+          <div className="md:col-span-4 md:h-full">
+            <div className="md:overflow-visible md:h-full">
               <MasterFXPanel fx={params.fx} onChange={(fx) => setParams(p => ({ ...p, fx }))} />
             </div>
           </div>
-
           {/* Arpeggiator */}
-          <div className={`md:col-span-3 md:h-full ${ activeTab === 'arp' ? 'block' : 'hidden md:block' }`}>
-            <div className="mobile-tab-panel md:overflow-visible md:h-full">
+          <div className="md:col-span-3 md:h-full">
+            <div className="md:overflow-visible md:h-full">
               <ArpeggiatorPanel arp={params.arpeggiator} onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} />
             </div>
           </div>
-
-          {/* Drum Sequencer — horizontal scroll on mobile */}
-          <div className={`md:col-span-5 md:h-full ${ activeTab === 'seq' ? 'block' : 'hidden md:block' }`}>
-            <div className="mobile-tab-panel md:overflow-visible md:h-full">
+          {/* Drum Sequencer */}
+          <div className="md:col-span-5 md:h-full">
+            <div className="md:overflow-visible md:h-full">
               <DrumMachine
                 isPlaying={isDrumMachinePlaying}
                 onPlayToggle={handlePlayToggle}
@@ -804,16 +723,176 @@ export const Synth: React.FC = () => {
               />
             </div>
           </div>
-
         </div>
 
-        {/* KEYS tab — full keyboard view on mobile */}
-        <div className={`w-full flex flex-col ${ activeTab === 'keys' ? 'block md:hidden' : 'hidden' }`}>
-          <Keyboard 
-            onNoteOn={handleNoteOn} 
-            onNoteOff={handleNoteOff} 
-            activeNotes={activeNotes} 
-          />
+        {/* ════════════════════ MOBILE LAYOUT (<md) ════════════════════ */}
+        {/*
+          Each tab panel is absolutely-positioned to fill the main area.
+          Only the active one is visible. Each scrolls independently.
+          This prevents content from one panel affecting another's layout.
+        */}
+        <div className="md:hidden relative flex-1 min-h-0 overflow-hidden">
+
+          {/* VCO Tab */}
+          <div className={`mobile-section-panel ${activeTab === 'vco' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+            <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="flex flex-col justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2 w-full bg-[#0a0d14] p-2 rounded-sm border border-[#1e2636]">
+                <div className="flex flex-col items-center gap-0.5">
+                  <span className="text-[7px] font-mono text-gray-400 uppercase">Voice Mode</span>
+                  <div className="flex gap-1">
+                    {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
+                      <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => ({ ...p, voiceMode: mode }))} color="cyan" size="sm" className="text-[8px] px-2 py-1" />
+                    ))}
+                  </div>
+                </div>
+                <Knob label="Glide"   value={params.glide}     min={0}   max={0.5} size={38} onChange={(v) => setParams(p => ({ ...p, glide: v }))}     unit="s"  color="cyan"    />
+                <Knob label="Sub Osc" value={params.subGain}   min={0}   max={1}   size={38} onChange={(v) => setParams(p => ({ ...p, subGain: v }))}   unit="%"  color="amber"   />
+                <Knob label="Noise"   value={params.noiseGain} min={0}   max={1}   size={38} onChange={(v) => setParams(p => ({ ...p, noiseGain: v }))} unit="%"  color="emerald" />
+                <Knob label="PWM"     value={params.pwm}       min={0.1} max={0.9} size={38} onChange={(v) => setParams(p => ({ ...p, pwm: v }))}         unit="%"  color="red"     />
+              </div>
+              {/* Mobile OSC Selector */}
+              <div className="flex items-center justify-center gap-1.5 w-full my-2">
+                {(['osc1', 'osc2', 'osc3', 'osc4'] as const).map(osc => (
+                  <button key={osc} onClick={() => setSelectedMobileOsc(osc)}
+                    className={`min-h-[40px] px-3 text-[9px] font-mono font-bold rounded-sm border flex-1 transition-all ${
+                      selectedMobileOsc === osc
+                        ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
+                        : 'bg-[#121620] text-gray-400 border-[#222a3a] active:bg-[#1e2633]'
+                    }`}>
+                    {osc.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <div className="w-full">
+                <div className={selectedMobileOsc === 'osc1' ? 'block' : 'hidden'}>{renderOscControl('osc1', 'OSC 1')}</div>
+                <div className={selectedMobileOsc === 'osc2' ? 'block' : 'hidden'}>{renderOscControl('osc2', 'OSC 2')}</div>
+                <div className={selectedMobileOsc === 'osc3' ? 'block' : 'hidden'}>{renderOscControl('osc3', 'OSC 3')}</div>
+                <div className={selectedMobileOsc === 'osc4' ? 'block' : 'hidden'}>{renderOscControl('osc4', 'OSC 4')}</div>
+              </div>
+            </Panel>
+          </div>
+
+          {/* VCF Tab */}
+          <div className={`mobile-section-panel ${activeTab === 'vcf' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+            <div className="flex flex-col gap-3">
+              <div className="oled-screen p-1.5 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
+                <div className="flex items-center justify-between px-1 mb-1">
+                  <span className="font-mono-lcd text-[8px] text-[#00e5ff] uppercase tracking-widest">MAIN AUDIO OUTPUT</span>
+                  <div className="flex gap-1">
+                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#00e5ff]' : 'text-gray-500' }`}>OSC</button>
+                    <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
+                  </div>
+                </div>
+                <div className="flex-1 w-full"><WaveformDisplay analyser={audioEngine.current?.getAnalyser() || null} isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} color="#00e5ff" mode={visualizerMode} /></div>
+              </div>
+              <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="w-full flex flex-col justify-between">
+                <div className="flex flex-col gap-3 w-full justify-between">
+                  <div className="grid grid-cols-4 gap-1 w-full">
+                    {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
+                      <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[44px] text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-around gap-2 py-2">
+                    <Knob label="Cutoff"    value={params.filter.cutoff}          min={20}  max={20000} size={54} logarithmic onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))}                       unit="Hz" color="amber"   />
+                    <Knob label="Resonance" value={params.filter.resonance}       min={0}   max={40}    size={48}             onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))}                    color="cyan"    />
+                    <Knob label="EG Int"    value={params.filterEnvelope.amount}  min={0}   max={10000} size={44}             onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, amount: v } }))} color="emerald"  />
+                  </div>
+                </div>
+              </Panel>
+            </div>
+          </div>
+
+          {/* ENV Tab */}
+          <div className={`mobile-section-panel ${activeTab === 'env' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+            <div className="flex flex-col gap-3">
+              <Panel title="LFO — MODULATION" badgeColor="emerald" className="flex flex-col justify-between">
+                <div className="flex flex-col gap-2 w-full justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-1 bg-[#090c12] p-1 rounded-sm border border-[#1d2535]">
+                      {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
+                        const isActive = params.lfo.waveform === w;
+                        const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
+                        return (
+                          <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[36px] min-w-[36px] ${ isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200' }`}><Icon className="w-4 h-4"/></button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex-1 h-16"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
+                  </div>
+                  <div className="flex items-center justify-around gap-2">
+                    <Knob label={params.lfo.sync ? "Division" : "Rate"} value={params.lfo.rate} min={0.1} max={20} size={48} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} unit={params.lfo.sync ? "" : "Hz"} color="emerald" />
+                    <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={48} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
+                  </div>
+                  <div className="flex items-center justify-between gap-1 bg-[#0a0d14] p-1.5 rounded-sm border border-[#1e2636]">
+                    <LEDButton label="BPM SYNC" active={params.lfo.sync} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[8px] px-2 py-1" />
+                    {params.lfo.sync && (
+                      <select value={params.lfo.division} onChange={(e) => setParams(p => ({ ...p, lfo: { ...p.lfo, division: e.target.value } }))} className="bg-[#141a26] text-[#00ff66] font-mono text-[9px] px-2 py-1 rounded border border-[#202738]">
+                        {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-[#0a0d14] p-1.5 rounded-sm border border-[#1e2636]">
+                    {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
+                      <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, target } }))} color="emerald" size="sm" className="flex-1 text-[8px] px-1 py-1.5" />
+                    ))}
+                  </div>
+                </div>
+              </Panel>
+              <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan" className="flex flex-col justify-between">
+                <div className="flex items-center justify-around w-full py-3">
+                  <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={48} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))}  unit="s" color="cyan" />
+                  <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={48} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))}   unit="s" color="cyan" />
+                  <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={48} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} unit="%" color="cyan" />
+                  <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={48} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} unit="s" color="cyan" />
+                </div>
+              </Panel>
+              <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber" className="flex flex-col justify-between">
+                <div className="flex items-center justify-around w-full py-3">
+                  <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))}  unit="s" color="amber" />
+                  <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))}   unit="s" color="amber" />
+                  <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} unit="%" color="amber" />
+                  <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={48} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} unit="s" color="amber" />
+                </div>
+              </Panel>
+            </div>
+          </div>
+
+          {/* FX Tab */}
+          <div className={`mobile-section-panel ${activeTab === 'fx' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+            <MasterFXPanel fx={params.fx} onChange={(fx) => setParams(p => ({ ...p, fx }))} />
+          </div>
+
+          {/* ARP Tab */}
+          <div className={`mobile-section-panel ${activeTab === 'arp' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+            <ArpeggiatorPanel arp={params.arpeggiator} onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} />
+          </div>
+
+          {/* SEQ Tab — drum machine with contained horizontal scroll */}
+          <div className={`mobile-section-panel ${activeTab === 'seq' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+            <DrumMachine
+              isPlaying={isDrumMachinePlaying}
+              onPlayToggle={handlePlayToggle}
+              bpm={bpm}
+              onBpmChange={setBpm}
+              pattern={drumPattern}
+              selectedTrack={selectedTrack}
+              onTrackSelect={setSelectedTrack}
+              onStepToggle={handleStepToggle}
+              currentStep={currentStep}
+              currentBank={currentBankIndex}
+              onBankSelect={setCurrentBankIndex}
+              swing={swing}
+              onSwingChange={setSwing}
+              trackSettings={drumSettings[selectedTrack]}
+              onTrackSettingsChange={handleDrumTrackSettingsChange}
+            />
+          </div>
+
+          {/* KEYS Tab */}
+          <div className={`mobile-section-panel ${activeTab === 'keys' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+            <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} activeNotes={activeNotes} />
+          </div>
+
         </div>
 
       </main>
