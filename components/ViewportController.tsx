@@ -9,6 +9,7 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
   const [panX, setPanX] = useState<number>(0);
   const [panY, setPanY] = useState<number>(0);
   const [isPanMode, setIsPanMode] = useState<boolean>(false);
+  const [isDesktop, setIsDesktop] = useState<boolean>(window.innerWidth >= 768);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -53,6 +54,15 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
     startPanY: 0,
   });
 
+  // Track desktop vs mobile for re-renders
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    setIsDesktop(mq.matches);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   // Helper functions for distance and midpoint
   const getTouchDistance = (t1: Touch, t2: Touch) => {
     const dx = t1.clientX - t2.clientX;
@@ -90,7 +100,7 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
     }
   }, []);
 
-  // Auto-fit on initial mount for desktop
+  // Auto-fit on initial mount for desktop only
   useEffect(() => {
     if (window.innerWidth >= 1024) {
       handleFit();
@@ -106,12 +116,15 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
     setZoom(prev => Math.max(0.5, +(prev - 0.15).toFixed(2)));
   }, []);
 
-  // Touch gesture listeners attached natively with passive: false to prevent default page zoom/scroll
+  // Touch gesture listeners — desktop only
   useEffect(() => {
     const wrapper = wrapperRef.current;
     if (!wrapper) return;
 
     const handleTouchStart = (e: TouchEvent) => {
+      // On mobile (<768px), don't intercept touches — let tab panels scroll naturally
+      if (!isDesktop) return;
+
       if (e.touches.length === 2) {
         e.preventDefault();
         const dist = getTouchDistance(e.touches[0], e.touches[1]);
@@ -137,6 +150,8 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      if (!isDesktop) return;
+
       const state = touchStateRef.current;
 
       if (e.touches.length === 2 && state.isPinching) {
@@ -189,24 +204,22 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
       wrapper.removeEventListener('touchend', handleTouchEnd);
       wrapper.removeEventListener('touchcancel', handleTouchEnd);
     };
-  }, [zoom, panX, panY, isPanMode]);
+  }, [zoom, panX, panY, isPanMode, isDesktop]);
 
   // Mouse wheel navigation handler for Desktop
   const handleWheel = (e: React.WheelEvent) => {
+    if (!isDesktop) return;
     if (e.ctrlKey || e.metaKey) {
-      // Zooming via ctrl + wheel or touchpad pinch
       e.preventDefault();
       const deltaZoom = -e.deltaY * 0.003;
       setZoom(prev => Math.min(2.5, Math.max(0.5, +(prev + deltaZoom).toFixed(2))));
     } else {
-      // Normal wheel scrolling -> navigate vertically up and down
       setPanY(prev => Math.max(-1500, Math.min(800, prev - e.deltaY * 0.85)));
     }
   };
 
   // Mouse drag panning handlers
   const handleMouseDown = (e: React.MouseEvent) => {
-    // Middle mouse button or Pan Mode active
     if (isPanMode || e.button === 1) {
       e.preventDefault();
       mousePanRef.current = {
@@ -244,9 +257,9 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
-      {/* On-Screen Skeuomorphic Navigation Toolbar (Mobile & Desktop) */}
+      {/* Viewport nav toolbar — desktop only. On mobile, tabs handle all navigation */}
       <nav 
-        className="absolute top-2 right-2 z-50 flex items-center gap-1.5 p-1.5 rounded-md bg-[#10141d]/90 backdrop-blur-md border border-[#232b3d] shadow-xl text-gray-200"
+        className="hidden md:flex absolute bottom-3 right-3 z-50 items-center gap-1.5 p-1.5 rounded-md bg-[#10141d]/90 backdrop-blur-md border border-[#232b3d] shadow-xl text-gray-200"
         aria-label="Viewport Controls"
       >
         {/* Monospaced Readout */}
@@ -344,14 +357,18 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
         </button>
       </nav>
 
-      {/* Transform Container with smooth CSS scaling and translation */}
+      {/* 
+        Transform Container: 
+        - Desktop (md+): CSS scale + translate3d applied for zoom/pan
+        - Mobile (<md): No transform — children render in natural flow, scrolled via tab panels
+      */}
       <div 
         ref={contentRef}
-        className="h-full w-full origin-top transition-transform duration-75 ease-out"
-        style={{
+        className="h-full w-full origin-top md:transition-transform md:duration-75 md:ease-out"
+        style={isDesktop ? {
           transform: `translate3d(${panX}px, ${panY}px, 0px) scale(${zoom})`,
           transformOrigin: 'top center',
-        }}
+        } : undefined}
       >
         {children}
       </div>

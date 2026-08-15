@@ -151,68 +151,111 @@ export const Keyboard: React.FC<KeyboardProps> = ({
   };
 
   return (
-    <div className="w-full flex flex-col md:flex-row items-stretch bg-[#0c0f15] border-t-2 border-[#202736] p-2 gap-2 touch-lock select-none">
+    <div className="w-full flex flex-col bg-[#0c0f15] border-t-2 border-[#202736] p-2 gap-2 touch-lock select-none">
       
-      {/* Left Control Bar: Octave Transpose & Wheels */}
-      <div className="flex flex-row md:flex-col justify-between items-center gap-2 bg-[#131720] p-2 rounded-sm border border-[#252d3d] shrink-0">
+      {/* ── Control Bar: Octave + Wheels ──────────────────────────────── */}
+      {/* Mobile: horizontal strip across top. Desktop: vertical side column. */}
+      <div className="flex flex-col md:flex-row md:items-stretch gap-2">
         
-        {/* Octave Transpose Buttons */}
-        <div className="flex flex-col items-center gap-1 w-full">
-          <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Octave</span>
-          <div className="flex gap-1">
-            {[-2, -1, 0, 1, 2].map((oct) => (
-              <button
-                key={oct}
-                onClick={() => setOctaveOffset(oct)}
-                className={`px-1.5 py-1 text-[9px] font-mono font-bold rounded-sm border transition-all ${
-                  octaveOffset === oct
-                    ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
-                    : 'bg-[#1e2533] text-gray-400 border-[#2e374a] hover:text-white'
-                }`}
-              >
-                {oct > 0 ? `+${oct}` : oct}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Wheels Section (Pitch & Mod) */}
-        <div className="flex flex-row gap-3 items-center">
+        {/* Row 1 (mobile) / Column (desktop): Octave selector + Wheels */}
+        <div className="flex flex-row items-center justify-between gap-3 bg-[#131720] px-3 py-2 rounded-sm border border-[#252d3d] md:flex-col md:justify-between md:w-auto md:shrink-0">
           
-          {/* Pitch Wheel */}
+          {/* Octave Buttons */}
           <div className="flex flex-col items-center gap-1">
-            <span className="text-[7px] font-mono text-gray-400 uppercase">Pitch</span>
-            <div 
-              className="relative w-5 h-16 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
-              onPointerDown={handlePitchWheelPointerDown}
-            >
-              <div 
-                className="absolute left-0 right-0 h-3 bg-gradient-to-r from-gray-400 via-white to-gray-400 rounded-sm border-y border-black/80 shadow-[0_0_4px_white]"
-                style={{ top: `${(1 - pitchVal) * 80}%` }}
-              />
+            <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Octave</span>
+            <div className="flex gap-1">
+              {[-2, -1, 0, 1, 2].map((oct) => (
+                <button
+                  key={oct}
+                  onClick={() => setOctaveOffset(oct)}
+                  className={`min-w-[36px] min-h-[36px] px-1.5 text-[10px] font-mono font-bold rounded-sm border transition-all ${
+                    octaveOffset === oct
+                      ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
+                      : 'bg-[#1e2533] text-gray-400 border-[#2e374a] hover:text-white active:bg-[#263248]'
+                  }`}
+                >
+                  {oct > 0 ? `+${oct}` : oct}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Modulation Wheel */}
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[7px] font-mono text-gray-400 uppercase">Mod</span>
-            <div 
-              className="relative w-5 h-16 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
-              onPointerDown={handleModWheelPointerDown}
-            >
+          {/* ── Desktop vertical wheels (hidden on mobile) ── */}
+          <div className="hidden md:flex flex-row gap-3 items-center">
+            {/* Pitch Wheel */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[7px] font-mono text-gray-400 uppercase">Pitch</span>
               <div 
-                className="absolute left-0 right-0 h-3 bg-gradient-to-r from-[#00b8d4] via-[#00e5ff] to-[#00b8d4] rounded-sm border-y border-black/80 shadow-[0_0_6px_#00e5ff]"
-                style={{ top: `${(1 - modVal) * 80}%` }}
+                className="relative w-5 h-16 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
+                onPointerDown={handlePitchWheelPointerDown}
+              >
+                <div 
+                  className="absolute left-0 right-0 h-3 bg-gradient-to-r from-gray-400 via-white to-gray-400 rounded-sm border-y border-black/80 shadow-[0_0_4px_white]"
+                  style={{ top: `${(1 - pitchVal) * 80}%` }}
+                />
+              </div>
+            </div>
+            {/* Mod Wheel */}
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-[7px] font-mono text-gray-400 uppercase">Mod</span>
+              <div 
+                className="relative w-5 h-16 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
+                onPointerDown={handleModWheelPointerDown}
+              >
+                <div 
+                  className="absolute left-0 right-0 h-3 bg-gradient-to-r from-[#00b8d4] via-[#00e5ff] to-[#00b8d4] rounded-sm border-y border-black/80 shadow-[0_0_6px_#00e5ff]"
+                  style={{ top: `${(1 - modVal) * 80}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ── Mobile horizontal wheel sliders (hidden on desktop) ── */}
+          <div className="flex md:hidden flex-col gap-1.5 min-w-[140px]">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Pitch</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={pitchVal}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  setPitchVal(v);
+                  if (onPitchBendChange) onPitchBendChange(v);
+                }}
+                onPointerUp={() => {
+                  setPitchVal(0.5);
+                  if (onPitchBendChange) onPitchBendChange(0.5);
+                }}
+                className="wheel-slider-h touch-lock"
+              />
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Mod</span>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.01"
+                value={modVal}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  setModVal(v);
+                  if (onModulationChange) onModulationChange(v);
+                }}
+                className="wheel-slider-h mod touch-lock"
               />
             </div>
           </div>
 
         </div>
 
-      </div>
+      </div>{/* end control-bar wrapper */}
 
       {/* Main Piano Keybed */}
-      <div className="relative w-full h-36 md:h-40 min-h-[144px] bg-[#07090d] p-1 rounded-sm border border-[#202736] overflow-hidden shadow-2xl">
+      <div className="relative w-full h-40 md:h-40 min-h-[160px] bg-[#07090d] p-1 rounded-sm border border-[#202736] overflow-hidden shadow-2xl">
         
         {/* White Keys Row */}
         <div className="absolute top-1 left-1 right-1 bottom-1 flex gap-[2px]">
