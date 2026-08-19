@@ -100,15 +100,17 @@ export class DrumMachineEngine {
     const osc = this.audioContext.createOscillator();
     const gain = this.audioContext.createGain();
 
-    const startFreq = (isAccent ? 180 : 150) * rate;
-    const endFreq = 0.01;
-    const decayDuration = 0.1 * settings.decay;
+    const fundamental = (isAccent ? 56 : 48) * rate;
+    const startFreq = (isAccent ? 220 : 180) * rate;
+    const decayDuration = 0.25 * settings.decay;
+    const pitchDropDuration = 0.035;
 
     osc.frequency.setValueAtTime(startFreq, time);
-    osc.frequency.exponentialRampToValueAtTime(endFreq, time + decayDuration);
+    osc.frequency.exponentialRampToValueAtTime(fundamental, time + pitchDropDuration);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20, fundamental * 0.8), time + decayDuration);
 
     gain.gain.setValueAtTime(velGain, time);
-    gain.gain.exponentialRampToValueAtTime(0.01, time + decayDuration);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + decayDuration);
 
     osc.connect(gain);
     gain.connect(outputGain);
@@ -132,24 +134,28 @@ export class DrumMachineEngine {
     }
     const noise = this.audioContext.createBufferSource();
     noise.buffer = buffer;
-    noise.playbackRate.value = rate;
 
     const noiseFilter = this.audioContext.createBiquadFilter();
     noiseFilter.type = 'highpass';
-    noiseFilter.frequency.value = (isAccent ? 1200 : 1000) * rate;
+    const hpFreq = Math.min(this.audioContext.sampleRate / 2 - 100, (isAccent ? 1400 : 1000) * rate);
+    noiseFilter.frequency.setValueAtTime(Math.max(100, hpFreq), time);
 
     const noiseGain = this.audioContext.createGain();
     noiseGain.gain.setValueAtTime(0.5 * velGain, time);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, time + noiseDuration * 0.75);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, time + noiseDuration * 0.75);
 
     noise.connect(noiseFilter).connect(noiseGain).connect(outputGain);
 
     const osc = this.audioContext.createOscillator();
     osc.type = 'triangle';
-    osc.frequency.value = (isAccent ? 120 : 100) * rate;
+    const bodyFreq = (isAccent ? 220 : 180) * rate;
+    const endBodyFreq = (isAccent ? 130 : 100) * rate;
+    osc.frequency.setValueAtTime(bodyFreq, time);
+    osc.frequency.exponentialRampToValueAtTime(Math.max(20, endBodyFreq), time + 0.05);
+
     const oscGain = this.audioContext.createGain();
     oscGain.gain.setValueAtTime(0.7 * velGain, time);
-    oscGain.gain.exponentialRampToValueAtTime(0.01, time + noiseDuration * 0.5);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, time + noiseDuration * 0.5);
     
     osc.connect(oscGain).connect(outputGain);
     
@@ -174,17 +180,18 @@ export class DrumMachineEngine {
     }
     const noise = this.audioContext.createBufferSource();
     noise.buffer = buffer;
-    noise.playbackRate.value = rate;
 
-    const noiseFilter = this.audioContext.createBiquadFilter();
-    noiseFilter.type = 'highpass';
-    noiseFilter.frequency.value = (isAccent ? 8000 : 7000) * rate;
+    const bandpass = this.audioContext.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    const bpFreq = Math.min(this.audioContext.sampleRate / 2 - 200, (isAccent ? 9000 : 7500) * rate);
+    bandpass.frequency.setValueAtTime(Math.max(500, bpFreq), time);
+    bandpass.Q.setValueAtTime(4, time);
 
     const noiseGain = this.audioContext.createGain();
-    noiseGain.gain.setValueAtTime(0.4 * velGain, time);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, time + duration * 0.5);
+    noiseGain.gain.setValueAtTime(0.6 * velGain, time);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.6);
 
-    noise.connect(noiseFilter).connect(noiseGain).connect(outputGain);
+    noise.connect(bandpass).connect(noiseGain).connect(outputGain);
 
     noise.start(time);
     noise.stop(time + duration);
@@ -206,17 +213,18 @@ export class DrumMachineEngine {
     }
     const noise = this.audioContext.createBufferSource();
     noise.buffer = buffer;
-    noise.playbackRate.value = rate;
 
-    const highpass = this.audioContext.createBiquadFilter();
-    highpass.type = "highpass";
-    highpass.frequency.setValueAtTime(3000 * rate, time); 
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    const fFreq = Math.min(this.audioContext.sampleRate / 2 - 200, 4500 * rate);
+    filter.frequency.setValueAtTime(Math.max(400, fFreq), time);
+    filter.Q.setValueAtTime(2, time);
 
     const gain = this.audioContext.createGain();
-    gain.gain.setValueAtTime(0.4 * velGain, time);
+    gain.gain.setValueAtTime(0.5 * velGain, time);
     gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.8);
 
-    noise.connect(highpass).connect(gain).connect(outputGain);
+    noise.connect(filter).connect(gain).connect(outputGain);
 
     noise.start(time);
     noise.stop(time + duration);

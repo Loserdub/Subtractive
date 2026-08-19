@@ -53,16 +53,16 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
   const currentTheme = TRACK_THEMES[selectedTrack];
 
   return (
-    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center w-full select-none overflow-hidden h-full">
+    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center w-full select-none h-full">
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
       <Screw className="bottom-2 right-2" />
       
       {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-3 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden">
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden" style={{ background: 'var(--badge-bg)', border: '1px solid var(--badge-border)' }}>
         <div className="w-1.5 h-1.5 rounded-full bg-[#ffaa00] shadow-[0_0_6px_#ffaa00] shrink-0" />
-        <span className="font-mono text-[10px] md:text-xs font-bold text-gray-300 tracking-[0.15em] uppercase truncate">RHYTHM SEQUENCER</span>
+        <span className="font-mono text-[10px] md:text-xs font-bold tracking-[0.15em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>RHYTHM SEQUENCER</span>
       </div>
 
       {/* Control Bar: Play/Stop, BPM, Track Select, Swing, Bank Select */}
@@ -83,8 +83,8 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
 
           {/* Pattern Bank Selectors */}
           <div className="flex flex-col items-center gap-0.5 shrink-0">
-            <span className="text-[7px] text-gray-400 uppercase font-mono tracking-wider">Bank</span>
-            <div className="flex gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
+            <span className="text-[7px] uppercase font-mono tracking-wider" style={{ color: 'var(--text-label)' }}>Bank</span>
+            <div className="flex gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
               {[0, 1, 2, 3].map((bankIndex) => (
                 <button
                   key={bankIndex}
@@ -122,7 +122,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
             })}
           </div>
 
-          <div className="flex items-center gap-1 border-l border-[#202738] pl-1.5 shrink-0">
+          <div className="flex items-center gap-1 pl-1.5 shrink-0" style={{ borderLeft: '1px solid var(--osc-border)' }}>
             <Knob
               label="Vol"
               value={trackSettings.volume}
@@ -167,7 +167,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
       </div>
 
       {/* 16-Step Sequencer 3-State LED Grid */}
-      <div className="w-full bg-[#080b10] border border-[#1e2738] rounded-sm py-2.5 mt-2 relative shadow-inner" style={{ overflowX: 'auto', touchAction: 'pan-x' }}>
+      <div className="w-full rounded-sm py-2.5 mt-2 relative shadow-inner" style={{ background: 'var(--oled-bg)', border: '1px solid var(--osc-border)', overflowX: 'auto', touchAction: 'pan-x' }}>
         <div className="flex flex-row gap-1 sm:gap-1.5 md:gap-2 justify-center min-w-max px-2">
           {pattern[selectedTrack].map((stepVal, index) => {
             const isNormal = stepVal === 1;

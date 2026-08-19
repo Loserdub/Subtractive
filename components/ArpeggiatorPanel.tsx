@@ -30,23 +30,23 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
   };
 
   return (
-    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center select-none touch-lock w-full h-full overflow-hidden">
+    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center select-none touch-lock w-full h-full">
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
       <Screw className="bottom-2 right-2" />
       
       {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden">
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden" style={{ background: 'var(--badge-bg)', border: '1px solid var(--badge-border)' }}>
         <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] shadow-[0_0_6px_#00e5ff] shrink-0" />
-        <span className="font-mono text-[10px] md:text-xs font-bold text-gray-200 tracking-[0.15em] uppercase truncate">ARPEGGIATOR</span>
+        <span className="font-mono text-[10px] md:text-xs font-bold tracking-[0.15em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>ARPEGGIATOR</span>
       </div>
 
       <div className="flex flex-wrap items-center justify-around gap-2 w-full h-full pt-0.5">
         
         {/* Enable Button */}
         <div className="flex flex-col items-center gap-0.5 min-w-0">
-          <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase tracking-wider">Status</span>
+          <span className="text-[7px] md:text-[8px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-label)' }}>Status</span>
           <LEDButton
             label={arp.enabled ? "ARP ON" : "ARP OFF"}
             active={arp.enabled}
@@ -59,8 +59,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
 
         {/* Pattern Mode */}
         <div className="flex flex-col items-center gap-0.5 min-w-0">
-          <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase tracking-wider">Mode</span>
-          <div className="flex items-center gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
+          <span className="text-[7px] md:text-[8px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-label)' }}>Mode</span>
+          <div className="flex items-center gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
             {(['up', 'down', 'updown', 'random'] as ArpMode[]).map((mode) => (
               <LEDButton
                 key={mode}
@@ -77,8 +77,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
 
         {/* Octave Range */}
         <div className="flex flex-col items-center gap-0.5 min-w-0">
-          <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase tracking-wider">Octaves</span>
-          <div className="flex items-center gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
+          <span className="text-[7px] md:text-[8px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-label)' }}>Octaves</span>
+          <div className="flex items-center gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
             {[1, 2, 3].map((oct) => (
               <button
                 key={oct}
@@ -97,8 +97,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
 
         {/* Rate Division */}
         <div className="flex flex-col items-center gap-0.5 min-w-0">
-          <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase tracking-wider">Rate</span>
-          <div className="flex items-center gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
+          <span className="text-[7px] md:text-[8px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-label)' }}>Rate</span>
+          <div className="flex items-center gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
             {['1/16', '1/8', '1/4'].map((div) => (
               <button
                 key={div}

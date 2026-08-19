@@ -59,6 +59,7 @@ export class AudioEngine {
   private params: SynthParameters;
   private maxVoices = 16;
   private bpm = 120;
+  private pitchBendCents = 0;
 
   // Arpeggiator State
   private arpHeldNotes: { note: number; velocity: number }[] = [];
@@ -69,6 +70,20 @@ export class AudioEngine {
 
   constructor(initialParams: SynthParameters) {
     this.params = initialParams;
+  }
+
+  public setPitchBend(normalized: number, bendRangeSemitones: number = 2) {
+    // normalized: 0..1 (0.5 is center / no pitch bend)
+    this.pitchBendCents = (normalized - 0.5) * 2 * bendRangeSemitones * 100;
+    if (!this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    for (const note of this.activeNotes.values()) {
+      note.osc1.detune.setTargetAtTime(this.params.osc1.detune + this.pitchBendCents, now, 0.005);
+      note.osc2.detune.setTargetAtTime(this.params.osc2.detune + this.pitchBendCents, now, 0.005);
+      note.osc3.detune.setTargetAtTime(this.params.osc3.detune + this.pitchBendCents, now, 0.005);
+      note.osc4.detune.setTargetAtTime(this.params.osc4.detune + this.pitchBendCents, now, 0.005);
+      note.subOsc.detune.setTargetAtTime(this.pitchBendCents, now, 0.005);
+    }
   }
 
   public setBpm(bpm: number) {
@@ -372,10 +387,11 @@ export class AudioEngine {
       if (note.osc3.type !== this.params.osc3.waveform) note.osc3.type = this.params.osc3.waveform;
       if (note.osc4.type !== this.params.osc4.waveform) note.osc4.type = this.params.osc4.waveform;
 
-      note.osc1.detune.setValueAtTime(this.params.osc1.detune, now);
-      note.osc2.detune.setValueAtTime(this.params.osc2.detune, now);
-      note.osc3.detune.setValueAtTime(this.params.osc3.detune, now);
-      note.osc4.detune.setValueAtTime(this.params.osc4.detune, now);
+      note.osc1.detune.setValueAtTime(this.params.osc1.detune + this.pitchBendCents, now);
+      note.osc2.detune.setValueAtTime(this.params.osc2.detune + this.pitchBendCents, now);
+      note.osc3.detune.setValueAtTime(this.params.osc3.detune + this.pitchBendCents, now);
+      note.osc4.detune.setValueAtTime(this.params.osc4.detune + this.pitchBendCents, now);
+      note.subOsc.detune.setValueAtTime(this.pitchBendCents, now);
 
       const masterHeadroom = 0.25;
       note.osc1Gain.gain.setTargetAtTime(this.params.osc1.enabled ? this.params.osc1.gain * masterHeadroom : 0, now, 0.01);
@@ -548,7 +564,7 @@ export class AudioEngine {
       const osc = this.audioContext!.createOscillator();
       osc.type = params.waveform;
       osc.frequency.setValueAtTime(frequency, now);
-      osc.detune.setValueAtTime(params.detune, now);
+      osc.detune.setValueAtTime(params.detune + this.pitchBendCents, now);
       
       const gain = this.audioContext!.createGain();
       const targetGain = params.enabled ? params.gain * masterHeadroom : 0;
@@ -568,6 +584,7 @@ export class AudioEngine {
     const subOsc = this.audioContext.createOscillator();
     subOsc.type = 'square';
     subOsc.frequency.setValueAtTime(frequency / 2, now);
+    subOsc.detune.setValueAtTime(this.pitchBendCents, now);
     const subGain = this.audioContext.createGain();
     subGain.gain.setValueAtTime(this.params.subGain * masterHeadroom, now);
     subOsc.connect(subGain).connect(filter);

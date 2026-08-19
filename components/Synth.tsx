@@ -12,6 +12,7 @@ import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN, DEFAULT_DRUM_T
 import { SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from './Icon';
 import { WaveformDisplay } from './WaveformDisplay';
 import { VUMeter } from './VUMeter';
+import { useTheme, THEMES } from '../contexts/ThemeContext';
 
 interface PanelProps {
   title: string;
@@ -26,10 +27,10 @@ const Screw = ({ className = "" }: { className?: string }) => (
 
 const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, className = "" }) => {
   const badgeGlows = {
-    cyan: 'bg-[#00e5ff] shadow-[0_0_6px_#00e5ff]',
-    amber: 'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]',
+    cyan:    'bg-[#00e5ff] shadow-[0_0_6px_#00e5ff]',
+    amber:   'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]',
     emerald: 'bg-[#00ff66] shadow-[0_0_6px_#00ff66]',
-    red: 'bg-[#ff3344] shadow-[0_0_6px_#ff3344]',
+    red:     'bg-[#ff3344] shadow-[0_0_6px_#ff3344]',
   };
 
   return (
@@ -40,9 +41,9 @@ const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, cla
       <Screw className="bottom-2 right-2" />
       
       {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden">
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden" style={{ background: 'var(--badge-bg)', border: '1px solid var(--badge-border)' }}>
         <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${badgeGlows[badgeColor]}`} />
-        <span className="font-mono text-[10px] md:text-xs font-bold text-gray-200 tracking-[0.15em] uppercase truncate">{title}</span>
+        <span className="font-mono text-[10px] md:text-xs font-bold tracking-[0.15em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>{title}</span>
       </div>
       {children}
     </div>
@@ -50,6 +51,7 @@ const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, cla
 };
 
 export const Synth: React.FC = () => {
+  const { theme, setTheme } = useTheme();
   const [params, setParams] = useState<SynthParameters>(DEFAULT_SYNTH_PARAMS);
   const [selectedPresetName, setSelectedPresetName] = useState<string>('Analog Init');
   const [midiStatus, setMidiStatus] = useState<string>('Engine Standby');
@@ -232,8 +234,19 @@ export const Synth: React.FC = () => {
         const depth = data2 / 127;
         setParams(p => ({ ...p, lfo: { ...p.lfo, depth: depth } }));
       }
+    } else if (command === 224) { // Pitch Bend (0xE0)
+      const bendNormalized = ((data2 << 7) | data1) / 16383;
+      audioEngine.current?.setPitchBend(bendNormalized);
     }
   };
+
+  const handlePitchBendChange = useCallback((val: number) => {
+    audioEngine.current?.setPitchBend(val);
+  }, []);
+
+  const handleModulationChange = useCallback((val: number) => {
+    setParams(p => ({ ...p, lfo: { ...p.lfo, depth: val } }));
+  }, []);
 
   const handleNoteOn = useCallback((note: number) => {
     if (!isStarted || !audioEngine.current) return;
@@ -282,9 +295,9 @@ export const Synth: React.FC = () => {
   const renderOscControl = (oscKey: 'osc1' | 'osc2' | 'osc3' | 'osc4', label: string) => {
     const oscParams = params[oscKey];
     return (
-      <div className="flex flex-col gap-1.5 border border-[#202738] p-2 rounded-sm bg-[#0e121a] w-full min-w-0 relative">
-        <div className="flex items-center gap-1.5 mb-0.5 w-full justify-between px-0.5 border-b border-[#202738] pb-1">
-          <span className="text-gray-400 text-[9px] md:text-[10px] font-mono font-bold tracking-wider truncate">{label}</span>
+      <div className="flex flex-col gap-1.5 p-2 rounded-sm w-full min-w-0 relative" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
+        <div className="flex items-center gap-1.5 mb-0.5 w-full justify-between px-0.5 pb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
+          <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider truncate" style={{ color: 'var(--text-label)' }}>{label}</span>
           <ToggleSwitch 
             label="" 
             checked={oscParams.enabled} 
@@ -296,7 +309,7 @@ export const Synth: React.FC = () => {
         
         <div className="flex flex-row items-stretch w-full gap-1.5 px-0.5">
           {/* Waveform Selector */}
-          <div className="flex flex-col gap-0.5 bg-[#07090e] p-0.5 rounded-sm border border-[#1b2230] h-full justify-between shrink-0">
+          <div className="flex flex-col gap-0.5 p-0.5 rounded-sm h-full justify-between shrink-0" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
             {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
               const isActive = oscParams.waveform === w;
               const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
@@ -308,7 +321,7 @@ export const Synth: React.FC = () => {
                   className={`p-0.5 rounded-sm transition-all flex items-center justify-center h-5 w-5 md:h-5 md:w-5
                     ${isActive 
                       ? 'bg-[#00e5ff] text-black shadow-[0_0_8px_#00e5ff]' 
-                      : 'text-gray-500 hover:text-gray-200 hover:bg-[#1a2130]'
+                      : 'text-gray-500 hover:text-gray-200'
                     }`}
                 >
                   <Icon className="w-3 h-3"/>
@@ -320,10 +333,10 @@ export const Synth: React.FC = () => {
           {/* LCD Waveform Preview */}
           <div className="flex flex-col flex-1 justify-between gap-1 min-w-0">
             <div className="oled-screen rounded-sm px-1 py-0.5 flex items-center justify-between h-4 w-full">
-              <span className="font-mono-lcd text-[#00e5ff] text-[7px] md:text-[8px] uppercase tracking-wider truncate">
+              <span className="font-mono-lcd text-[7px] md:text-[8px] uppercase tracking-wider truncate" style={{ color: 'var(--oled-text)' }}>
                 {oscParams.waveform}
               </span>
-              <span className="font-mono-lcd text-gray-400 text-[7px]">
+              <span className="font-mono-lcd text-[7px]" style={{ color: 'var(--text-secondary)' }}>
                 {Math.round(oscParams.gain * 100)}%
               </span>
             </div>
@@ -352,7 +365,7 @@ export const Synth: React.FC = () => {
           </div>
 
           {/* Detune Knob */}
-          <div className="flex flex-col items-center justify-center border-l border-[#202738] pl-1 shrink-0">
+          <div className="flex flex-col items-center justify-center pl-1 shrink-0" style={{ borderLeft: '1px solid var(--osc-border)' }}>
             <Knob 
               label="Detune" 
               value={oscParams.detune} 
@@ -371,7 +384,7 @@ export const Synth: React.FC = () => {
 
   if (!isStarted) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center p-4 bg-[#080b0f]">
+      <div className="h-full w-full flex flex-col items-center justify-center p-4" style={{ background: 'var(--chassis-bg)' }}>
         <div className="synth-panel max-w-lg w-full p-6 md:p-8 rounded-sm text-center flex flex-col items-center">
           <Screw className="top-2 left-2" />
           <Screw className="top-2 right-2" />
@@ -382,10 +395,10 @@ export const Synth: React.FC = () => {
             <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#00e5ff]" />
           </div>
 
-          <h2 className="text-xl md:text-2xl font-brand font-black text-white tracking-widest uppercase mb-1 md:mb-2">
+          <h2 className="text-xl md:text-2xl font-brand font-black tracking-widest uppercase mb-1 md:mb-2" style={{ color: 'var(--text-primary)' }}>
             SUBTRACTIVE SYNTH
           </h2>
-          <p className="text-gray-400 font-mono text-[11px] md:text-xs mb-5 tracking-wide">
+          <p className="font-mono text-[11px] md:text-xs mb-5 tracking-wide" style={{ color: 'var(--text-secondary)' }}>
             Polyphonic Analog Modelling Engine • Master FX • Precision Sequencer
           </p>
 
@@ -398,7 +411,7 @@ export const Synth: React.FC = () => {
             className="w-full py-2.5 md:py-3 text-xs md:text-sm tracking-widest"
           />
 
-          <span className="mt-3 text-[9px] md:text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+          <span className="mt-3 text-[9px] md:text-[10px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
             {midiStatus}
           </span>
         </div>
@@ -407,7 +420,7 @@ export const Synth: React.FC = () => {
   }
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden bg-[#080a0e] p-1.5 md:p-2.5 gap-1.5 md:gap-2">
+    <div className="h-full w-full flex flex-col overflow-hidden p-1.5 md:p-2.5 gap-1.5 md:gap-2" style={{ background: 'var(--chassis-bg)' }}>
       
       {/* ── Top Header ── */}
       <header className="synth-panel p-2 md:p-2.5 rounded-sm shrink-0">
@@ -451,7 +464,7 @@ export const Synth: React.FC = () => {
             </select>
           </div>
 
-          {/* Vol + VU */}
+          {/* Vol + VU + Theme Picker */}
           <div className="flex items-center gap-1 shrink-0">
             <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
             <Knob 
@@ -464,6 +477,23 @@ export const Synth: React.FC = () => {
               unit="%"
               color="emerald"
             />
+            {/* Mobile Theme Chips */}
+            <div className="flex flex-col gap-0.5 pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
+              {THEMES.map(t => (
+                <button
+                  key={t.id}
+                  title={t.description}
+                  onClick={() => setTheme(t.id)}
+                  className={`theme-chip ${theme === t.id ? 'active' : ''}`}
+                  style={{
+                    background: t.chipColor,
+                    borderColor: theme === t.id ? t.chipBorder : 'transparent',
+                    boxShadow: theme === t.id ? `0 0 6px ${t.chipBorder}` : 'none',
+                    width: 14, height: 14,
+                  }}
+                />
+              ))}
+            </div>
           </div>
         </div>
 
@@ -528,12 +558,31 @@ export const Synth: React.FC = () => {
           <div className="flex items-center gap-2 shrink-0">
             <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
             <Knob label="Vol" value={params.masterGain ?? 0.8} min={0} max={1} size={34} onChange={v => setParams(p => ({ ...p, masterGain: v }))} unit="%" color="emerald" />
+            {/* Desktop Theme Chip Switcher */}
+            <div className="flex flex-col gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--panel-border)' }}>
+              <span className="text-[6px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>SKIN</span>
+              <div className="flex gap-1">
+                {THEMES.map(t => (
+                  <button
+                    key={t.id}
+                    title={t.description}
+                    onClick={() => setTheme(t.id)}
+                    className={`theme-chip ${theme === t.id ? 'active' : ''}`}
+                    style={{
+                      background: t.chipColor,
+                      borderColor: theme === t.id ? t.chipBorder : 'rgba(255,255,255,0.2)',
+                      boxShadow: theme === t.id ? `0 0 8px ${t.chipBorder}` : 'none',
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
       {/* ── Mobile Tab Bar (< md) ── finger-safe 44px height tabs ── */}
-      <div className="md:hidden shrink-0 flex items-stretch gap-1 bg-[#0d1018] px-1.5 py-1 rounded-sm border border-[#1e2636]">
+      <div className="md:hidden shrink-0 flex items-stretch gap-1 px-1.5 py-1 rounded-sm" style={{ background: 'var(--tab-bar-bg)', border: '1px solid var(--tab-bar-border)' }}>
         {[
           { id: 'vco', label: 'VCO', icon: '〜' },
           { id: 'vcf', label: 'VCF', icon: '⌘' },
@@ -560,16 +609,15 @@ export const Synth: React.FC = () => {
 
         {/* ════════════════════ DESKTOP LAYOUT (md+) ════════════════════ */}
         {/* Upper bay: VCO | VCF | ENV */}
-        <div className="hidden md:flex flex-1 min-h-0 grid grid-cols-1 md:grid-cols-12 gap-2">
+        <div className="hidden md:grid flex-1 min-h-0 grid-cols-1 md:grid-cols-12 gap-2.5 pt-3">
 
           {/* VCO Panel */}
           <div className="md:col-span-5 md:h-full flex flex-col min-h-0">
-            <div className="md:overflow-hidden md:h-full">
-            <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="md:h-full flex flex-col justify-between">
+            <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="h-full flex flex-col justify-between">
               {/* Voice Mode & Tone Controls */}
-              <div className="flex flex-wrap items-center justify-between gap-1.5 w-full bg-[#0a0d14] p-1.5 rounded-sm border border-[#1e2636]">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 w-full p-1.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                 <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[7px] font-mono text-gray-400 uppercase">Voice Mode</span>
+                  <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
                   <div className="flex gap-1">
                     {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
                       <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => ({ ...p, voiceMode: mode }))} color="cyan" size="sm" className="text-[7px] px-1.5 py-0.5" />
@@ -589,30 +637,28 @@ export const Synth: React.FC = () => {
                 {renderOscControl('osc4', 'OSC 4')}
               </div>
             </Panel>
-            </div>
           </div>
 
           {/* VCF Panel + Visualizer */}
-          <div className="md:col-span-4 md:h-full flex flex-col gap-2.5 md:min-h-0">
-            <div className="md:overflow-hidden md:h-full flex flex-col gap-2">
+          <div className="md:col-span-4 md:h-full flex flex-col gap-2.5 min-h-0">
             {/* Oscilloscope Screen */}
             <div className="oled-screen p-1.5 rounded-sm h-24 w-full flex flex-col justify-between shrink-0">
               <div className="flex items-center justify-between px-1 mb-0.5">
-                <span className="font-mono-lcd text-[8px] text-[#00e5ff] uppercase tracking-widest">MAIN AUDIO OUTPUT</span>
+                <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
                 <div className="flex gap-1">
                   <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#00e5ff]' : 'text-gray-500' }`}>OSC</button>
                   <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
                 </div>
               </div>
-              <div className="flex-1 w-full">
+              <div className="flex-1 w-full min-h-0">
                 <WaveformDisplay analyser={audioEngine.current?.getAnalyser() || null} isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} color="#00e5ff" mode={visualizerMode} />
               </div>
             </div>
 
             {/* VCF Filter Module with explicit top separation */}
-            <div className="md:flex-1 w-full flex flex-col pt-1">
+            <div className="flex-1 w-full flex flex-col pt-3 min-h-0">
               <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="h-full w-full flex flex-col justify-between">
-                <div className="flex flex-col gap-2 w-full justify-between">
+                <div className="flex flex-col gap-2 w-full justify-between h-full">
                   <div className="grid grid-cols-4 gap-1 w-full">
                     {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
                       <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[32px] text-[8px] md:text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
@@ -626,16 +672,14 @@ export const Synth: React.FC = () => {
                 </div>
               </Panel>
             </div>
-            </div>
           </div>
 
           {/* ENV Panel: LFO + AMP ADSR + FILTER ADSR */}
-          <div className="md:col-span-3 md:h-full flex flex-col gap-2.5 md:min-h-0">
-            <div className="md:overflow-hidden md:h-full flex flex-col gap-2.5">
-            <Panel title="LFO — MODULATION" badgeColor="emerald" className="md:flex-1 flex flex-col justify-between">
+          <div className="md:col-span-3 md:h-full flex flex-col gap-2.5 min-h-0">
+            <Panel title="LFO — MODULATION" badgeColor="emerald" className="flex-1 flex flex-col justify-between min-h-0">
               <div className="flex flex-col gap-1.5 w-full justify-between">
                 <div className="flex items-center gap-1.5">
-                  <div className="flex flex-col gap-0.5 bg-[#090c12] p-0.5 rounded-sm border border-[#1d2535]">
+                  <div className="flex flex-col gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
                     {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
                       const isActive = params.lfo.waveform === w;
                       const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
@@ -650,15 +694,15 @@ export const Synth: React.FC = () => {
                   <Knob label={params.lfo.sync ? "Div" : "Rate"} value={params.lfo.rate} min={0.1} max={20} size={30} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} unit={params.lfo.sync ? "" : "Hz"} color="emerald" />
                   <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={30} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
                 </div>
-                <div className="flex items-center justify-between gap-1 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
+                <div className="flex items-center justify-between gap-1 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                   <LEDButton label="SYNC" active={params.lfo.sync} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[7px] px-1.5 py-0.5" />
                   {params.lfo.sync && (
-                    <select value={params.lfo.division} onChange={(e) => setParams(p => ({ ...p, lfo: { ...p.lfo, division: e.target.value } }))} className="bg-[#141a26] text-[#00ff66] font-mono text-[8px] px-1 py-0.5 rounded border border-[#202738]">
+                    <select value={params.lfo.division} onChange={(e) => setParams(p => ({ ...p, lfo: { ...p.lfo, division: e.target.value } }))} className="font-mono text-[8px] px-1 py-0.5 rounded" style={{ background: 'var(--osc-bg)', color: 'var(--accent-emerald)', border: '1px solid var(--osc-border)' }}>
                       {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   )}
                 </div>
-                <div className="flex items-center gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
+                <div className="flex items-center gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                   {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
                     <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, target } }))} color="emerald" size="sm" className="flex-1 text-[7px] px-0.5 py-0.5" />
                   ))}
@@ -666,8 +710,8 @@ export const Synth: React.FC = () => {
               </div>
             </Panel>
 
-            <div className="pt-1">
-              <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan" className="md:flex-1 flex flex-col justify-between">
+            <div className="pt-3 flex-1 flex flex-col min-h-0">
+              <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan" className="h-full flex flex-col justify-between">
                 <div className="flex items-center justify-around w-full py-1">
                   <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={28} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))}  unit="s" color="cyan" />
                   <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={28} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))}   unit="s" color="cyan" />
@@ -677,8 +721,8 @@ export const Synth: React.FC = () => {
               </Panel>
             </div>
 
-            <div className="pt-1">
-              <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber" className="md:flex-1 flex flex-col justify-between">
+            <div className="pt-3 flex-1 flex flex-col min-h-0">
+              <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber" className="h-full flex flex-col justify-between">
                 <div className="flex items-center justify-around w-full py-1">
                   <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={28} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))}  unit="s" color="amber" />
                   <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={28} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))}   unit="s" color="amber" />
@@ -687,47 +731,39 @@ export const Synth: React.FC = () => {
                 </div>
               </Panel>
             </div>
-
-            </div>
           </div>
 
         </div>
 
         {/* Lower bay: FX | ARP | SEQ */}
-        <div className="hidden md:grid flex-1 min-h-0 grid-cols-1 md:grid-cols-12 gap-2">
+        <div className="hidden md:grid flex-1 min-h-0 grid-cols-1 md:grid-cols-12 gap-2.5 pt-3.5">
           {/* Master FX */}
-          <div className="md:col-span-4 md:h-full">
-            <div className="md:overflow-visible md:h-full">
-              <MasterFXPanel fx={params.fx} onChange={(fx) => setParams(p => ({ ...p, fx }))} />
-            </div>
+          <div className="md:col-span-4 md:h-full flex flex-col min-h-0">
+            <MasterFXPanel fx={params.fx} onChange={(fx) => setParams(p => ({ ...p, fx }))} />
           </div>
           {/* Arpeggiator */}
-          <div className="md:col-span-3 md:h-full">
-            <div className="md:overflow-visible md:h-full">
-              <ArpeggiatorPanel arp={params.arpeggiator} onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} />
-            </div>
+          <div className="md:col-span-3 md:h-full flex flex-col min-h-0">
+            <ArpeggiatorPanel arp={params.arpeggiator} onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} />
           </div>
           {/* Drum Sequencer */}
-          <div className="md:col-span-5 md:h-full">
-            <div className="md:overflow-visible md:h-full">
-              <DrumMachine
-                isPlaying={isDrumMachinePlaying}
-                onPlayToggle={handlePlayToggle}
-                bpm={bpm}
-                onBpmChange={setBpm}
-                pattern={drumPattern}
-                selectedTrack={selectedTrack}
-                onTrackSelect={setSelectedTrack}
-                onStepToggle={handleStepToggle}
-                currentStep={currentStep}
-                currentBank={currentBankIndex}
-                onBankSelect={setCurrentBankIndex}
-                swing={swing}
-                onSwingChange={setSwing}
-                trackSettings={drumSettings[selectedTrack]}
-                onTrackSettingsChange={handleDrumTrackSettingsChange}
-              />
-            </div>
+          <div className="md:col-span-5 md:h-full flex flex-col min-h-0">
+            <DrumMachine
+              isPlaying={isDrumMachinePlaying}
+              onPlayToggle={handlePlayToggle}
+              bpm={bpm}
+              onBpmChange={setBpm}
+              pattern={drumPattern}
+              selectedTrack={selectedTrack}
+              onTrackSelect={setSelectedTrack}
+              onStepToggle={handleStepToggle}
+              currentStep={currentStep}
+              currentBank={currentBankIndex}
+              onBankSelect={setCurrentBankIndex}
+              swing={swing}
+              onSwingChange={setSwing}
+              trackSettings={drumSettings[selectedTrack]}
+              onTrackSettingsChange={handleDrumTrackSettingsChange}
+            />
           </div>
         </div>
 
@@ -736,11 +772,11 @@ export const Synth: React.FC = () => {
 
           {/* VCO Tab */}
           <div className={`mobile-section-panel ${activeTab === 'vco' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-2">
+            <div className="pt-3">
               <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="flex flex-col justify-between">
-                <div className="flex flex-wrap items-center justify-between gap-2 w-full bg-[#0a0d14] p-2 rounded-sm border border-[#1e2636]">
+                <div className="flex flex-wrap items-center justify-between gap-2 w-full p-2 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                   <div className="flex flex-col items-center gap-0.5">
-                    <span className="text-[7px] font-mono text-gray-400 uppercase">Voice Mode</span>
+                    <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
                     <div className="flex gap-1">
                       {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
                         <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => ({ ...p, voiceMode: mode }))} color="cyan" size="sm" className="text-[8px] px-2 py-1" />
@@ -777,10 +813,10 @@ export const Synth: React.FC = () => {
 
           {/* VCF Tab */}
           <div className={`mobile-section-panel ${activeTab === 'vcf' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="flex flex-col gap-3.5 pt-2">
+            <div className="flex flex-col gap-3.5 pt-1">
               <div className="oled-screen p-1.5 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
                 <div className="flex items-center justify-between px-1 mb-1">
-                  <span className="font-mono-lcd text-[8px] text-[#00e5ff] uppercase tracking-widest">MAIN AUDIO OUTPUT</span>
+                  <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
                   <div className="flex gap-1">
                     <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#00e5ff]' : 'text-gray-500' }`}>OSC</button>
                     <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
@@ -788,30 +824,32 @@ export const Synth: React.FC = () => {
                 </div>
                 <div className="flex-1 w-full"><WaveformDisplay analyser={audioEngine.current?.getAnalyser() || null} isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} color="#00e5ff" mode={visualizerMode} /></div>
               </div>
-              <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="w-full flex flex-col justify-between">
-                <div className="flex flex-col gap-3 w-full justify-between">
-                  <div className="grid grid-cols-4 gap-1 w-full">
-                    {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
-                      <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[40px] text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
-                    ))}
+              <div className="pt-2">
+                <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="w-full flex flex-col justify-between">
+                  <div className="flex flex-col gap-3 w-full justify-between">
+                    <div className="grid grid-cols-4 gap-1 w-full">
+                      {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
+                        <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[40px] text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-around gap-2 py-2">
+                      <Knob label="Cutoff"    value={params.filter.cutoff}          min={20}  max={20000} size={50} logarithmic onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))}                       unit="Hz" color="amber"   />
+                      <Knob label="Resonance" value={params.filter.resonance}       min={0}   max={40}    size={44}             onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))}                    color="cyan"    />
+                      <Knob label="EG Int"    value={params.filterEnvelope.amount}  min={0}   max={10000} size={40}             onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, amount: v } }))} color="emerald"  />
+                    </div>
                   </div>
-                  <div className="flex items-center justify-around gap-2 py-2">
-                    <Knob label="Cutoff"    value={params.filter.cutoff}          min={20}  max={20000} size={50} logarithmic onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))}                       unit="Hz" color="amber"   />
-                    <Knob label="Resonance" value={params.filter.resonance}       min={0}   max={40}    size={44}             onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))}                    color="cyan"    />
-                    <Knob label="EG Int"    value={params.filterEnvelope.amount}  min={0}   max={10000} size={40}             onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, amount: v } }))} color="emerald"  />
-                  </div>
-                </div>
-              </Panel>
+                </Panel>
+              </div>
             </div>
           </div>
 
           {/* ENV Tab */}
           <div className={`mobile-section-panel ${activeTab === 'env' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="flex flex-col gap-4 pt-2">
+            <div className="flex flex-col gap-4 pt-3">
               <Panel title="LFO — MODULATION" badgeColor="emerald" className="flex flex-col justify-between">
                 <div className="flex flex-col gap-2 w-full justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="flex flex-col gap-1 bg-[#090c12] p-1 rounded-sm border border-[#1d2535]">
+                    <div className="flex flex-col gap-1 p-1 rounded-sm" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
                       {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
                         const isActive = params.lfo.waveform === w;
                         const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
@@ -826,7 +864,7 @@ export const Synth: React.FC = () => {
                     <Knob label={params.lfo.sync ? "Division" : "Rate"} value={params.lfo.rate} min={0.1} max={20} size={42} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} unit={params.lfo.sync ? "" : "Hz"} color="emerald" />
                     <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={42} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
                   </div>
-                  <div className="flex items-center justify-between gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
+                  <div className="flex items-center justify-between gap-1 p-1 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                     <LEDButton label="BPM SYNC" active={params.lfo.sync} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[8px] px-2 py-1" />
                     {params.lfo.sync && (
                       <select value={params.lfo.division} onChange={(e) => setParams(p => ({ ...p, lfo: { ...p.lfo, division: e.target.value } }))} className="bg-[#141a26] text-[#00ff66] font-mono text-[9px] px-2 py-1 rounded border border-[#202738]">
@@ -841,42 +879,46 @@ export const Synth: React.FC = () => {
                   </div>
                 </div>
               </Panel>
-              <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan" className="flex flex-col justify-between">
-                <div className="flex items-center justify-around w-full py-2">
-                  <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))}  unit="s" color="cyan" />
-                  <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))}   unit="s" color="cyan" />
-                  <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} unit="%" color="cyan" />
-                  <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} unit="s" color="cyan" />
-                </div>
-              </Panel>
-              <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber" className="flex flex-col justify-between">
-                <div className="flex items-center justify-around w-full py-2">
-                  <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))}  unit="s" color="amber" />
-                  <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))}   unit="s" color="amber" />
-                  <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} unit="%" color="amber" />
-                  <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} unit="s" color="amber" />
-                </div>
-              </Panel>
+              <div className="pt-2">
+                <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan" className="flex flex-col justify-between">
+                  <div className="flex items-center justify-around w-full py-2">
+                    <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))}  unit="s" color="cyan" />
+                    <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))}   unit="s" color="cyan" />
+                    <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} unit="%" color="cyan" />
+                    <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} unit="s" color="cyan" />
+                  </div>
+                </Panel>
+              </div>
+              <div className="pt-2">
+                <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber" className="flex flex-col justify-between">
+                  <div className="flex items-center justify-around w-full py-2">
+                    <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))}  unit="s" color="amber" />
+                    <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))}   unit="s" color="amber" />
+                    <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} unit="%" color="amber" />
+                    <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} unit="s" color="amber" />
+                  </div>
+                </Panel>
+              </div>
             </div>
           </div>
 
           {/* FX Tab */}
           <div className={`mobile-section-panel ${activeTab === 'fx' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-2">
+            <div className="pt-3">
               <MasterFXPanel fx={params.fx} onChange={(fx) => setParams(p => ({ ...p, fx }))} />
             </div>
           </div>
 
           {/* ARP Tab */}
           <div className={`mobile-section-panel ${activeTab === 'arp' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-2">
+            <div className="pt-3">
               <ArpeggiatorPanel arp={params.arpeggiator} onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} />
             </div>
           </div>
 
           {/* SEQ Tab — drum machine with contained horizontal scroll */}
           <div className={`mobile-section-panel ${activeTab === 'seq' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-2">
+            <div className="pt-3">
               <DrumMachine
                 isPlaying={isDrumMachinePlaying}
                 onPlayToggle={handlePlayToggle}
@@ -900,7 +942,13 @@ export const Synth: React.FC = () => {
           {/* KEYS Tab */}
           <div className={`mobile-section-panel ${activeTab === 'keys' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
             <div className="pt-2">
-              <Keyboard onNoteOn={handleNoteOn} onNoteOff={handleNoteOff} activeNotes={activeNotes} />
+              <Keyboard 
+                onNoteOn={handleNoteOn} 
+                onNoteOff={handleNoteOff} 
+                activeNotes={activeNotes} 
+                onPitchBendChange={handlePitchBendChange}
+                onModulationChange={handleModulationChange}
+              />
             </div>
           </div>
 
@@ -914,6 +962,8 @@ export const Synth: React.FC = () => {
           onNoteOn={handleNoteOn} 
           onNoteOff={handleNoteOff} 
           activeNotes={activeNotes} 
+          onPitchBendChange={handlePitchBendChange}
+          onModulationChange={handleModulationChange}
         />
       </footer>
 

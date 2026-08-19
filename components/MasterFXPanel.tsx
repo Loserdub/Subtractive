@@ -34,24 +34,24 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
   };
 
   return (
-    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center select-none touch-lock w-full h-full overflow-hidden">
+    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center select-none touch-lock w-full h-full">
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
       <Screw className="bottom-2 right-2" />
       
       {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#12161f] border border-[#2b3548] px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden">
+      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden" style={{ background: 'var(--badge-bg)', border: '1px solid var(--badge-border)' }}>
         <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344] shrink-0" />
-        <span className="font-mono text-[10px] md:text-xs font-bold text-gray-200 tracking-[0.15em] uppercase truncate">MASTER FX RACK</span>
+        <span className="font-mono text-[10px] md:text-xs font-bold tracking-[0.15em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>MASTER FX RACK</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 w-full h-full pt-0.5">
         
         {/* Drive Module */}
-        <div className="flex flex-col items-center justify-between border border-[#202738] p-2 rounded-sm bg-[#0e121a] w-full min-w-0">
-          <div className="flex items-center justify-between w-full border-b border-[#202738] pb-1 mb-1">
-            <span className="text-gray-400 text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate">DRIVE / TAPE</span>
+        <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
+          <div className="flex items-center justify-between w-full pb-1 mb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
+            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate" style={{ color: 'var(--text-label)' }}>DRIVE / TAPE</span>
             <LEDButton
               label={fx.drive.enabled ? "ON" : "OFF"}
               active={fx.drive.enabled}
@@ -75,9 +75,9 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
         </div>
 
         {/* Delay Module */}
-        <div className="flex flex-col items-center justify-between border border-[#202738] p-2 rounded-sm bg-[#0e121a] w-full min-w-0">
-          <div className="flex items-center justify-between w-full border-b border-[#202738] pb-1 mb-1">
-            <span className="text-gray-400 text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate">STEREO DELAY</span>
+        <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
+          <div className="flex items-center justify-between w-full pb-1 mb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
+            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate" style={{ color: 'var(--text-label)' }}>STEREO DELAY</span>
             <LEDButton
               label={fx.delay.enabled ? "ON" : "OFF"}
               active={fx.delay.enabled}
@@ -141,9 +141,9 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
         </div>
 
         {/* Reverb Module */}
-        <div className="flex flex-col items-center justify-between border border-[#202738] p-2 rounded-sm bg-[#0e121a] w-full min-w-0">
-          <div className="flex items-center justify-between w-full border-b border-[#202738] pb-1 mb-1">
-            <span className="text-gray-400 text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate">REVERB</span>
+        <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
+          <div className="flex items-center justify-between w-full pb-1 mb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
+            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate" style={{ color: 'var(--text-label)' }}>REVERB</span>
             <LEDButton
               label={fx.reverb.enabled ? "ON" : "OFF"}
               active={fx.reverb.enabled}

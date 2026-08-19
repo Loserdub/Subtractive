@@ -1,20 +1,350 @@
-/* Subtractive Synthesizer Design System & Skeuomorphic Styling */
+/* ══════════════════════════════════════════════════════════════════════
+   SUBTRACTIVE SYNTHESIZER — Design System & Theme Engine
+   CSS custom property tokens + 4 chassis skin definitions
+   ══════════════════════════════════════════════════════════════════════ */
 
+/* ── GOOGLE FONTS ────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@400;500;600;700&display=swap');
+
+/* ══════════════════════════════════════════════════════════════════════
+   DEFAULT / MONO-DARK THEME TOKENS (also :root fallbacks)
+   ══════════════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="mono-dark"] {
+  /* Chassis & Structure */
+  --chassis-bg:       #080a0e;
+  --chassis-gradient: radial-gradient(circle at 50% 0%, #1e232d 0%, #0d0f14 100%);
+  --panel-bg:         #1a1d24;
+  --panel-bg-alt:     #0e1118;
+  --panel-gradient:   linear-gradient(180deg, #1d212a 0%, #161920 100%);
+  --panel-border:     #2e3545;
+  --panel-inset-hi:   rgba(255, 255, 255, 0.07);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.8);
+  --panel-shadow:     rgba(0, 0, 0, 0.5);
+
+  /* OLED / LCD Screen */
+  --oled-bg:          #04090e;
+  --oled-bg-grad:     radial-gradient(circle at 50% 30%, #0d1a24 0%, #04090e 100%);
+  --oled-border:      #1c2b3a;
+  --oled-glow:        rgba(0, 229, 255, 0.08);
+  --oled-text:        #00e5ff;
+  --oled-scanline:    rgba(0, 0, 0, 0.25);
+
+  /* Knob Material */
+  --knob-track:       #1c222e;
+  --knob-ribbed:      repeating-conic-gradient(#2c3344 0 6deg, #181d28 6deg 12deg);
+  --knob-face-grad:   radial-gradient(circle at 35% 35%, #3c4456 0%, #151821 100%);
+  --knob-face-border: #161a24;
+  --knob-hi:          rgba(255, 255, 255, 0.15);
+  --knob-lo:          rgba(0, 0, 0, 0.8);
+
+  /* Screw */
+  --screw-grad:       linear-gradient(135deg, #717888 0%, #222630 100%);
+  --screw-border:     #14171f;
+  --screw-line:       #151820;
+
+  /* Accent Colors — signal and UI */
+  --accent-cyan:      #00e5ff;
+  --accent-amber:     #ffaa00;
+  --accent-emerald:   #00ff66;
+  --accent-red:       #ff3344;
+
+  /* Text hierarchy */
+  --text-primary:     #e2e8f0;
+  --text-secondary:   #6b7280;
+  --text-muted:       #374151;
+  --text-label:       #9ca3af;
+
+  /* Interactive Elements */
+  --btn-inactive-bg:      #141822;
+  --btn-inactive-border:  #2a3142;
+  --btn-inactive-text:    #6b7280;
+  --btn-hover-bg:         #1c2230;
+  --section-bg:           #0a0d14;
+  --section-border:       #1e2636;
+  --osc-bg:               #0e121a;
+  --osc-border:           #202738;
+  --waveform-bg:          #07090e;
+  --waveform-border:      #1b2230;
+
+  /* Piano Keys */
+  --key-white-grad:   linear-gradient(180deg, #f8fafc 0%, #e2e8f0 85%, #cbd5e1 100%);
+  --key-white-active: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+  --key-black-grad:   linear-gradient(180deg, #222733 0%, #11141c 85%, #090b0f 100%);
+  --key-black-active: linear-gradient(180deg, #090b0f 0%, #1a202c 100%);
+
+  /* Wheel Slider */
+  --wheel-bg:         #090b0f;
+  --wheel-border:     #252d3d;
+  --wheel-thumb:      linear-gradient(to right, #888 0%, #fff 50%, #888 100%);
+
+  /* Mobile Tab Bar */
+  --tab-bar-bg:       #0d1018;
+  --tab-bar-border:   #1e2636;
+  --tab-active-bg:    rgba(0, 229, 255, 0.15);
+  --tab-active-border:#00e5ff;
+  --tab-active-text:  #00e5ff;
+  --tab-active-glow:  rgba(0, 229, 255, 0.3);
+  --tab-inactive-text:#6b7280;
+
+  /* Body */
+  --body-bg:          #080a0e;
+  --body-text:        #e2e8f0;
+
+  /* Scrollbar */
+  --scrollbar-track:  #11141a;
+  --scrollbar-thumb:  #2a3140;
+  --scrollbar-hover:  #3e485e;
+
+  /* Badge (panel title) */
+  --badge-bg:         #12161f;
+  --badge-border:     #2b3548;
+
+  /* Theme crossfade */
+  --theme-transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease, box-shadow 0.25s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   VINTAGE JAPANESE — Roland / Korg (Orange × Blue × Brushed Aluminum)
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="vintage-japanese"] {
+  --chassis-bg:       #b0b4bc;
+  --chassis-gradient: radial-gradient(circle at 50% 0%, #d0d4dc 0%, #9da1a9 100%);
+  --panel-bg:         #c8ccd4;
+  --panel-bg-alt:     #b8bcc4;
+  --panel-gradient:   linear-gradient(180deg, #d4d8e0 0%, #c0c4cc 100%);
+  --panel-border:     #8890a0;
+  --panel-inset-hi:   rgba(255, 255, 255, 0.5);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.25);
+  --panel-shadow:     rgba(80, 80, 100, 0.4);
+
+  --oled-bg:          #1a0e00;
+  --oled-bg-grad:     radial-gradient(circle at 50% 30%, #2a1800 0%, #100800 100%);
+  --oled-border:      #8B4513;
+  --oled-glow:        rgba(255, 140, 0, 0.15);
+  --oled-text:        #ffa500;
+  --oled-scanline:    rgba(0, 0, 0, 0.3);
+
+  --knob-track:       #787c84;
+  --knob-ribbed:      repeating-conic-gradient(#a0a4ac 0 6deg, #707478 6deg 12deg);
+  --knob-face-grad:   radial-gradient(circle at 35% 35%, #c8ccd4 0%, #808488 100%);
+  --knob-face-border: #585c64;
+  --knob-hi:          rgba(255, 255, 255, 0.6);
+  --knob-lo:          rgba(0, 0, 0, 0.3);
+
+  --screw-grad:       linear-gradient(135deg, #d8dcec 0%, #909498 100%);
+  --screw-border:     #686c74;
+  --screw-line:       #a8acb4;
+
+  --accent-cyan:      #1a5fe8;
+  --accent-amber:     #e8541a;
+  --accent-emerald:   #2a9e44;
+  --accent-red:       #cc1122;
+
+  --text-primary:     #1a1c20;
+  --text-secondary:   #404448;
+  --text-muted:       #686c74;
+  --text-label:       #484c54;
+
+  --btn-inactive-bg:     #b0b4bc;
+  --btn-inactive-border: #787c84;
+  --btn-inactive-text:   #484c54;
+  --btn-hover-bg:        #c8ccd4;
+  --section-bg:          #b8bcc4;
+  --section-border:      #8890a0;
+  --osc-bg:              #c0c4cc;
+  --osc-border:          #9098a8;
+  --waveform-bg:         #b0b4bc;
+  --waveform-border:     #8890a0;
+
+  --key-white-grad:   linear-gradient(180deg, #f8fafc 0%, #e8ebf0 85%, #d0d5dc 100%);
+  --key-white-active: linear-gradient(180deg, #d0d5dc 0%, #b0b8c4 100%);
+  --key-black-grad:   linear-gradient(180deg, #181c24 0%, #0c1018 85%, #080a0e 100%);
+  --key-black-active: linear-gradient(180deg, #080a0e 0%, #141820 100%);
+
+  --wheel-bg:         #a0a4ac;
+  --wheel-border:     #686c74;
+  --wheel-thumb:      linear-gradient(to right, #606468 0%, #d0d4dc 50%, #606468 100%);
+
+  --tab-bar-bg:       #b0b4bc;
+  --tab-bar-border:   #8890a0;
+  --tab-active-bg:    rgba(232, 84, 26, 0.2);
+  --tab-active-border:#e8541a;
+  --tab-active-text:  #e8541a;
+  --tab-active-glow:  rgba(232, 84, 26, 0.3);
+  --tab-inactive-text:#606468;
+
+  --body-bg:          #9da1a9;
+  --body-text:        #1a1c20;
+  --scrollbar-track:  #a8acb4;
+  --scrollbar-thumb:  #787c84;
+  --scrollbar-hover:  #606468;
+  --badge-bg:         #c8ccd4;
+  --badge-border:     #8890a0;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GERMAN INDUSTRIAL — Moog Black & Machined Aluminum / Gold
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="german-industrial"] {
+  --chassis-bg:       #030303;
+  --chassis-gradient: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #030303 100%);
+  --panel-bg:         #111111;
+  --panel-bg-alt:     #080808;
+  --panel-gradient:   linear-gradient(180deg, #181818 0%, #0c0c0c 100%);
+  --panel-border:     #2a2a2a;
+  --panel-inset-hi:   rgba(255, 255, 255, 0.06);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.95);
+  --panel-shadow:     rgba(0, 0, 0, 0.8);
+
+  --oled-bg:          #001400;
+  --oled-bg-grad:     radial-gradient(circle at 50% 30%, #001e00 0%, #000a00 100%);
+  --oled-border:      #1a3a1a;
+  --oled-glow:        rgba(0, 255, 68, 0.12);
+  --oled-text:        #00ff44;
+  --oled-scanline:    rgba(0, 0, 0, 0.35);
+
+  --knob-track:       #1a1a1a;
+  --knob-ribbed:      repeating-conic-gradient(#282828 0 6deg, #0e0e0e 6deg 12deg);
+  --knob-face-grad:   radial-gradient(circle at 35% 35%, #2e2e2e 0%, #0a0a0a 100%);
+  --knob-face-border: #080808;
+  --knob-hi:          rgba(255, 255, 255, 0.08);
+  --knob-lo:          rgba(0, 0, 0, 0.98);
+
+  --screw-grad:       linear-gradient(135deg, #a0a0a4 0%, #303030 100%);
+  --screw-border:     #080808;
+  --screw-line:       #181818;
+
+  --accent-cyan:      #c9a84c;
+  --accent-amber:     #e8b84c;
+  --accent-emerald:   #aac840;
+  --accent-red:       #cc3322;
+
+  --text-primary:     #f0ece0;
+  --text-secondary:   #807860;
+  --text-muted:       #404030;
+  --text-label:       #a09070;
+
+  --btn-inactive-bg:     #0e0e0e;
+  --btn-inactive-border: #252525;
+  --btn-inactive-text:   #606050;
+  --btn-hover-bg:        #181818;
+  --section-bg:          #080808;
+  --section-border:      #1e1e1e;
+  --osc-bg:              #0a0a0a;
+  --osc-border:          #1e1e1e;
+  --waveform-bg:         #040404;
+  --waveform-border:     #181818;
+
+  --key-white-grad:   linear-gradient(180deg, #f0ece0 0%, #d8d4c8 85%, #c0bcb0 100%);
+  --key-white-active: linear-gradient(180deg, #c0bcb0 0%, #a0988c 100%);
+  --key-black-grad:   linear-gradient(180deg, #0e0e0e 0%, #050505 85%, #020202 100%);
+  --key-black-active: linear-gradient(180deg, #020202 0%, #0c0c0c 100%);
+
+  --wheel-bg:         #050505;
+  --wheel-border:     #1e1e1e;
+  --wheel-thumb:      linear-gradient(to right, #484840 0%, #c9a84c 50%, #484840 100%);
+
+  --tab-bar-bg:       #080808;
+  --tab-bar-border:   #1e1e1e;
+  --tab-active-bg:    rgba(201, 168, 76, 0.15);
+  --tab-active-border:#c9a84c;
+  --tab-active-text:  #c9a84c;
+  --tab-active-glow:  rgba(201, 168, 76, 0.3);
+  --tab-inactive-text:#505040;
+
+  --body-bg:          #030303;
+  --body-text:        #f0ece0;
+  --scrollbar-track:  #080808;
+  --scrollbar-thumb:  #202018;
+  --scrollbar-hover:  #302e20;
+  --badge-bg:         #0e0e0e;
+  --badge-border:     #2a2a1e;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CYBERPUNK CRT — Neon Magenta + Cyan on void black, scanlines
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="cyberpunk-crt"] {
+  --chassis-bg:       #020308;
+  --chassis-gradient: radial-gradient(circle at 50% 0%, #0a0614 0%, #020308 100%);
+  --panel-bg:         #060812;
+  --panel-bg-alt:     #030408;
+  --panel-gradient:   linear-gradient(180deg, #080a16 0%, #040610 100%);
+  --panel-border:     #2a0a3e;
+  --panel-inset-hi:   rgba(255, 0, 204, 0.06);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.98);
+  --panel-shadow:     rgba(255, 0, 204, 0.15);
+
+  --oled-bg:          #02000a;
+  --oled-bg-grad:     radial-gradient(circle at 50% 30%, #0a0020 0%, #020008 100%);
+  --oled-border:      #4a0060;
+  --oled-glow:        rgba(255, 0, 204, 0.18);
+  --oled-text:        #ff00cc;
+  --oled-scanline:    rgba(0, 0, 0, 0.4);
+
+  --knob-track:       #1a0028;
+  --knob-ribbed:      repeating-conic-gradient(#200030 0 6deg, #0c0016 6deg 12deg);
+  --knob-face-grad:   radial-gradient(circle at 35% 35%, #200034 0%, #080010 100%);
+  --knob-face-border: #0c0018;
+  --knob-hi:          rgba(255, 0, 204, 0.2);
+  --knob-lo:          rgba(0, 0, 0, 0.98);
+
+  --screw-grad:       linear-gradient(135deg, #cc00aa 0%, #1a001e 100%);
+  --screw-border:     #0a0012;
+  --screw-line:       #160020;
+
+  --accent-cyan:      #00ffee;
+  --accent-amber:     #ff00cc;
+  --accent-emerald:   #00ff88;
+  --accent-red:       #ff2244;
+
+  --text-primary:     #e0d0f0;
+  --text-secondary:   #805888;
+  --text-muted:       #3a1850;
+  --text-label:       #b080c0;
+
+  --btn-inactive-bg:     #08000e;
+  --btn-inactive-border: #2a0038;
+  --btn-inactive-text:   #6030a0;
+  --btn-hover-bg:        #100018;
+  --section-bg:          #04000a;
+  --section-border:      #200030;
+  --osc-bg:              #060010;
+  --osc-border:          #1a0030;
+  --waveform-bg:         #020008;
+  --waveform-border:     #140020;
+
+  --key-white-grad:   linear-gradient(180deg, #e0d0f0 0%, #c0a8d8 85%, #a090c0 100%);
+  --key-white-active: linear-gradient(180deg, #a090c0 0%, #8060a8 100%);
+  --key-black-grad:   linear-gradient(180deg, #0e0018 0%, #060010 85%, #020008 100%);
+  --key-black-active: linear-gradient(180deg, #020008 0%, #0a0018 100%);
+
+  --wheel-bg:         #040008;
+  --wheel-border:     #200030;
+  --wheel-thumb:      linear-gradient(to right, #6000a0 0%, #ff00cc 50%, #6000a0 100%);
+
+  --tab-bar-bg:       #040008;
+  --tab-bar-border:   #200030;
+  --tab-active-bg:    rgba(255, 0, 204, 0.15);
+  --tab-active-border:#ff00cc;
+  --tab-active-text:  #ff00cc;
+  --tab-active-glow:  rgba(255, 0, 204, 0.35);
+  --tab-inactive-text:#5030a0;
+
+  --body-bg:          #020308;
+  --body-text:        #e0d0f0;
+  --scrollbar-track:  #040008;
+  --scrollbar-thumb:  #1a0028;
+  --scrollbar-hover:  #2a0040;
+  --badge-bg:         #060010;
+  --badge-border:     #2a0040;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   BASE LAYER
+   ══════════════════════════════════════════════════════════════════════ */
 @layer base {
-  :root {
-    --chassis-bg: #121418;
-    --panel-bg: #1a1d24;
-    --panel-border: #2c3240;
-    --oled-bg: #070e14;
-    --oled-border: #1a2838;
-    --cyan-glow: #00e5ff;
-    --amber-glow: #ffaa00;
-    --emerald-glow: #00ff66;
-    --red-glow: #ff3344;
-    /* Minimum touch target size per Apple HIG / Material Design */
-    --touch-min: 44px;
-  }
-
   html, body {
     height: 100%;
     height: 100dvh;
@@ -25,9 +355,10 @@
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
-    background-color: #080a0e;
-    color: #e2e8f0;
+    background-color: var(--body-bg);
+    color: var(--body-text);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    transition: var(--theme-transition);
   }
 
   /* On mobile the main tab panel container scrolls vertically */
@@ -40,7 +371,6 @@
   /*
    * Mobile section panels — each tab gets an absolutely-positioned full-height
    * container that scrolls independently. Only the active one is shown.
-   * This prevents content height from one section affecting another's layout.
    */
   .mobile-section-panel {
     position: absolute;
@@ -50,7 +380,6 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
     padding: 0.375rem;
-    /* Smooth cross-section transition */
     transition: opacity 0.12s ease;
   }
   .mobile-section-active {
@@ -65,59 +394,56 @@
   }
 }
 
-/* Custom Scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #11141a;
-}
-::-webkit-scrollbar-thumb {
-  background: #2a3140;
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3e485e;
-}
+/* ══════════════════════════════════════════════════════════════════════
+   SCROLLBARS
+   ══════════════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track  { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
-/* Monospaced Display Typography */
-.font-mono-lcd {
-  font-family: 'Share Tech Mono', 'JetBrains Mono', monospace;
-}
-.font-brand {
-  font-family: 'Orbitron', sans-serif;
-}
+/* ══════════════════════════════════════════════════════════════════════
+   TYPOGRAPHY
+   ══════════════════════════════════════════════════════════════════════ */
+.font-mono-lcd { font-family: 'Share Tech Mono', 'JetBrains Mono', monospace; }
+.font-brand    { font-family: 'Orbitron', sans-serif; }
 
-/* Skeuomorphic Panel Frame */
+/* ══════════════════════════════════════════════════════════════════════
+   CHASSIS & PANELS
+   ══════════════════════════════════════════════════════════════════════ */
 .synth-chassis {
-  background: radial-gradient(circle at 50% 0%, #1e232d 0%, #0d0f14 100%);
+  background: var(--chassis-gradient);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 50px rgba(0, 0, 0, 0.9);
+  transition: var(--theme-transition);
 }
 
 .synth-panel {
-  background: linear-gradient(180deg, #1d212a 0%, #161920 100%);
-  border: 1px solid #2e3545;
-  box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.07),
-    inset 0 -1px 3px rgba(0, 0, 0, 0.8),
-    0 4px 20px rgba(0, 0, 0, 0.5);
+  background: var(--panel-gradient);
+  border: 1px solid var(--panel-border);
+  box-shadow:
+    inset 0 1px 1px var(--panel-inset-hi),
+    inset 0 -1px 3px var(--panel-inset-lo),
+    0 4px 20px var(--panel-shadow);
   position: relative;
+  transition: var(--theme-transition);
 }
 
 .panel-bevel {
   box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), inset 0 -1px 1px rgba(255,255,255,0.05);
 }
 
-/* OLED Screen Glass */
+/* ══════════════════════════════════════════════════════════════════════
+   OLED SCREEN
+   ══════════════════════════════════════════════════════════════════════ */
 .oled-screen {
-  background: radial-gradient(circle at 50% 30%, #0d1a24 0%, #04090e 100%);
-  border: 1px solid #1c2b3a;
-  box-shadow: 
+  background: var(--oled-bg-grad);
+  border: 1px solid var(--oled-border);
+  box-shadow:
     inset 0 2px 8px rgba(0, 0, 0, 0.9),
-    0 0 12px rgba(0, 229, 255, 0.08);
+    0 0 12px var(--oled-glow);
   position: relative;
   overflow: hidden;
+  transition: var(--theme-transition);
 }
 
 .oled-screen::after {
@@ -125,95 +451,118 @@
   display: block;
   position: absolute;
   top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, var(--oled-scanline) 50%);
   background-size: 100% 4px;
   pointer-events: none;
   opacity: 0.6;
 }
 
-/* Hex Screw Details */
+/* ══════════════════════════════════════════════════════════════════════
+   HEX SCREWS
+   ══════════════════════════════════════════════════════════════════════ */
 .synth-screw {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #717888 0%, #222630 100%);
-  border: 1px solid #14171f;
+  background: var(--screw-grad);
+  border: 1px solid var(--screw-border);
   box-shadow: 1px 1px 2px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.5);
   position: relative;
+  transition: var(--theme-transition);
 }
 .synth-screw::after {
   content: "";
   position: absolute;
   top: 50%; left: 15%; right: 15%;
   height: 1px;
-  background: #151820;
+  background: var(--screw-line);
   transform: translateY(-50%) rotate(45deg);
   box-shadow: 0 1px 0 rgba(255,255,255,0.2);
 }
 
-/* Active LED Glow Effects */
-.led-glow-cyan {
-  box-shadow: 0 0 10px rgba(0, 229, 255, 0.7), 0 0 20px rgba(0, 229, 255, 0.3);
+/* ══════════════════════════════════════════════════════════════════════
+   LED GLOW EFFECTS
+   ══════════════════════════════════════════════════════════════════════ */
+.led-glow-cyan    { box-shadow: 0 0 10px rgba(0, 229, 255, 0.7),   0 0 20px rgba(0, 229, 255, 0.3); }
+.led-glow-amber   { box-shadow: 0 0 10px rgba(255, 170, 0, 0.7),   0 0 20px rgba(255, 170, 0, 0.3); }
+.led-glow-emerald { box-shadow: 0 0 10px rgba(0, 255, 102, 0.7),   0 0 20px rgba(0, 255, 102, 0.3); }
+.led-glow-red     { box-shadow: 0 0 10px rgba(255, 51, 68, 0.7),   0 0 20px rgba(255, 51, 68, 0.3); }
+
+/* ══════════════════════════════════════════════════════════════════════
+   CYBERPUNK CRT — PANEL BORDER PULSE + SCANLINE OVERLAY
+   ══════════════════════════════════════════════════════════════════════ */
+@keyframes crt-border-pulse {
+  0%, 100% { box-shadow: inset 0 1px 1px rgba(255, 0, 204, 0.06), inset 0 -1px 3px rgba(0,0,0,0.98), 0 4px 20px rgba(255, 0, 204, 0.12); }
+  50%       { box-shadow: inset 0 1px 1px rgba(255, 0, 204, 0.12), inset 0 -1px 3px rgba(0,0,0,0.98), 0 4px 28px rgba(255, 0, 204, 0.22); }
 }
-.led-glow-amber {
-  box-shadow: 0 0 10px rgba(255, 170, 0, 0.7), 0 0 20px rgba(255, 170, 0, 0.3);
-}
-.led-glow-emerald {
-  box-shadow: 0 0 10px rgba(0, 255, 102, 0.7), 0 0 20px rgba(0, 255, 102, 0.3);
-}
-.led-glow-red {
-  box-shadow: 0 0 10px rgba(255, 51, 68, 0.7), 0 0 20px rgba(255, 51, 68, 0.3);
+[data-theme="cyberpunk-crt"] .synth-panel {
+  animation: crt-border-pulse 3s ease-in-out infinite;
 }
 
-/* Touch Action Lock Utility */
+/* Global CRT scanline overlay on full chassis for cyberpunk */
+@keyframes crt-flicker {
+  0%   { opacity: 0.97; }
+  50%  { opacity: 1; }
+  100% { opacity: 0.97; }
+}
+[data-theme="cyberpunk-crt"] .synth-chassis {
+  animation: crt-flicker 8s ease-in-out infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TOUCH UTILITIES
+   ══════════════════════════════════════════════════════════════════════ */
 .touch-lock {
   touch-action: none !important;
   user-select: none !important;
   -webkit-user-select: none !important;
 }
 
-/* Piano Keybed Styling */
+/* ══════════════════════════════════════════════════════════════════════
+   PIANO KEYBED
+   ══════════════════════════════════════════════════════════════════════ */
 .key-white {
-  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 85%, #cbd5e1 100%);
+  background: var(--key-white-grad);
   box-shadow: 0 4px 6px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(0,0,0,0.1);
 }
 .key-white.active {
-  background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
+  background: var(--key-white-active);
   transform: translateY(3px);
   box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .key-black {
-  background: linear-gradient(180deg, #222733 0%, #11141c 85%, #090b0f 100%);
+  background: var(--key-black-grad);
   box-shadow: 2px 4px 8px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.2);
 }
 .key-black.active {
-  background: linear-gradient(180deg, #090b0f 0%, #1a202c 100%);
+  background: var(--key-black-active);
   transform: translateY(2px);
   box-shadow: 1px 2px 4px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* ─── Mobile Touch Utilities ───────────────────────────────────────── */
-
-/* Horizontal wheel slider for mobile pitch/mod */
+/* ══════════════════════════════════════════════════════════════════════
+   WHEEL SLIDERS (mobile pitch / mod)
+   ══════════════════════════════════════════════════════════════════════ */
 .wheel-slider-h {
   -webkit-appearance: none;
   appearance: none;
   width: 100%;
   height: 28px;
-  background: #090b0f;
-  border: 1px solid #252d3d;
+  background: var(--wheel-bg);
+  border: 1px solid var(--wheel-border);
   border-radius: 4px;
   outline: none;
   cursor: pointer;
   touch-action: none;
+  transition: var(--theme-transition);
 }
 .wheel-slider-h::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 28px;
   height: 24px;
   border-radius: 3px;
-  background: linear-gradient(to right, #888 0%, #fff 50%, #888 100%);
+  background: var(--wheel-thumb);
   border: 1px solid rgba(0,0,0,0.7);
   box-shadow: 0 0 4px rgba(255,255,255,0.5);
   cursor: ns-resize;
@@ -222,14 +571,27 @@
   background: linear-gradient(to right, #00b8d4 0%, #00e5ff 50%, #00b8d4 100%);
   box-shadow: 0 0 6px #00e5ff;
 }
-
-/* Ensure all interactive elements meet 44px minimum touch target */
-.touch-target {
-  min-height: var(--touch-min);
-  min-width: var(--touch-min);
+[data-theme="vintage-japanese"] .wheel-slider-h.mod::-webkit-slider-thumb {
+  background: linear-gradient(to right, #1040a0 0%, #1a5fe8 50%, #1040a0 100%);
+  box-shadow: 0 0 6px #1a5fe8;
+}
+[data-theme="german-industrial"] .wheel-slider-h.mod::-webkit-slider-thumb {
+  background: linear-gradient(to right, #907030 0%, #c9a84c 50%, #907030 100%);
+  box-shadow: 0 0 6px #c9a84c;
+}
+[data-theme="cyberpunk-crt"] .wheel-slider-h.mod::-webkit-slider-thumb {
+  background: linear-gradient(to right, #8000aa 0%, #ff00cc 50%, #8000aa 100%);
+  box-shadow: 0 0 8px #ff00cc;
 }
 
-/* Mobile tab button base — clear, bold, finger-safe */
+/* ══════════════════════════════════════════════════════════════════════
+   TOUCH TARGETS
+   ══════════════════════════════════════════════════════════════════════ */
+.touch-target { min-height: 44px; min-width: 44px; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   MOBILE TAB BAR
+   ══════════════════════════════════════════════════════════════════════ */
 .mobile-tab-btn {
   display: flex;
   flex-direction: column;
@@ -249,17 +611,37 @@
   -webkit-user-select: none;
 }
 .mobile-tab-btn.active {
-  background: rgba(0, 229, 255, 0.15);
-  border-color: #00e5ff;
-  color: #00e5ff;
-  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3), inset 0 0 8px rgba(0, 229, 255, 0.05);
+  background: var(--tab-active-bg);
+  border-color: var(--tab-active-border);
+  color: var(--tab-active-text);
+  box-shadow: 0 0 8px var(--tab-active-glow), inset 0 0 8px rgba(0, 0, 0, 0.05);
 }
 .mobile-tab-btn:not(.active) {
-  color: #6b7280;
+  color: var(--tab-inactive-text);
   background: transparent;
 }
 .mobile-tab-btn:not(.active):active {
   background: rgba(255,255,255,0.05);
-  color: #9ca3af;
+  color: var(--text-label);
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   THEME SWITCHER CHIP BUTTON
+   ══════════════════════════════════════════════════════════════════════ */
+.theme-chip {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+  flex-shrink: 0;
+}
+.theme-chip.active {
+  transform: scale(1.2);
+}
+.theme-chip:hover:not(.active) {
+  transform: scale(1.1);
+  opacity: 0.9;
+}

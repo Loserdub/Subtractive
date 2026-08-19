@@ -36,13 +36,13 @@ export const Knob: React.FC<KnobProps> = ({
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  // Color theme definitions
+  // Color theme definitions — accent colors stay per-prop, cap material uses CSS vars
   const colorMap = {
-    cyan: { stroke: '#00e5ff', glow: 'rgba(0, 229, 255, 0.6)', text: 'text-[#00e5ff]' },
-    amber: { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.6)', text: 'text-[#ffaa00]' },
-    emerald: { stroke: '#00ff66', glow: 'rgba(0, 255, 102, 0.6)', text: 'text-[#00ff66]' },
-    red: { stroke: '#ff3344', glow: 'rgba(255, 51, 68, 0.6)', text: 'text-[#ff3344]' },
-    white: { stroke: '#e2e8f0', glow: 'rgba(226, 232, 240, 0.6)', text: 'text-gray-200' },
+    cyan:    { stroke: '#00e5ff', glow: 'rgba(0, 229, 255, 0.6)',   text: 'text-[#00e5ff]' },
+    amber:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.6)',   text: 'text-[#ffaa00]' },
+    emerald: { stroke: '#00ff66', glow: 'rgba(0, 255, 102, 0.6)',   text: 'text-[#00ff66]' },
+    red:     { stroke: '#ff3344', glow: 'rgba(255, 51, 68, 0.6)',   text: 'text-[#ff3344]' },
+    white:   { stroke: '#e2e8f0', glow: 'rgba(226, 232, 240, 0.6)', text: 'text-gray-200' },
   };
 
   const activeTheme = colorMap[color] || colorMap.cyan;
@@ -166,16 +166,16 @@ export const Knob: React.FC<KnobProps> = ({
       >
         {/* Outer Ring & Arc SVG */}
         <svg 
-          className="absolute inset-0 w-full h-full pointer-events-none transform -rotate-225"
+          className="absolute inset-0 w-full h-full pointer-events-none"
           style={{ transform: 'rotate(135deg)' }}
         >
-          {/* Track Arc Background */}
+          {/* Track Arc Background — uses CSS var for theme-aware color */}
           <circle
             cx={center}
             cy={center}
             r={radius}
             fill="none"
-            stroke="#1c222e"
+            stroke="var(--knob-track)"
             strokeWidth={strokeWidth}
             strokeDasharray={`${arcLength} ${circumference}`}
             strokeLinecap="round"
@@ -198,21 +198,23 @@ export const Knob: React.FC<KnobProps> = ({
           />
         </svg>
 
-        {/* Outer Ribbed Metal Cap */}
+        {/* Outer Ribbed Cap — uses CSS var */}
         <div 
-          className="absolute rounded-full border border-[#0d1017] shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
+          className="absolute rounded-full border border-black/30 shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
           style={{ 
             inset: '6px',
-            background: 'repeating-conic-gradient(#2c3344 0 6deg, #181d28 6deg 12deg)' 
+            background: 'var(--knob-ribbed)'
           }}
         />
 
-        {/* Inner Anodized Metal Knob Face */}
+        {/* Inner Anodized Metal Knob Face — uses CSS vars */}
         <div 
-          className="absolute rounded-full border border-[#161a24] shadow-[inset_0_1px_2px_rgba(255,255,255,0.15),inset_0_-2px_4px_rgba(0,0,0,0.8)]"
+          className="absolute rounded-full"
           style={{ 
             inset: '18%',
-            background: 'radial-gradient(circle at 35% 35%, #3c4456 0%, #151821 100%)' 
+            background: 'var(--knob-face-grad)',
+            border: `1px solid var(--knob-face-border)`,
+            boxShadow: `inset 0 1px 2px var(--knob-hi), inset 0 -2px 4px var(--knob-lo)`
           }}
         />
 
@@ -224,7 +226,7 @@ export const Knob: React.FC<KnobProps> = ({
             transition: isDragging ? 'none' : 'transform 0.05s ease-out'
           }}
         >
-          {/* White / Glowing Pointer Line */}
+          {/* Glowing Pointer Line */}
           <div 
             className="absolute top-[18%] left-1/2 -translate-x-1/2 rounded-full"
             style={{ 
@@ -238,16 +240,23 @@ export const Knob: React.FC<KnobProps> = ({
 
         {/* OLED Value Readout Tooltip on Hover / Drag */}
         <div 
-          className={`absolute -top-7 left-1/2 -translate-x-1/2 bg-[#080d14] px-2 py-0.5 rounded-sm border border-[#1e2d3e] text-[9px] font-mono-lcd ${activeTheme.text} shadow-[0_4px_10px_rgba(0,0,0,0.9)] pointer-events-none z-50 whitespace-nowrap transition-opacity duration-150 ${
+          className={`absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm text-[9px] font-mono-lcd shadow-[0_4px_10px_rgba(0,0,0,0.9)] pointer-events-none z-50 whitespace-nowrap transition-opacity duration-150 ${activeTheme.text} ${
             isDragging || isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
+          style={{
+            background: 'var(--oled-bg)',
+            border: '1px solid var(--oled-border)',
+          }}
         >
           {formatValue(value)}
         </div>
       </div>
 
       {/* Label Underneath */}
-      <span className="mt-1.5 text-[8px] md:text-[9px] font-bold text-gray-400 tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5">
+      <span 
+        className="mt-1.5 text-[8px] md:text-[9px] font-bold tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
+        style={{ color: 'var(--text-label)' }}
+      >
         {label}
       </span>
     </div>

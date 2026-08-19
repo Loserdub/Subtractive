@@ -16,10 +16,10 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   size = 'md'
 }) => {
   const ledColors = {
-    cyan: checked ? 'bg-[#00e5ff] shadow-[0_0_10px_#00e5ff]' : 'bg-[#003344]',
-    amber: checked ? 'bg-[#ffaa00] shadow-[0_0_10px_#ffaa00]' : 'bg-[#442200]',
+    cyan:    checked ? 'bg-[#00e5ff] shadow-[0_0_10px_#00e5ff]' : 'bg-[#003344]',
+    amber:   checked ? 'bg-[#ffaa00] shadow-[0_0_10px_#ffaa00]' : 'bg-[#442200]',
     emerald: checked ? 'bg-[#00ff66] shadow-[0_0_10px_#00ff66]' : 'bg-[#003311]',
-    red: checked ? 'bg-[#ff3344] shadow-[0_0_10px_#ff3344]' : 'bg-[#440011]',
+    red:     checked ? 'bg-[#ff3344] shadow-[0_0_10px_#ff3344]' : 'bg-[#440011]',
   };
 
   return (
@@ -30,7 +30,11 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         <button
           type="button"
           onClick={() => onChange(!checked)}
-          className="relative w-10 h-5 bg-[#0f1218] rounded-full border border-[#2a3142] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] focus:outline-none transition-colors"
+          className="relative w-10 h-5 rounded-full border shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] focus:outline-none transition-colors"
+          style={{
+            background: 'var(--panel-bg-alt)',
+            borderColor: 'var(--panel-border)',
+          }}
           aria-label={label}
         >
           {/* Metal Toggle Lever */}
@@ -45,7 +49,10 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           </div>
         </button>
       </div>
-      <span className="text-[9px] font-bold text-gray-400 font-mono tracking-widest uppercase text-center leading-none">
+      <span 
+        className="text-[9px] font-bold font-mono tracking-widest uppercase text-center leading-none"
+        style={{ color: 'var(--text-label)' }}
+      >
         {label}
       </span>
     </div>
@@ -72,14 +79,12 @@ export const LEDButton: React.FC<LEDButtonProps> = ({
   className = ''
 }) => {
   const activeStyles = {
-    cyan: 'bg-[#002f3d] border-[#00e5ff] text-[#00e5ff] shadow-[0_0_12px_rgba(0,229,255,0.4)]',
-    amber: 'bg-[#3d2900] border-[#ffaa00] text-[#ffaa00] shadow-[0_0_12px_rgba(255,170,0,0.4)]',
+    cyan:    'bg-[#002f3d] border-[#00e5ff] text-[#00e5ff] shadow-[0_0_12px_rgba(0,229,255,0.4)]',
+    amber:   'bg-[#3d2900] border-[#ffaa00] text-[#ffaa00] shadow-[0_0_12px_rgba(255,170,0,0.4)]',
     emerald: 'bg-[#003d19] border-[#00ff66] text-[#00ff66] shadow-[0_0_12px_rgba(0,255,102,0.4)]',
-    red: 'bg-[#3d000a] border-[#ff3344] text-[#ff3344] shadow-[0_0_12px_rgba(255,51,68,0.4)]',
-    white: 'bg-[#334155] border-white text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]',
+    red:     'bg-[#3d000a] border-[#ff3344] text-[#ff3344] shadow-[0_0_12px_rgba(255,51,68,0.4)]',
+    white:   'bg-[#334155] border-white text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]',
   };
-
-  const inactiveStyles = 'bg-[#141822] border-[#2a3142] text-gray-400 hover:text-gray-200 hover:bg-[#1c2230] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_2px_4px_rgba(0,0,0,0.4)]';
 
   const sizeClasses = {
     sm: 'px-2 py-1 text-[9px] gap-1',
@@ -92,8 +97,14 @@ export const LEDButton: React.FC<LEDButtonProps> = ({
       type="button"
       onClick={onClick}
       className={`relative font-mono font-bold uppercase tracking-wider rounded-sm border transition-all duration-150 flex items-center justify-center active:scale-95 touch-lock select-none ${sizeClasses[size]} ${
-        active ? activeStyles[color] : inactiveStyles
+        active ? activeStyles[color] : ''
       } ${className}`}
+      style={!active ? {
+        background: 'var(--btn-inactive-bg)',
+        borderColor: 'var(--btn-inactive-border)',
+        color: 'var(--btn-inactive-text)',
+        boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.4)',
+      } : undefined}
     >
       {/* Top Edge Highlight */}
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/10 rounded-t-sm pointer-events-none" />
