@@ -30,7 +30,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
   };
 
   return (
-    <div className="synth-panel rounded-sm p-3 pt-6 md:p-4 md:pt-7 flex flex-col items-center select-none touch-lock w-full h-full">
+    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center select-none touch-lock w-full h-full overflow-hidden">
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
@@ -42,47 +42,48 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
         <span className="font-mono text-[10px] md:text-xs font-bold text-gray-200 tracking-[0.15em] uppercase truncate">ARPEGGIATOR</span>
       </div>
 
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 w-full h-full pt-1">
+      <div className="flex flex-wrap items-center justify-around gap-2 w-full h-full pt-0.5">
         
         {/* Enable Button */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Status</span>
+        <div className="flex flex-col items-center gap-0.5 min-w-0">
+          <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase tracking-wider">Status</span>
           <LEDButton
             label={arp.enabled ? "ARP ON" : "ARP OFF"}
             active={arp.enabled}
             onClick={toggleEnabled}
             color="cyan"
-            size="md"
+            size="sm"
+            className="px-2.5 py-1"
           />
         </div>
 
         {/* Pattern Mode */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Mode</span>
-          <div className="flex items-center gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
+        <div className="flex flex-col items-center gap-0.5 min-w-0">
+          <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase tracking-wider">Mode</span>
+          <div className="flex items-center gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
             {(['up', 'down', 'updown', 'random'] as ArpMode[]).map((mode) => (
               <LEDButton
                 key={mode}
-                label={mode === 'updown' ? 'U&D' : mode.toUpperCase()}
+                label={mode === 'updown' ? 'U&D' : mode === 'random' ? 'RND' : mode.toUpperCase()}
                 active={arp.mode === mode}
                 onClick={() => setMode(mode)}
                 color="cyan"
                 size="sm"
-                className="text-[8px]"
+                className="text-[7px] md:text-[8px] px-1.5 py-0.5"
               />
             ))}
           </div>
         </div>
 
         {/* Octave Range */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Octaves</span>
-          <div className="flex items-center gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
+        <div className="flex flex-col items-center gap-0.5 min-w-0">
+          <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase tracking-wider">Octaves</span>
+          <div className="flex items-center gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
             {[1, 2, 3].map((oct) => (
               <button
                 key={oct}
                 onClick={() => setOctaves(oct)}
-                className={`w-6 h-6 rounded-sm text-[10px] font-mono font-bold transition-all ${
+                className={`w-5 h-5 rounded-sm text-[9px] font-mono font-bold transition-all ${
                   arp.octaves === oct
                     ? 'bg-[#00e5ff] text-black shadow-[0_0_6px_#00e5ff]'
                     : 'bg-[#141a26] text-gray-400 hover:text-white'
@@ -95,14 +96,14 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
         </div>
 
         {/* Rate Division */}
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Rate</span>
-          <div className="flex items-center gap-1 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
+        <div className="flex flex-col items-center gap-0.5 min-w-0">
+          <span className="text-[7px] md:text-[8px] font-mono text-gray-400 uppercase tracking-wider">Rate</span>
+          <div className="flex items-center gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
             {['1/16', '1/8', '1/4'].map((div) => (
               <button
                 key={div}
                 onClick={() => setDivision(div)}
-                className={`px-1.5 h-6 rounded-sm text-[9px] font-mono font-bold transition-all ${
+                className={`px-1 h-5 rounded-sm text-[8px] font-mono font-bold transition-all ${
                   arp.division === div
                     ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]'
                     : 'bg-[#141a26] text-gray-400 hover:text-white'
@@ -115,16 +116,18 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({ arp, onChang
         </div>
 
         {/* Gate Control */}
-        <Knob
-          label="Gate"
-          value={arp.gate}
-          min={0.1}
-          max={1.0}
-          size={40}
-          onChange={(v) => onChange({ ...arp, gate: v })}
-          unit="%"
-          color="emerald"
-        />
+        <div className="flex flex-col items-center justify-center">
+          <Knob
+            label="Gate"
+            value={arp.gate}
+            min={0.1}
+            max={1.0}
+            size={34}
+            onChange={(v) => onChange({ ...arp, gate: v })}
+            unit="%"
+            color="emerald"
+          />
+        </div>
 
       </div>
     </div>

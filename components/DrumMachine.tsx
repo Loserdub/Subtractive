@@ -53,7 +53,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
   const currentTheme = TRACK_THEMES[selectedTrack];
 
   return (
-    <div className="synth-panel rounded-sm p-3 pt-6 md:p-4 md:pt-7 flex flex-col items-center w-full select-none overflow-hidden">
+    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center w-full select-none overflow-hidden h-full">
       <Screw className="top-2 left-2" />
       <Screw className="top-2 right-2" />
       <Screw className="bottom-2 left-2" />
@@ -66,30 +66,30 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
       </div>
 
       {/* Control Bar: Play/Stop, BPM, Track Select, Swing, Bank Select */}
-      <div className="w-full flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3 px-1 py-1">
+      <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-2.5 px-0.5 py-0.5">
         
-        {/* Play & Tempo & Swing */}
-        <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+        {/* Play & Tempo & Swing & Bank */}
+        <div className="flex items-center justify-around sm:justify-start flex-wrap gap-2 w-full lg:w-auto">
           <LEDButton
             label={isPlaying ? 'STOP' : 'PLAY'}
             active={isPlaying}
             onClick={onPlayToggle}
             color={isPlaying ? 'emerald' : 'cyan'}
             size="md"
-            className="px-3 py-1.5 text-xs"
+            className="px-2.5 py-1 text-xs shrink-0"
           />
-          <Knob label="Tempo" value={bpm} min={60} max={180} size={36} onChange={onBpmChange} unit="BPM" color="amber" />
-          <Knob label="Swing" value={swing} min={0} max={100} size={36} onChange={onSwingChange} unit="%" color="emerald" />
+          <Knob label="Tempo" value={bpm} min={60} max={180} size={34} onChange={onBpmChange} unit="BPM" color="amber" />
+          <Knob label="Swing" value={swing} min={0} max={100} size={34} onChange={onSwingChange} unit="%" color="emerald" />
 
           {/* Pattern Bank Selectors */}
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-[7px] text-gray-400 uppercase font-mono tracking-widest">Bank</span>
+          <div className="flex flex-col items-center gap-0.5 shrink-0">
+            <span className="text-[7px] text-gray-400 uppercase font-mono tracking-wider">Bank</span>
             <div className="flex gap-0.5 bg-[#0a0d14] p-0.5 rounded-sm border border-[#1e2636]">
               {[0, 1, 2, 3].map((bankIndex) => (
                 <button
                   key={bankIndex}
                   onClick={() => onBankSelect(bankIndex)}
-                  className={`w-6 h-5 rounded-sm font-mono font-bold text-[10px] transition-all ${
+                  className={`w-5 h-5 rounded-sm font-mono font-bold text-[9px] transition-all ${
                     currentBank === bankIndex
                       ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
                       : 'bg-[#181e2b] text-gray-400 hover:text-white border border-[#2b3548]'
@@ -103,8 +103,8 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
         </div>
 
         {/* Track Selection & Per-Track Controls */}
-        <div className="flex flex-wrap items-center justify-center gap-2 w-full sm:w-auto">
-          <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-center gap-2 w-full lg:w-auto">
+          <div className="flex items-center gap-1 shrink-0">
             {DRUM_TRACKS.map((track) => {
               const isActive = track === selectedTrack;
               const theme = TRACK_THEMES[track];
@@ -122,13 +122,13 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
             })}
           </div>
 
-          <div className="flex items-center gap-1.5 border-l border-[#202738] pl-2">
+          <div className="flex items-center gap-1 border-l border-[#202738] pl-1.5 shrink-0">
             <Knob
               label="Vol"
               value={trackSettings.volume}
               min={0}
               max={1}
-              size={32}
+              size={30}
               onChange={(v) => onTrackSettingsChange(selectedTrack, { volume: v })}
               unit="%"
               color="cyan"
@@ -138,7 +138,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
               value={trackSettings.pan}
               min={-1}
               max={1}
-              size={32}
+              size={30}
               onChange={(v) => onTrackSettingsChange(selectedTrack, { pan: v })}
               color="emerald"
             />
@@ -147,7 +147,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
               value={trackSettings.decay}
               min={0.2}
               max={3.0}
-              size={32}
+              size={30}
               onChange={(v) => onTrackSettingsChange(selectedTrack, { decay: v })}
               color="amber"
             />
@@ -156,7 +156,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
               value={trackSettings.pitch}
               min={-12}
               max={12}
-              size={32}
+              size={30}
               onChange={(v) => onTrackSettingsChange(selectedTrack, { pitch: v })}
               unit="st"
               color="red"

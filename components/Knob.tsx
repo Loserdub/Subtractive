@@ -150,14 +150,14 @@ export const Knob: React.FC<KnobProps> = ({
 
   return (
     <div 
-      className="flex flex-col items-center select-none group touch-lock" 
-      style={{ width: size + 16 }}
+      className="flex flex-col items-center justify-center select-none group touch-lock min-w-0" 
+      style={{ width: size + 12 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div
         ref={knobRef}
-        className="relative flex items-center justify-center rounded-full cursor-ns-resize touch-lock"
+        className="relative flex items-center justify-center rounded-full cursor-ns-resize touch-lock shrink-0"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -238,7 +238,7 @@ export const Knob: React.FC<KnobProps> = ({
 
         {/* OLED Value Readout Tooltip on Hover / Drag */}
         <div 
-          className={`absolute -top-7 left-1/2 -translate-x-1/2 bg-[#080d14] px-2 py-0.5 rounded-sm border border-[#1e2d3e] text-[10px] font-mono-lcd ${activeTheme.text} shadow-[0_4px_10px_rgba(0,0,0,0.9)] pointer-events-none z-50 whitespace-nowrap transition-opacity duration-150 ${
+          className={`absolute -top-7 left-1/2 -translate-x-1/2 bg-[#080d14] px-2 py-0.5 rounded-sm border border-[#1e2d3e] text-[9px] font-mono-lcd ${activeTheme.text} shadow-[0_4px_10px_rgba(0,0,0,0.9)] pointer-events-none z-50 whitespace-nowrap transition-opacity duration-150 ${
             isDragging || isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
         >
@@ -247,7 +247,7 @@ export const Knob: React.FC<KnobProps> = ({
       </div>
 
       {/* Label Underneath */}
-      <span className="mt-2 text-[9px] font-bold text-gray-400 tracking-widest uppercase font-mono text-center leading-none select-none">
+      <span className="mt-1.5 text-[8px] md:text-[9px] font-bold text-gray-400 tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5">
         {label}
       </span>
     </div>
