@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { KEYBOARD_LAYOUT } from '../constants';
 import { LEDButton } from './Switch';
 
@@ -21,7 +21,7 @@ const BASE_KEY_LABELS: Record<number, string> = {
   72: 'Q', 73: '2', 74: 'W', 75: '3', 76: 'E', 77: 'R', 78: '5', 79: 'T', 80: '6', 81: 'Y', 82: '7', 83: 'U', 84: 'I',
 };
 
-export const Keyboard: React.FC<KeyboardProps> = ({
+export const Keyboard: React.FC<KeyboardProps> = React.memo(({
   onNoteOn,
   onNoteOff,
   activeNotes,
@@ -33,14 +33,17 @@ export const Keyboard: React.FC<KeyboardProps> = ({
   const [pitchVal, setPitchVal] = useState(0.5); // 0..1 (0.5 center)
   const [modVal, setModVal] = useState(0); // 0..1
 
-  // Calculate transposed keyboard layout
-  const transposedLayout = KEYBOARD_LAYOUT.map(k => ({
-    ...k,
-    midi: k.midi + octaveOffset * 12
-  }));
-
-  const whiteKeys = transposedLayout.filter(k => k.type === 'white');
-  const blackKeys = transposedLayout.filter(k => k.type === 'black');
+  // Memoize transposed keyboard layout to avoid recalculation on note on/off
+  const { whiteKeys, blackKeys } = useMemo(() => {
+    const transposed = KEYBOARD_LAYOUT.map(k => ({
+      ...k,
+      midi: k.midi + octaveOffset * 12
+    }));
+    return {
+      whiteKeys: transposed.filter(k => k.type === 'white'),
+      blackKeys: transposed.filter(k => k.type === 'black')
+    };
+  }, [octaveOffset]);
 
   // Handle QWERTY Keyboard input
   useEffect(() => {
@@ -348,4 +351,4 @@ export const Keyboard: React.FC<KeyboardProps> = ({
 
     </div>
   );
-};
+});

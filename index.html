@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#080a0e" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>Subtractive — Polyphonic Analog Modelling Synthesizer &amp; Rhythm Sequencer | JRAY</title>
     <meta name="description" content="Free browser-native polyphonic subtractive synthesizer &amp; 16-step rhythm sequencer featuring real-time Web Audio API DSP synthesis, Master FX Rack (Drive, Delay, Reverb), Synth Arpeggiator, Zero-Crossing Oscilloscope, Stereo Peak VU Metering, and Web MIDI support. Built by Justin Ray / Trust Node Logic." />
@@ -390,5 +395,12 @@
   <body class="bg-[#090b0e] text-gray-200 h-full overflow-hidden font-sans antialiased touch-none">
     <div id="root" class="h-full w-full overflow-hidden"></div>
     <script type="module" src="/index.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

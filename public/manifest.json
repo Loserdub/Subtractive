@@ -1,0 +1,20 @@
+{
+  "name": "Subtractive Synthesizer",
+  "short_name": "Subtractive",
+  "description": "Free browser-native polyphonic subtractive synthesizer & 16-step rhythm sequencer.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "landscape-primary",
+  "background_color": "#080a0e",
+  "theme_color": "#080a0e",
+  "categories": ["music", "multimedia", "utilities"],
+  "icons": [
+    {
+      "src": "vite.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -35,6 +35,9 @@ export class AudioEngine {
   private analyserRight: AnalyserNode | null = null;
   private peakLeft = 0;
   private peakRight = 0;
+  private meterBufferL: Uint8Array | null = null;
+  private meterBufferR: Uint8Array | null = null;
+  private reverbCache = new Map<number, AudioBuffer>();
 
   
   // FX Nodes
@@ -83,6 +86,24 @@ export class AudioEngine {
       note.osc3.detune.setTargetAtTime(this.params.osc3.detune + this.pitchBendCents, now, 0.005);
       note.osc4.detune.setTargetAtTime(this.params.osc4.detune + this.pitchBendCents, now, 0.005);
       note.subOsc.detune.setTargetAtTime(this.pitchBendCents, now, 0.005);
+    }
+  }
+
+  public setModulation(normalized: number) {
+    if (!this.audioContext) return;
+    const now = this.audioContext.currentTime;
+    const depth = Math.max(0, Math.min(1, normalized));
+    this.params.lfo.depth = depth;
+    for (const note of this.activeNotes.values()) {
+      if (note.lfoTarget === 'filter') {
+        note.lfoGain.gain.setTargetAtTime(depth * this.params.filterEnvelope.amount, now, 0.008);
+      } else if (note.lfoTarget === 'pitch') {
+        note.lfoGain.gain.setTargetAtTime(depth * 1200, now, 0.008);
+      } else if (note.lfoTarget === 'amp') {
+        note.lfoGain.gain.setTargetAtTime(depth, now, 0.008);
+      } else if (note.lfoTarget === 'pwm') {
+        note.lfoGain.gain.setTargetAtTime(depth * 0.4, now, 0.008);
+      }
     }
   }
 
@@ -230,8 +251,18 @@ export class AudioEngine {
       return { left: 0, right: 0 };
     }
 
-    const dataL = new Uint8Array(this.analyserLeft.frequencyBinCount);
-    const dataR = new Uint8Array(this.analyserRight.frequencyBinCount);
+    const binCountL = this.analyserLeft.frequencyBinCount;
+    const binCountR = this.analyserRight.frequencyBinCount;
+
+    if (!this.meterBufferL || this.meterBufferL.length !== binCountL) {
+      this.meterBufferL = new Uint8Array(binCountL);
+    }
+    if (!this.meterBufferR || this.meterBufferR.length !== binCountR) {
+      this.meterBufferR = new Uint8Array(binCountR);
+    }
+
+    const dataL = this.meterBufferL;
+    const dataR = this.meterBufferR;
 
     this.analyserLeft.getByteTimeDomainData(dataL);
     this.analyserRight.getByteTimeDomainData(dataR);
@@ -280,8 +311,16 @@ export class AudioEngine {
 
   private updateReverbImpulse(decay: number) {
     if (!this.audioContext || !this.convolverNode) return;
+    const clampedDecay = Math.max(0.1, decay);
+    const cacheKey = Math.round(clampedDecay * 10) / 10;
+    
+    if (this.reverbCache.has(cacheKey)) {
+      this.convolverNode.buffer = this.reverbCache.get(cacheKey)!;
+      return;
+    }
+
     const rate = this.audioContext.sampleRate;
-    const length = rate * Math.max(0.1, decay);
+    const length = Math.floor(rate * clampedDecay);
     const impulse = this.audioContext.createBuffer(2, length, rate);
     const left = impulse.getChannelData(0);
     const right = impulse.getChannelData(1);
@@ -291,6 +330,12 @@ export class AudioEngine {
       left[i] = (Math.random() * 2 - 1) * decayFactor;
       right[i] = (Math.random() * 2 - 1) * decayFactor;
     }
+
+    if (this.reverbCache.size > 20) {
+      const firstKey = this.reverbCache.keys().next().value;
+      if (firstKey !== undefined) this.reverbCache.delete(firstKey);
+    }
+    this.reverbCache.set(cacheKey, impulse);
     this.convolverNode.buffer = impulse;
   }
 

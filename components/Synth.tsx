@@ -78,7 +78,6 @@ export const Synth: React.FC = () => {
   const [drumSettings, setDrumSettings] = useState<Record<DrumTrackName, DrumTrackSettings>>(
     JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS))
   );
-  const [currentStep, setCurrentStep] = useState<number | null>(null);
 
   const audioEngine = useRef<AudioEngine | null>(null);
   const drumMachineEngine = useRef<DrumMachineEngine | null>(null);
@@ -96,7 +95,7 @@ export const Synth: React.FC = () => {
     audioEngine.current = engine;
     audioEngine.current.setBpm(bpm);
     
-    drumMachineEngine.current = new DrumMachineEngine(audioContext, (step) => setCurrentStep(step), engine.getMasterGainNode());
+    drumMachineEngine.current = new DrumMachineEngine(audioContext, undefined, engine.getMasterGainNode());
     drumMachineEngine.current.setPattern(drumPattern);
     drumMachineEngine.current.setSwing(swing);
     drumMachineEngine.current.setBpm(bpm);
@@ -245,6 +244,7 @@ export const Synth: React.FC = () => {
   }, []);
 
   const handleModulationChange = useCallback((val: number) => {
+    audioEngine.current?.setModulation(val);
     setParams(p => ({ ...p, lfo: { ...p.lfo, depth: val } }));
   }, []);
 
@@ -756,7 +756,7 @@ export const Synth: React.FC = () => {
               selectedTrack={selectedTrack}
               onTrackSelect={setSelectedTrack}
               onStepToggle={handleStepToggle}
-              currentStep={currentStep}
+              engine={drumMachineEngine.current}
               currentBank={currentBankIndex}
               onBankSelect={setCurrentBankIndex}
               swing={swing}
@@ -928,7 +928,7 @@ export const Synth: React.FC = () => {
                 selectedTrack={selectedTrack}
                 onTrackSelect={setSelectedTrack}
                 onStepToggle={handleStepToggle}
-                currentStep={currentStep}
+                engine={drumMachineEngine.current}
                 currentBank={currentBankIndex}
                 onBankSelect={setCurrentBankIndex}
                 swing={swing}

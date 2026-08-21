@@ -13,7 +13,7 @@ interface KnobProps {
   color?: 'cyan' | 'amber' | 'emerald' | 'red' | 'white';
 }
 
-export const Knob: React.FC<KnobProps> = ({
+export const Knob: React.FC<KnobProps> = React.memo(({
   label,
   value,
   min,
@@ -261,4 +261,4 @@ export const Knob: React.FC<KnobProps> = ({
       </span>
     </div>
   );
-};
+});

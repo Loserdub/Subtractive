@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Knob } from './Knob';
 import { LEDButton } from './Switch';
 import { StepSequencePattern, DrumTrackName, DrumTrackSettings } from '../types';
 import { DRUM_TRACKS } from '../constants';
+import { DrumMachineEngine } from '../services/DrumMachineEngine';
 
 interface DrumMachineProps {
   isPlaying: boolean;
@@ -13,13 +14,14 @@ interface DrumMachineProps {
   selectedTrack: DrumTrackName;
   onTrackSelect: (track: DrumTrackName) => void;
   onStepToggle: (track: DrumTrackName, stepIndex: number) => void;
-  currentStep: number | null;
+  currentStep?: number | null;
   currentBank: number;
   onBankSelect: (bankIndex: number) => void;
   swing: number;
   onSwingChange: (val: number) => void;
   trackSettings: DrumTrackSettings;
   onTrackSettingsChange: (track: DrumTrackName, settings: Partial<DrumTrackSettings>) => void;
+  engine?: DrumMachineEngine | null;
 }
 
 const TRACK_THEMES: Record<DrumTrackName, { color: 'cyan' | 'amber' | 'emerald' | 'red'; activeBg: string; accentBg: string }> = {
@@ -33,7 +35,7 @@ const Screw = ({ className = "" }: { className?: string }) => (
   <div className={`synth-screw absolute ${className}`} />
 );
 
-export const DrumMachine: React.FC<DrumMachineProps> = ({
+export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
   isPlaying,
   onPlayToggle,
   bpm,
@@ -42,15 +44,31 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
   selectedTrack,
   onTrackSelect,
   onStepToggle,
-  currentStep,
+  currentStep: propStep,
   currentBank,
   onBankSelect,
   swing,
   onSwingChange,
   trackSettings,
-  onTrackSettingsChange
+  onTrackSettingsChange,
+  engine
 }) => {
+  const [localStep, setLocalStep] = useState<number | null>(propStep ?? null);
   const currentTheme = TRACK_THEMES[selectedTrack];
+
+  // Subscribe directly to step ticks from DrumMachineEngine to isolate re-renders
+  useEffect(() => {
+    if (engine) {
+      const unsubscribe = engine.subscribeStep((step) => {
+        setLocalStep(step);
+      });
+      return unsubscribe;
+    } else if (propStep !== undefined) {
+      setLocalStep(propStep);
+    }
+  }, [engine, propStep]);
+
+  const activeStep = engine ? localStep : (propStep ?? localStep);
 
   return (
     <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center w-full select-none h-full">
@@ -172,7 +190,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
           {pattern[selectedTrack].map((stepVal, index) => {
             const isNormal = stepVal === 1;
             const isAccent = stepVal === 2;
-            const isPlayingStep = index === currentStep;
+            const isPlayingStep = index === activeStep;
             const stepGroup = Math.floor(index / 4);
             const isDownbeat = index % 4 === 0;
 
@@ -219,4 +237,4 @@ export const DrumMachine: React.FC<DrumMachineProps> = ({
 
     </div>
   );
-};
+});

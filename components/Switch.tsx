@@ -8,7 +8,7 @@ interface ToggleSwitchProps {
   size?: 'sm' | 'md';
 }
 
-export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
+export const ToggleSwitch: React.FC<ToggleSwitchProps> = React.memo(({
   label,
   checked,
   onChange,
@@ -57,7 +57,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
       </span>
     </div>
   );
-};
+});
 
 interface LEDButtonProps {
   label: string;
@@ -69,7 +69,7 @@ interface LEDButtonProps {
   className?: string;
 }
 
-export const LEDButton: React.FC<LEDButtonProps> = ({
+export const LEDButton: React.FC<LEDButtonProps> = React.memo(({
   label,
   active,
   onClick,
@@ -112,4 +112,4 @@ export const LEDButton: React.FC<LEDButtonProps> = ({
       {label && <span>{label}</span>}
     </button>
   );
-};
+});

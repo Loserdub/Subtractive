@@ -1,6 +1,11 @@
 import { StepSequencePattern, DrumTrackName, DrumTrackSettings } from '../types';
 import { DEFAULT_DRUM_TRACK_SETTINGS } from '../constants';
 
+interface TrackChannelStrip {
+  gain: GainNode;
+  panner: StereoPannerNode | null;
+}
+
 export class DrumMachineEngine {
   private audioContext: AudioContext;
   private isPlaying = false;
@@ -12,20 +17,70 @@ export class DrumMachineEngine {
   private scheduleAheadTime = 0.1; // s
   private nextNoteTime = 0.0;
   private onStepChange?: (step: number) => void;
+  private stepListeners = new Set<(step: number | null) => void>();
   
   private swing = 0; // 0 to 100
   private trackSettings: Record<DrumTrackName, DrumTrackSettings> = JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS));
   private outputNode: AudioNode | null = null;
+  private channelStrips: Record<DrumTrackName, TrackChannelStrip> | null = null;
 
   constructor(audioContext: AudioContext, onStepChange?: (step: number) => void, outputNode?: AudioNode | null) {
     this.audioContext = audioContext;
     this.onStepChange = onStepChange;
     this.outputNode = outputNode || null;
+    this.initChannelStrips();
     this.initWorker();
+  }
+
+  public subscribeStep(listener: (step: number | null) => void): () => void {
+    this.stepListeners.add(listener);
+    return () => {
+      this.stepListeners.delete(listener);
+    };
+  }
+
+  private initChannelStrips() {
+    const destination: AudioNode = this.outputNode || this.audioContext.destination;
+    const tracks: DrumTrackName[] = ['kick', 'snare', 'hihat', 'crash'];
+    const strips: Partial<Record<DrumTrackName, TrackChannelStrip>> = {};
+
+    for (const track of tracks) {
+      const settings = this.trackSettings[track];
+      const gainNode = this.audioContext.createGain();
+      gainNode.gain.setValueAtTime(settings.volume, this.audioContext.currentTime);
+
+      let pannerNode: StereoPannerNode | null = null;
+      if (this.audioContext.createStereoPanner) {
+        pannerNode = this.audioContext.createStereoPanner();
+        pannerNode.pan.setValueAtTime(settings.pan, this.audioContext.currentTime);
+        gainNode.connect(pannerNode);
+        pannerNode.connect(destination);
+      } else {
+        gainNode.connect(destination);
+      }
+
+      strips[track] = { gain: gainNode, panner: pannerNode };
+    }
+    this.channelStrips = strips as Record<DrumTrackName, TrackChannelStrip>;
   }
 
   public setOutputNode(node: AudioNode | null) {
     this.outputNode = node;
+    if (this.channelStrips) {
+      const destination: AudioNode = this.outputNode || this.audioContext.destination;
+      for (const track of Object.keys(this.channelStrips) as DrumTrackName[]) {
+        const strip = this.channelStrips[track];
+        try {
+          if (strip.panner) {
+            strip.panner.disconnect();
+            strip.panner.connect(destination);
+          } else {
+            strip.gain.disconnect();
+            strip.gain.connect(destination);
+          }
+        } catch {}
+      }
+    }
   }
 
   private initWorker() {
@@ -60,6 +115,16 @@ export class DrumMachineEngine {
 
   public setTrackSettings(track: DrumTrackName, settings: Partial<DrumTrackSettings>) {
     this.trackSettings[track] = { ...this.trackSettings[track], ...settings };
+    const strip = this.channelStrips?.[track];
+    if (strip) {
+      const now = this.audioContext.currentTime;
+      if (settings.volume !== undefined) {
+        strip.gain.gain.setTargetAtTime(settings.volume, now, 0.005);
+      }
+      if (settings.pan !== undefined && strip.panner) {
+        strip.panner.pan.setTargetAtTime(settings.pan, now, 0.005);
+      }
+    }
   }
 
   public getTrackSettings(track: DrumTrackName): DrumTrackSettings {
@@ -71,23 +136,11 @@ export class DrumMachineEngine {
     return Math.pow(2, semitones / 12);
   }
 
-  private createTrackOutput(track: DrumTrackName, time: number): GainNode {
-    const settings = this.trackSettings[track];
-    const trackGain = this.audioContext.createGain();
-    trackGain.gain.setValueAtTime(settings.volume, time);
-
-    let destinationNode: AudioNode = this.outputNode || this.audioContext.destination;
-    
-    if (this.audioContext.createStereoPanner) {
-      const panner = this.audioContext.createStereoPanner();
-      panner.pan.setValueAtTime(settings.pan, time);
-      trackGain.connect(panner);
-      panner.connect(destinationNode);
-    } else {
-      trackGain.connect(destinationNode);
+  private getTrackInput(track: DrumTrackName): AudioNode {
+    if (!this.channelStrips) {
+      this.initChannelStrips();
     }
-
-    return trackGain;
+    return this.channelStrips![track].gain;
   }
 
   private createKick(time: number, velocityVal: number) {
@@ -96,7 +149,7 @@ export class DrumMachineEngine {
     const isAccent = velocityVal > 1;
     const velGain = isAccent ? 1.0 : 0.7;
 
-    const outputGain = this.createTrackOutput('kick', time);
+    const outputGain = this.getTrackInput('kick');
     const osc = this.audioContext.createOscillator();
     const gain = this.audioContext.createGain();
 
@@ -125,9 +178,9 @@ export class DrumMachineEngine {
     const isAccent = velocityVal > 1;
     const velGain = isAccent ? 1.0 : 0.7;
 
-    const outputGain = this.createTrackOutput('snare', time);
+    const outputGain = this.getTrackInput('snare');
     const noiseDuration = 0.2 * settings.decay;
-    const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * noiseDuration, this.audioContext.sampleRate);
+    const buffer = this.audioContext.createBuffer(1, Math.floor(this.audioContext.sampleRate * noiseDuration), this.audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < data.length; i++) {
       data[i] = Math.random() * 2 - 1;
@@ -171,9 +224,9 @@ export class DrumMachineEngine {
     const isAccent = velocityVal > 1;
     const velGain = isAccent ? 1.0 : 0.7;
 
-    const outputGain = this.createTrackOutput('hihat', time);
+    const outputGain = this.getTrackInput('hihat');
     const duration = 0.1 * settings.decay;
-    const buffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * duration, this.audioContext.sampleRate);
+    const buffer = this.audioContext.createBuffer(1, Math.floor(this.audioContext.sampleRate * duration), this.audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < data.length; i++) {
       data[i] = Math.random() * 2 - 1;
@@ -203,9 +256,9 @@ export class DrumMachineEngine {
     const isAccent = velocityVal > 1;
     const velGain = isAccent ? 1.0 : 0.7;
 
-    const outputGain = this.createTrackOutput('crash', time);
+    const outputGain = this.getTrackInput('crash');
     const duration = 1.5 * settings.decay;
-    const bufferSize = this.audioContext.sampleRate * duration;
+    const bufferSize = Math.floor(this.audioContext.sampleRate * duration);
     const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -250,6 +303,7 @@ export class DrumMachineEngine {
     const swingDelay = isOffbeat ? (swingFactor * (secondsPer16thNote / 2)) : 0;
 
     const playTime = this.nextNoteTime + swingDelay;
+    const stepToNotify = this.currentStep;
 
     const kickVal = this.pattern.kick[this.currentStep];
     const snareVal = this.pattern.snare[this.currentStep];
@@ -261,14 +315,15 @@ export class DrumMachineEngine {
     if (hihatVal > 0) this.createHihat(playTime, hihatVal);
     if (crashVal > 0) this.createCrash(playTime, crashVal);
 
-    if (this.onStepChange) {
-      const timeUntilNote = Math.max(0, playTime - this.audioContext.currentTime);
-      setTimeout(() => {
-        if (this.isPlaying && this.onStepChange) {
-          this.onStepChange(this.currentStep);
+    const timeUntilNote = Math.max(0, playTime - this.audioContext.currentTime);
+    setTimeout(() => {
+      if (this.isPlaying) {
+        this.stepListeners.forEach(fn => fn(stepToNotify));
+        if (this.onStepChange) {
+          this.onStepChange(stepToNotify);
         }
-      }, timeUntilNote * 1000);
-    }
+      }
+    }, timeUntilNote * 1000);
   
     this.nextNoteTime += secondsPer16thNote;
     this.currentStep = (this.currentStep + 1) % 16;
@@ -309,6 +364,7 @@ export class DrumMachineEngine {
     if (this.worker) {
       this.worker.postMessage('stop');
     }
+    this.stepListeners.forEach(fn => fn(null));
     if (this.onStepChange) {
       this.onStepChange(-1); 
     }
