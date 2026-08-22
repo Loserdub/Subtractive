@@ -147,53 +147,72 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           ctx.restore();
         }
       } else {
-        // Fallback Synthetic Waveform Preview
-        const amplitude = height * 0.35 * amplitudeScale;
-        const cycles = 2;
-        const frequency = (Math.PI * 2 * cycles) / width;
+        // Synthetic Waveform Preview — physically accurate shape per waveform type
+        const amplitude = height * 0.35 * Math.max(0.05, amplitudeScale);
+        const cycles = 2.5;
         const path = new Path2D();
+        const phase = phaseRef.current;
 
-        for (let x = 0; x < width; x++) {
-          const t = x * frequency - phaseRef.current;
-          let y = 0;
-          const twoPi = 2 * Math.PI;
-          const normT = ((t % twoPi) + twoPi) % twoPi / twoPi;
-
+        // Helper: map normalized phase [0,1) to waveform sample [-1,1]
+        const sample = (normP: number): number => {
           switch (waveform) {
             case 'sine':
-              y = Math.sin(t);
-              break;
+              return Math.sin(normP * Math.PI * 2);
             case 'square':
-              y = Math.sin(t) >= 0 ? 1 : -1;
-              break;
+              return normP < 0.5 ? 1 : -1;
             case 'sawtooth':
-              y = 1 - 2 * normT;
-              break;
+              return 1 - 2 * normP;
             case 'triangle':
-              y = (2 / Math.PI) * Math.asin(Math.sin(t));
-              break;
+              return normP < 0.5
+                ? 4 * normP - 1
+                : 3 - 4 * normP;
+          }
+        };
+
+        // Draw waveform pixel by pixel, but add hard vertical jumps for
+        // discontinuous waveforms (square, sawtooth) instead of lineTo
+        let prevNormP = -1;
+        for (let px = 0; px <= width; px++) {
+          const t = (px / width) * cycles + phase;
+          const normP = ((t % 1) + 1) % 1;
+
+          // Detect wrap-around (discontinuity) for square and sawtooth
+          const isDiscontinuous = waveform === 'square' || waveform === 'sawtooth';
+          const wrapped = prevNormP > 0 && normP < prevNormP - 0.3;
+          
+          if (isDiscontinuous && wrapped) {
+            // Draw the vertical edge: jump from current position to opposite amplitude
+            // without interpolation, then continue
+            const jumpY = centerY - sample(0) * amplitude;
+            path.lineTo(px, centerY - sample(prevNormP) * amplitude);
+            path.moveTo(px, jumpY);
           }
 
-          const yPos = centerY + y * amplitude;
-          if (x === 0) path.moveTo(x, yPos);
-          else path.lineTo(x, yPos);
+          const y = centerY - sample(normP) * amplitude;
+          if (px === 0) path.moveTo(px, y);
+          else path.lineTo(px, y);
+
+          prevNormP = normP;
         }
 
         ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineJoin = 'miter'; // Sharp corners for square/sawtooth
+        ctx.lineCap = 'butt';
         if (isPlaying) {
-          ctx.globalAlpha = 0.35;
-          ctx.strokeStyle = color;
+          // Glow pass
+          ctx.globalAlpha = 0.3;
           ctx.lineWidth = 4 * dpr;
           ctx.stroke(path);
-
+          // Core beam
           ctx.globalAlpha = 1.0;
           ctx.lineWidth = 1.5 * dpr;
           ctx.stroke(path);
 
-          phaseRef.current += 0.08;
+          // Advance phase: ~110 Hz equivalent visual rate for a realistic feel
+          phaseRef.current += 0.055;
         } else {
           ctx.globalAlpha = 0.3;
-          ctx.strokeStyle = color;
           ctx.lineWidth = 1.5 * dpr;
           ctx.stroke(path);
         }

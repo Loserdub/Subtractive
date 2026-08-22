@@ -198,23 +198,24 @@ export const Knob: React.FC<KnobProps> = React.memo(({
           />
         </svg>
 
-        {/* Outer Ribbed Cap — uses CSS var */}
-        <div 
-          className="absolute rounded-full border border-black/30 shadow-[0_4px_8px_rgba(0,0,0,0.8)]"
-          style={{ 
-            inset: '6px',
-            background: 'var(--knob-ribbed)'
-          }}
-        />
-
-        {/* Inner Anodized Metal Knob Face — uses CSS vars */}
+        {/* Outer Ribbed Ring — flat, accent-bordered */}
         <div 
           className="absolute rounded-full"
           style={{ 
-            inset: '18%',
+            inset: '6px',
+            background: 'var(--knob-ribbed)',
+            border: `2px solid var(--knob-face-border)`,
+            boxShadow: `2px 2px 0 rgba(0,0,0,0.9), -1px -1px 0 rgba(0,0,0,0.5)`
+          }}
+        />
+
+        {/* Inner Flat Knob Face */}
+        <div 
+          className="absolute rounded-full"
+          style={{ 
+            inset: '22%',
             background: 'var(--knob-face-grad)',
             border: `1px solid var(--knob-face-border)`,
-            boxShadow: `inset 0 1px 2px var(--knob-hi), inset 0 -2px 4px var(--knob-lo)`
           }}
         />
 
@@ -226,14 +227,14 @@ export const Knob: React.FC<KnobProps> = React.memo(({
             transition: isDragging ? 'none' : 'transform 0.05s ease-out'
           }}
         >
-          {/* Glowing Pointer Line */}
+          {/* Glowing Pointer Line — sharp, flat */}
           <div 
-            className="absolute top-[18%] left-1/2 -translate-x-1/2 rounded-full"
+            className="absolute top-[18%] left-1/2 -translate-x-1/2"
             style={{ 
               width: size > 48 ? '3px' : '2px', 
-              height: `${size * 0.22}px`,
-              backgroundColor: isDragging || isHovered ? activeTheme.stroke : '#ffffff',
-              boxShadow: isDragging || isHovered ? `0 0 6px ${activeTheme.stroke}` : '0 1px 2px rgba(0,0,0,0.5)'
+              height: `${size * 0.24}px`,
+              background: isDragging || isHovered ? activeTheme.stroke : 'rgba(255,255,255,0.85)',
+              boxShadow: isDragging || isHovered ? `0 0 8px ${activeTheme.stroke}, 0 0 2px ${activeTheme.stroke}` : '1px 1px 0 rgba(0,0,0,0.8)'
             }}
           />
         </div>

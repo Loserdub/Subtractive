@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings } from '../types';
+import { patchParams } from '../utils/patchParams';
 import { AudioEngine } from '../services/AudioEngine';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
 import { Knob } from './Knob';
@@ -228,10 +229,10 @@ export const Synth: React.FC = () => {
         const max = 20000;
         const normalized = data2 / 127;
         const cutoff = min * Math.pow(max / min, normalized);
-        setParams(p => ({ ...p, filter: { ...p.filter, cutoff: cutoff } }));
+        setParams(p => patchParams(p, { filter: { cutoff } }));
       } else if (data1 === 1) {
         const depth = data2 / 127;
-        setParams(p => ({ ...p, lfo: { ...p.lfo, depth: depth } }));
+        setParams(p => patchParams(p, { lfo: { depth } }));
       }
     } else if (command === 224) { // Pitch Bend (0xE0)
       const bendNormalized = ((data2 << 7) | data1) / 16383;
@@ -245,7 +246,7 @@ export const Synth: React.FC = () => {
 
   const handleModulationChange = useCallback((val: number) => {
     audioEngine.current?.setModulation(val);
-    setParams(p => ({ ...p, lfo: { ...p.lfo, depth: val } }));
+    setParams(p => patchParams(p, { lfo: { depth: val } }));
   }, []);
 
   const handleNoteOn = useCallback((note: number) => {
@@ -265,19 +266,19 @@ export const Synth: React.FC = () => {
   }, [isStarted]);
 
   const setOscWaveform = (osc: 'osc1' | 'osc2' | 'osc3' | 'osc4', waveform: Waveform) => {
-    setParams(p => ({ ...p, [osc]: { ...p[osc], waveform } }));
+    setParams(p => patchParams(p, { [osc]: { waveform } }));
   };
 
   const toggleOsc = (osc: 'osc1' | 'osc2' | 'osc3' | 'osc4') => {
-    setParams(p => ({ ...p, [osc]: { ...p[osc], enabled: !p[osc].enabled } }));
+    setParams(p => patchParams(p, { [osc]: { enabled: !p[osc].enabled } }));
   };
   
   const setLfoWaveform = (waveform: Waveform) => {
-    setParams(p => ({ ...p, lfo: { ...p.lfo, waveform } }));
+    setParams(p => patchParams(p, { lfo: { waveform } }));
   };
 
   const setFilterType = (type: FilterType) => {
-    setParams(p => ({ ...p, filter: { ...p.filter, type } }));
+    setParams(p => patchParams(p, { filter: { type } }));
   };
 
   const handlePlayToggle = () => {
@@ -357,7 +358,7 @@ export const Synth: React.FC = () => {
                 min={0} 
                 max={1} 
                 size={28} 
-                onChange={v => setParams(p => ({ ...p, [oscKey]: { ...p[oscKey], gain: v } }))} 
+                onChange={v => setParams(p => patchParams(p, { [oscKey]: { gain: v } }))} 
                 unit="%"
                 color="cyan"
               />
@@ -372,7 +373,7 @@ export const Synth: React.FC = () => {
               min={-2400} 
               max={2400} 
               size={28}
-              onChange={v => setParams(p => ({ ...p, [oscKey]: { ...p[oscKey], detune: v } }))} 
+              onChange={v => setParams(p => patchParams(p, { [oscKey]: { detune: v } }))} 
               unit="cents"
               color="amber"
             />
@@ -473,7 +474,7 @@ export const Synth: React.FC = () => {
               min={0} 
               max={1} 
               size={32} 
-              onChange={v => setParams(p => ({ ...p, masterGain: v }))} 
+              onChange={v => setParams(p => patchParams(p, { masterGain: v }))} 
               unit="%"
               color="emerald"
             />
@@ -557,7 +558,7 @@ export const Synth: React.FC = () => {
 
           <div className="flex items-center gap-2 shrink-0">
             <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
-            <Knob label="Vol" value={params.masterGain ?? 0.8} min={0} max={1} size={34} onChange={v => setParams(p => ({ ...p, masterGain: v }))} unit="%" color="emerald" />
+            <Knob label="Vol" value={params.masterGain ?? 0.8} min={0} max={1} size={34} onChange={v => setParams(p => patchParams(p, { masterGain: v }))} unit="%" color="emerald" />
             {/* Desktop Theme Chip Switcher */}
             <div className="flex flex-col gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--panel-border)' }}>
               <span className="text-[6px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>SKIN</span>
@@ -620,14 +621,14 @@ export const Synth: React.FC = () => {
                   <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
                   <div className="flex gap-1">
                     {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
-                      <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => ({ ...p, voiceMode: mode }))} color="cyan" size="sm" className="text-[7px] px-1.5 py-0.5" />
+                      <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => patchParams(p, { voiceMode: mode }))} color="cyan" size="sm" className="text-[7px] px-1.5 py-0.5" />
                     ))}
                   </div>
                 </div>
-                <Knob label="Glide"   value={params.glide}     min={0}   max={0.5} size={32} onChange={(v) => setParams(p => ({ ...p, glide: v }))}     unit="s"  color="cyan"    />
-                <Knob label="Sub Osc" value={params.subGain}   min={0}   max={1}   size={32} onChange={(v) => setParams(p => ({ ...p, subGain: v }))}   unit="%"  color="amber"   />
-                <Knob label="Noise"   value={params.noiseGain} min={0}   max={1}   size={32} onChange={(v) => setParams(p => ({ ...p, noiseGain: v }))} unit="%"  color="emerald" />
-                <Knob label="PWM"     value={params.pwm}       min={0.1} max={0.9} size={32} onChange={(v) => setParams(p => ({ ...p, pwm: v }))}         unit="%"  color="red"     />
+                <Knob label="Glide"   value={params.glide}     min={0}   max={0.5} size={32} onChange={(v) => setParams(p => patchParams(p, { glide: v }))}     unit="s"  color="cyan"    />
+                <Knob label="Sub Osc" value={params.subGain}   min={0}   max={1}   size={32} onChange={(v) => setParams(p => patchParams(p, { subGain: v }))}   unit="%"  color="amber"   />
+                <Knob label="Noise"   value={params.noiseGain} min={0}   max={1}   size={32} onChange={(v) => setParams(p => patchParams(p, { noiseGain: v }))} unit="%"  color="emerald" />
+                <Knob label="PWM"     value={params.pwm}       min={0.1} max={0.9} size={32} onChange={(v) => setParams(p => patchParams(p, { pwm: v }))}         unit="%"  color="red"     />
               </div>
               {/* Oscillator Grid (desktop: clean responsive 2 or 4 column grid) */}
               <div className="grid grid-cols-2 xl:grid-cols-4 gap-1.5 w-full md:flex-1 md:min-h-0 pt-1">
@@ -665,9 +666,9 @@ export const Synth: React.FC = () => {
                     ))}
                   </div>
                   <div className="flex items-center justify-around gap-1.5 py-1">
-                    <Knob label="Cutoff"    value={params.filter.cutoff}          min={20}  max={20000} size={42} logarithmic onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))}                       unit="Hz" color="amber"   />
-                    <Knob label="Resonance" value={params.filter.resonance}       min={0}   max={40}    size={38}             onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))}                    color="cyan"    />
-                    <Knob label="EG Int"    value={params.filterEnvelope.amount}  min={0}   max={10000} size={36}             onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, amount: v } }))} color="emerald"  />
+                    <Knob label="Cutoff"    value={params.filter.cutoff}          min={20}  max={20000} size={42} logarithmic onChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}                       unit="Hz" color="amber"   />
+                    <Knob label="Resonance" value={params.filter.resonance}       min={0}   max={40}    size={38}             onChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}                    color="cyan"    />
+                    <Knob label="EG Int"    value={params.filterEnvelope.amount}  min={0}   max={10000} size={36}             onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} color="emerald"  />
                   </div>
                 </div>
               </Panel>
@@ -691,20 +692,20 @@ export const Synth: React.FC = () => {
                   <div className="flex-1 h-9"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
                 </div>
                 <div className="flex items-center justify-around gap-1">
-                  <Knob label={params.lfo.sync ? "Div" : "Rate"} value={params.lfo.rate} min={0.1} max={20} size={30} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} unit={params.lfo.sync ? "" : "Hz"} color="emerald" />
-                  <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={30} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
+                  <Knob label={params.lfo.sync ? "Div" : "Rate"} value={params.lfo.rate} min={0.1} max={20} size={30} onChange={v => setParams(p => patchParams(p, { lfo: { rate: v } }))} unit={params.lfo.sync ? "" : "Hz"} color="emerald" />
+                  <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={30} onChange={v => setParams(p => patchParams(p, { lfo: { depth: v } }))} unit="%" color="cyan" />
                 </div>
                 <div className="flex items-center justify-between gap-1 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
-                  <LEDButton label="SYNC" active={params.lfo.sync} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[7px] px-1.5 py-0.5" />
+                  <LEDButton label="SYNC" active={params.lfo.sync} onClick={() => setParams(p => patchParams(p, { lfo: { sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[7px] px-1.5 py-0.5" />
                   {params.lfo.sync && (
-                    <select value={params.lfo.division} onChange={(e) => setParams(p => ({ ...p, lfo: { ...p.lfo, division: e.target.value } }))} className="font-mono text-[8px] px-1 py-0.5 rounded" style={{ background: 'var(--osc-bg)', color: 'var(--accent-emerald)', border: '1px solid var(--osc-border)' }}>
+                    <select value={params.lfo.division} onChange={(e) => setParams(p => patchParams(p, { lfo: { division: e.target.value } }))} className="font-mono text-[8px] px-1 py-0.5 rounded" style={{ background: 'var(--osc-bg)', color: 'var(--accent-emerald)', border: '1px solid var(--osc-border)' }}>
                       {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   )}
                 </div>
                 <div className="flex items-center gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                   {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
-                    <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, target } }))} color="emerald" size="sm" className="flex-1 text-[7px] px-0.5 py-0.5" />
+                    <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => patchParams(p, { lfo: { target } }))} color="emerald" size="sm" className="flex-1 text-[7px] px-0.5 py-0.5" />
                   ))}
                 </div>
               </div>
@@ -713,10 +714,10 @@ export const Synth: React.FC = () => {
             <div className="pt-3 flex-1 flex flex-col min-h-0">
               <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan" className="h-full flex flex-col justify-between">
                 <div className="flex items-center justify-around w-full py-1">
-                  <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={28} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))}  unit="s" color="cyan" />
-                  <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={28} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))}   unit="s" color="cyan" />
-                  <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} unit="%" color="cyan" />
-                  <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={28} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} unit="s" color="cyan" />
+                  <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { attack: v } }))}  unit="s" color="cyan" />
+                  <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { decay: v } }))}   unit="s" color="cyan" />
+                  <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { sustain: v } }))} unit="%" color="cyan" />
+                  <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { release: v } }))} unit="s" color="cyan" />
                 </div>
               </Panel>
             </div>
@@ -724,10 +725,10 @@ export const Synth: React.FC = () => {
             <div className="pt-3 flex-1 flex flex-col min-h-0">
               <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber" className="h-full flex flex-col justify-between">
                 <div className="flex items-center justify-around w-full py-1">
-                  <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={28} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))}  unit="s" color="amber" />
-                  <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={28} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))}   unit="s" color="amber" />
-                  <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} unit="%" color="amber" />
-                  <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={28} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} unit="s" color="amber" />
+                  <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { attack: v } }))}  unit="s" color="amber" />
+                  <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { decay: v } }))}   unit="s" color="amber" />
+                  <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { sustain: v } }))} unit="%" color="amber" />
+                  <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { release: v } }))} unit="s" color="amber" />
                 </div>
               </Panel>
             </div>
@@ -779,14 +780,14 @@ export const Synth: React.FC = () => {
                     <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
                     <div className="flex gap-1">
                       {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
-                        <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => ({ ...p, voiceMode: mode }))} color="cyan" size="sm" className="text-[8px] px-2 py-1" />
+                        <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => patchParams(p, { voiceMode: mode }))} color="cyan" size="sm" className="text-[8px] px-2 py-1" />
                       ))}
                     </div>
                   </div>
-                  <Knob label="Glide"   value={params.glide}     min={0}   max={0.5} size={36} onChange={(v) => setParams(p => ({ ...p, glide: v }))}     unit="s"  color="cyan"    />
-                  <Knob label="Sub Osc" value={params.subGain}   min={0}   max={1}   size={36} onChange={(v) => setParams(p => ({ ...p, subGain: v }))}   unit="%"  color="amber"   />
-                  <Knob label="Noise"   value={params.noiseGain} min={0}   max={1}   size={36} onChange={(v) => setParams(p => ({ ...p, noiseGain: v }))} unit="%"  color="emerald" />
-                  <Knob label="PWM"     value={params.pwm}       min={0.1} max={0.9} size={36} onChange={(v) => setParams(p => ({ ...p, pwm: v }))}         unit="%"  color="red"     />
+                  <Knob label="Glide"   value={params.glide}     min={0}   max={0.5} size={36} onChange={(v) => setParams(p => patchParams(p, { glide: v }))}     unit="s"  color="cyan"    />
+                  <Knob label="Sub Osc" value={params.subGain}   min={0}   max={1}   size={36} onChange={(v) => setParams(p => patchParams(p, { subGain: v }))}   unit="%"  color="amber"   />
+                  <Knob label="Noise"   value={params.noiseGain} min={0}   max={1}   size={36} onChange={(v) => setParams(p => patchParams(p, { noiseGain: v }))} unit="%"  color="emerald" />
+                  <Knob label="PWM"     value={params.pwm}       min={0.1} max={0.9} size={36} onChange={(v) => setParams(p => patchParams(p, { pwm: v }))}         unit="%"  color="red"     />
                 </div>
                 {/* Mobile OSC Selector */}
                 <div className="flex items-center justify-center gap-1.5 w-full my-2">
@@ -833,9 +834,9 @@ export const Synth: React.FC = () => {
                       ))}
                     </div>
                     <div className="flex items-center justify-around gap-2 py-2">
-                      <Knob label="Cutoff"    value={params.filter.cutoff}          min={20}  max={20000} size={50} logarithmic onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))}                       unit="Hz" color="amber"   />
-                      <Knob label="Resonance" value={params.filter.resonance}       min={0}   max={40}    size={44}             onChange={v => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))}                    color="cyan"    />
-                      <Knob label="EG Int"    value={params.filterEnvelope.amount}  min={0}   max={10000} size={40}             onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, amount: v } }))} color="emerald"  />
+                      <Knob label="Cutoff"    value={params.filter.cutoff}          min={20}  max={20000} size={50} logarithmic onChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}                       unit="Hz" color="amber"   />
+                      <Knob label="Resonance" value={params.filter.resonance}       min={0}   max={40}    size={44}             onChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}                    color="cyan"    />
+                      <Knob label="EG Int"    value={params.filterEnvelope.amount}  min={0}   max={10000} size={40}             onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} color="emerald"  />
                     </div>
                   </div>
                 </Panel>
@@ -861,20 +862,20 @@ export const Synth: React.FC = () => {
                     <div className="flex-1 h-14"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
                   </div>
                   <div className="flex items-center justify-around gap-2">
-                    <Knob label={params.lfo.sync ? "Division" : "Rate"} value={params.lfo.rate} min={0.1} max={20} size={42} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, rate: v } }))} unit={params.lfo.sync ? "" : "Hz"} color="emerald" />
-                    <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={42} onChange={v => setParams(p => ({ ...p, lfo: { ...p.lfo, depth: v } }))} unit="%" color="cyan" />
+                    <Knob label={params.lfo.sync ? "Division" : "Rate"} value={params.lfo.rate} min={0.1} max={20} size={42} onChange={v => setParams(p => patchParams(p, { lfo: { rate: v } }))} unit={params.lfo.sync ? "" : "Hz"} color="emerald" />
+                    <Knob label="Depth" value={params.lfo.depth} min={0} max={1} size={42} onChange={v => setParams(p => patchParams(p, { lfo: { depth: v } }))} unit="%" color="cyan" />
                   </div>
                   <div className="flex items-center justify-between gap-1 p-1 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
-                    <LEDButton label="BPM SYNC" active={params.lfo.sync} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[8px] px-2 py-1" />
+                    <LEDButton label="BPM SYNC" active={params.lfo.sync} onClick={() => setParams(p => patchParams(p, { lfo: { sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[8px] px-2 py-1" />
                     {params.lfo.sync && (
-                      <select value={params.lfo.division} onChange={(e) => setParams(p => ({ ...p, lfo: { ...p.lfo, division: e.target.value } }))} className="bg-[#141a26] text-[#00ff66] font-mono text-[9px] px-2 py-1 rounded border border-[#202738]">
+                      <select value={params.lfo.division} onChange={(e) => setParams(p => patchParams(p, { lfo: { division: e.target.value } }))} className="bg-[#141a26] text-[#00ff66] font-mono text-[9px] px-2 py-1 rounded border border-[#202738]">
                         {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
                     {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
-                      <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => ({ ...p, lfo: { ...p.lfo, target } }))} color="emerald" size="sm" className="flex-1 text-[8px] px-1 py-1" />
+                      <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => patchParams(p, { lfo: { target } }))} color="emerald" size="sm" className="flex-1 text-[8px] px-1 py-1" />
                     ))}
                   </div>
                 </div>
@@ -882,20 +883,20 @@ export const Synth: React.FC = () => {
               <div className="pt-2">
                 <Panel title="AMP ENVELOPE (ADSR)" badgeColor="cyan" className="flex flex-col justify-between">
                   <div className="flex items-center justify-around w-full py-2">
-                    <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, attack: v } }))}  unit="s" color="cyan" />
-                    <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))}   unit="s" color="cyan" />
-                    <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, sustain: v } }))} unit="%" color="cyan" />
-                    <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={42} onChange={v => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, release: v } }))} unit="s" color="cyan" />
+                    <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={42} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { attack: v } }))}  unit="s" color="cyan" />
+                    <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={42} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { decay: v } }))}   unit="s" color="cyan" />
+                    <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={42} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { sustain: v } }))} unit="%" color="cyan" />
+                    <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={42} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { release: v } }))} unit="s" color="cyan" />
                   </div>
                 </Panel>
               </div>
               <div className="pt-2">
                 <Panel title="FILTER ENVELOPE (ADSR)" badgeColor="amber" className="flex flex-col justify-between">
                   <div className="flex items-center justify-around w-full py-2">
-                    <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, attack: v } }))}  unit="s" color="amber" />
-                    <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, decay: v } }))}   unit="s" color="amber" />
-                    <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, sustain: v } }))} unit="%" color="amber" />
-                    <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={42} onChange={v => setParams(p => ({ ...p, filterEnvelope: { ...p.filterEnvelope, release: v } }))} unit="s" color="amber" />
+                    <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={42} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { attack: v } }))}  unit="s" color="amber" />
+                    <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={42} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { decay: v } }))}   unit="s" color="amber" />
+                    <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={42} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { sustain: v } }))} unit="%" color="amber" />
+                    <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={42} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { release: v } }))} unit="s" color="amber" />
                   </div>
                 </Panel>
               </div>

@@ -1,44 +1,40 @@
 /* ══════════════════════════════════════════════════════════════════════
-   SUBTRACTIVE SYNTHESIZER — Design System & Theme Engine
-   CSS custom property tokens + 4 chassis skin definitions
-   ══════════════════════════════════════════════════════════════════════ */
-
-/* ══════════════════════════════════════════════════════════════════════
    DEFAULT / MONO-DARK THEME TOKENS (also :root fallbacks)
    ══════════════════════════════════════════════════════════════════════ */
 :root,
 [data-theme="mono-dark"] {
   /* Chassis & Structure */
   --chassis-bg:       #080a0e;
-  --chassis-gradient: radial-gradient(circle at 50% 0%, #1e232d 0%, #0d0f14 100%);
-  --panel-bg:         #1a1d24;
-  --panel-bg-alt:     #0e1118;
-  --panel-gradient:   linear-gradient(180deg, #1d212a 0%, #161920 100%);
-  --panel-border:     #2e3545;
-  --panel-inset-hi:   rgba(255, 255, 255, 0.07);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.8);
-  --panel-shadow:     rgba(0, 0, 0, 0.5);
+  --chassis-gradient: #080a0e;
+  --panel-bg:         #12151c;
+  --panel-bg-alt:     #0a0c12;
+  --panel-gradient:   #12151c;
+  --panel-border:     #00e5ff;
+  --panel-border-width: 2px;
+  --panel-inset-hi:   rgba(0, 229, 255, 0.06);
+  --panel-inset-lo:   rgba(0, 0, 0, 1);
+  --panel-shadow:     rgba(0, 0, 0, 0.9);
 
   /* OLED / LCD Screen */
-  --oled-bg:          #04090e;
-  --oled-bg-grad:     radial-gradient(circle at 50% 30%, #0d1a24 0%, #04090e 100%);
-  --oled-border:      #1c2b3a;
-  --oled-glow:        rgba(0, 229, 255, 0.08);
+  --oled-bg:          #02060a;
+  --oled-bg-grad:     #02060a;
+  --oled-border:      #00e5ff;
+  --oled-glow:        rgba(0, 229, 255, 0.18);
   --oled-text:        #00e5ff;
-  --oled-scanline:    rgba(0, 0, 0, 0.25);
+  --oled-scanline:    rgba(0, 0, 0, 0.4);
 
-  /* Knob Material */
+  /* Knob Material — flat cell-shade */
   --knob-track:       #1c222e;
-  --knob-ribbed:      repeating-conic-gradient(#2c3344 0 6deg, #181d28 6deg 12deg);
-  --knob-face-grad:   radial-gradient(circle at 35% 35%, #3c4456 0%, #151821 100%);
-  --knob-face-border: #161a24;
-  --knob-hi:          rgba(255, 255, 255, 0.15);
-  --knob-lo:          rgba(0, 0, 0, 0.8);
+  --knob-ribbed:      #1a1f2c;
+  --knob-face-grad:   #232838;
+  --knob-face-border: #00e5ff;
+  --knob-hi:          rgba(0, 229, 255, 0.08);
+  --knob-lo:          rgba(0, 0, 0, 1);
 
-  /* Screw */
-  --screw-grad:       linear-gradient(135deg, #717888 0%, #222630 100%);
-  --screw-border:     #14171f;
-  --screw-line:       #151820;
+  /* Screw — hexagonal bolt look */
+  --screw-grad:       #2a3048;
+  --screw-border:     #00e5ff;
+  --screw-line:       #00e5ff;
 
   /* Accent Colors — signal and UI */
   --accent-cyan:      #00e5ff;
@@ -53,164 +49,166 @@
   --text-label:       #9ca3af;
 
   /* Interactive Elements */
-  --btn-inactive-bg:      #141822;
+  --btn-inactive-bg:      #0d1018;
   --btn-inactive-border:  #2a3142;
-  --btn-inactive-text:    #6b7280;
-  --btn-hover-bg:         #1c2230;
-  --section-bg:           #0a0d14;
+  --btn-inactive-text:    #4b5568;
+  --btn-hover-bg:         #161c28;
+  --section-bg:           #090c12;
   --section-border:       #1e2636;
-  --osc-bg:               #0e121a;
-  --osc-border:           #202738;
-  --waveform-bg:          #07090e;
-  --waveform-border:      #1b2230;
+  --osc-bg:               #0c0f18;
+  --osc-border:           #1e2636;
+  --waveform-bg:          #060810;
+  --waveform-border:      #1a2230;
 
   /* Piano Keys */
-  --key-white-grad:   linear-gradient(180deg, #f8fafc 0%, #e2e8f0 85%, #cbd5e1 100%);
-  --key-white-active: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
-  --key-black-grad:   linear-gradient(180deg, #222733 0%, #11141c 85%, #090b0f 100%);
-  --key-black-active: linear-gradient(180deg, #090b0f 0%, #1a202c 100%);
+  --key-white-grad:   #f0f4f8;
+  --key-white-active: #b0bfcc;
+  --key-black-grad:   #111520;
+  --key-black-active: #080a10;
 
   /* Wheel Slider */
-  --wheel-bg:         #090b0f;
-  --wheel-border:     #252d3d;
-  --wheel-thumb:      linear-gradient(to right, #888 0%, #fff 50%, #888 100%);
+  --wheel-bg:         #080c12;
+  --wheel-border:     #00e5ff;
+  --wheel-thumb:      linear-gradient(to right, #007799 0%, #00e5ff 50%, #007799 100%);
 
   /* Mobile Tab Bar */
-  --tab-bar-bg:       #0d1018;
-  --tab-bar-border:   #1e2636;
-  --tab-active-bg:    rgba(0, 229, 255, 0.15);
+  --tab-bar-bg:       #080c12;
+  --tab-bar-border:   #00e5ff;
+  --tab-active-bg:    rgba(0, 229, 255, 0.12);
   --tab-active-border:#00e5ff;
   --tab-active-text:  #00e5ff;
-  --tab-active-glow:  rgba(0, 229, 255, 0.3);
-  --tab-inactive-text:#6b7280;
+  --tab-active-glow:  rgba(0, 229, 255, 0.5);
+  --tab-inactive-text:#4b5568;
 
   /* Body */
   --body-bg:          #080a0e;
   --body-text:        #e2e8f0;
 
   /* Scrollbar */
-  --scrollbar-track:  #11141a;
-  --scrollbar-thumb:  #2a3140;
-  --scrollbar-hover:  #3e485e;
+  --scrollbar-track:  #0a0c12;
+  --scrollbar-thumb:  #1e2636;
+  --scrollbar-hover:  #2a3548;
 
   /* Badge (panel title) */
-  --badge-bg:         #12161f;
-  --badge-border:     #2b3548;
+  --badge-bg:         #080c12;
+  --badge-border:     #00e5ff;
 
   /* Theme crossfade */
-  --theme-transition: background-color 0.25s ease, border-color 0.25s ease, color 0.2s ease, box-shadow 0.25s ease;
+  --theme-transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
    VINTAGE JAPANESE — Roland / Korg (Orange × Blue × Brushed Aluminum)
    ══════════════════════════════════════════════════════════════════════ */
 [data-theme="vintage-japanese"] {
-  --chassis-bg:       #b0b4bc;
-  --chassis-gradient: radial-gradient(circle at 50% 0%, #d0d4dc 0%, #9da1a9 100%);
-  --panel-bg:         #c8ccd4;
-  --panel-bg-alt:     #b8bcc4;
-  --panel-gradient:   linear-gradient(180deg, #d4d8e0 0%, #c0c4cc 100%);
-  --panel-border:     #8890a0;
+  --chassis-bg:       #b4b8c0;
+  --chassis-gradient: #b4b8c0;
+  --panel-bg:         #ccd0d8;
+  --panel-bg-alt:     #bcc0c8;
+  --panel-gradient:   #ccd0d8;
+  --panel-border:     #1a5fe8;
+  --panel-border-width: 2px;
   --panel-inset-hi:   rgba(255, 255, 255, 0.5);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.25);
-  --panel-shadow:     rgba(80, 80, 100, 0.4);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.3);
+  --panel-shadow:     rgba(0, 0, 80, 0.4);
 
-  --oled-bg:          #1a0e00;
-  --oled-bg-grad:     radial-gradient(circle at 50% 30%, #2a1800 0%, #100800 100%);
-  --oled-border:      #8B4513;
-  --oled-glow:        rgba(255, 140, 0, 0.15);
+  --oled-bg:          #140a00;
+  --oled-bg-grad:     #140a00;
+  --oled-border:      #e8541a;
+  --oled-glow:        rgba(232, 84, 26, 0.25);
   --oled-text:        #ffa500;
-  --oled-scanline:    rgba(0, 0, 0, 0.3);
+  --oled-scanline:    rgba(0, 0, 0, 0.35);
 
-  --knob-track:       #787c84;
-  --knob-ribbed:      repeating-conic-gradient(#a0a4ac 0 6deg, #707478 6deg 12deg);
-  --knob-face-grad:   radial-gradient(circle at 35% 35%, #c8ccd4 0%, #808488 100%);
-  --knob-face-border: #585c64;
+  --knob-track:       #8890a0;
+  --knob-ribbed:      #a0a8b4;
+  --knob-face-grad:   #b8bcc8;
+  --knob-face-border: #e8541a;
   --knob-hi:          rgba(255, 255, 255, 0.6);
-  --knob-lo:          rgba(0, 0, 0, 0.3);
+  --knob-lo:          rgba(0, 0, 0, 0.25);
 
-  --screw-grad:       linear-gradient(135deg, #d8dcec 0%, #909498 100%);
-  --screw-border:     #686c74;
-  --screw-line:       #a8acb4;
+  --screw-grad:       #c8ccd8;
+  --screw-border:     #1a5fe8;
+  --screw-line:       #1a5fe8;
 
   --accent-cyan:      #1a5fe8;
   --accent-amber:     #e8541a;
   --accent-emerald:   #2a9e44;
   --accent-red:       #cc1122;
 
-  --text-primary:     #1a1c20;
+  --text-primary:     #10141c;
   --text-secondary:   #404448;
-  --text-muted:       #686c74;
-  --text-label:       #484c54;
+  --text-muted:       #707480;
+  --text-label:       #404858;
 
-  --btn-inactive-bg:     #b0b4bc;
-  --btn-inactive-border: #787c84;
-  --btn-inactive-text:   #484c54;
-  --btn-hover-bg:        #c8ccd4;
-  --section-bg:          #b8bcc4;
+  --btn-inactive-bg:     #b4b8c4;
+  --btn-inactive-border: #7880a0;
+  --btn-inactive-text:   #505870;
+  --btn-hover-bg:        #ccd0dc;
+  --section-bg:          #b0b4bc;
   --section-border:      #8890a0;
-  --osc-bg:              #c0c4cc;
-  --osc-border:          #9098a8;
-  --waveform-bg:         #b0b4bc;
+  --osc-bg:              #bcc0c8;
+  --osc-border:          #8890a0;
+  --waveform-bg:         #a8acb8;
   --waveform-border:     #8890a0;
 
-  --key-white-grad:   linear-gradient(180deg, #f8fafc 0%, #e8ebf0 85%, #d0d5dc 100%);
-  --key-white-active: linear-gradient(180deg, #d0d5dc 0%, #b0b8c4 100%);
-  --key-black-grad:   linear-gradient(180deg, #181c24 0%, #0c1018 85%, #080a0e 100%);
-  --key-black-active: linear-gradient(180deg, #080a0e 0%, #141820 100%);
+  --key-white-grad:   #f4f8fc;
+  --key-white-active: #c0c8d8;
+  --key-black-grad:   #141824;
+  --key-black-active: #080c14;
 
-  --wheel-bg:         #a0a4ac;
-  --wheel-border:     #686c74;
-  --wheel-thumb:      linear-gradient(to right, #606468 0%, #d0d4dc 50%, #606468 100%);
+  --wheel-bg:         #a0a4b0;
+  --wheel-border:     #e8541a;
+  --wheel-thumb:      linear-gradient(to right, #9040a0 0%, #e8541a 50%, #9040a0 100%);
 
   --tab-bar-bg:       #b0b4bc;
-  --tab-bar-border:   #8890a0;
-  --tab-active-bg:    rgba(232, 84, 26, 0.2);
+  --tab-bar-border:   #e8541a;
+  --tab-active-bg:    rgba(232, 84, 26, 0.18);
   --tab-active-border:#e8541a;
   --tab-active-text:  #e8541a;
-  --tab-active-glow:  rgba(232, 84, 26, 0.3);
-  --tab-inactive-text:#606468;
+  --tab-active-glow:  rgba(232, 84, 26, 0.5);
+  --tab-inactive-text:#606878;
 
-  --body-bg:          #9da1a9;
-  --body-text:        #1a1c20;
-  --scrollbar-track:  #a8acb4;
-  --scrollbar-thumb:  #787c84;
-  --scrollbar-hover:  #606468;
-  --badge-bg:         #c8ccd4;
-  --badge-border:     #8890a0;
+  --body-bg:          #a4a8b0;
+  --body-text:        #10141c;
+  --scrollbar-track:  #a8acb8;
+  --scrollbar-thumb:  #7880a0;
+  --scrollbar-hover:  #606878;
+  --badge-bg:         #ccd0dc;
+  --badge-border:     #1a5fe8;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
    GERMAN INDUSTRIAL — Moog Black & Machined Aluminum / Gold
    ══════════════════════════════════════════════════════════════════════ */
 [data-theme="german-industrial"] {
-  --chassis-bg:       #030303;
-  --chassis-gradient: radial-gradient(circle at 50% 0%, #1a1a1a 0%, #030303 100%);
-  --panel-bg:         #111111;
-  --panel-bg-alt:     #080808;
-  --panel-gradient:   linear-gradient(180deg, #181818 0%, #0c0c0c 100%);
-  --panel-border:     #2a2a2a;
-  --panel-inset-hi:   rgba(255, 255, 255, 0.06);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.95);
-  --panel-shadow:     rgba(0, 0, 0, 0.8);
+  --chassis-bg:       #020202;
+  --chassis-gradient: #020202;
+  --panel-bg:         #0e0e0e;
+  --panel-bg-alt:     #060606;
+  --panel-gradient:   #0e0e0e;
+  --panel-border:     #c9a84c;
+  --panel-border-width: 2px;
+  --panel-inset-hi:   rgba(201, 168, 76, 0.06);
+  --panel-inset-lo:   rgba(0, 0, 0, 1);
+  --panel-shadow:     rgba(0, 0, 0, 0.95);
 
-  --oled-bg:          #001400;
-  --oled-bg-grad:     radial-gradient(circle at 50% 30%, #001e00 0%, #000a00 100%);
-  --oled-border:      #1a3a1a;
-  --oled-glow:        rgba(0, 255, 68, 0.12);
+  --oled-bg:          #000e00;
+  --oled-bg-grad:     #000e00;
+  --oled-border:      #aac840;
+  --oled-glow:        rgba(170, 200, 64, 0.2);
   --oled-text:        #00ff44;
-  --oled-scanline:    rgba(0, 0, 0, 0.35);
+  --oled-scanline:    rgba(0, 0, 0, 0.4);
 
   --knob-track:       #1a1a1a;
-  --knob-ribbed:      repeating-conic-gradient(#282828 0 6deg, #0e0e0e 6deg 12deg);
-  --knob-face-grad:   radial-gradient(circle at 35% 35%, #2e2e2e 0%, #0a0a0a 100%);
-  --knob-face-border: #080808;
-  --knob-hi:          rgba(255, 255, 255, 0.08);
-  --knob-lo:          rgba(0, 0, 0, 0.98);
+  --knob-ribbed:      #181818;
+  --knob-face-grad:   #202020;
+  --knob-face-border: #c9a84c;
+  --knob-hi:          rgba(201, 168, 76, 0.1);
+  --knob-lo:          rgba(0, 0, 0, 1);
 
-  --screw-grad:       linear-gradient(135deg, #a0a0a4 0%, #303030 100%);
-  --screw-border:     #080808;
-  --screw-line:       #181818;
+  --screw-grad:       #242424;
+  --screw-border:     #c9a84c;
+  --screw-line:       #c9a84c;
 
   --accent-cyan:      #c9a84c;
   --accent-amber:     #e8b84c;
@@ -222,41 +220,41 @@
   --text-muted:       #404030;
   --text-label:       #a09070;
 
-  --btn-inactive-bg:     #0e0e0e;
-  --btn-inactive-border: #252525;
+  --btn-inactive-bg:     #0c0c0c;
+  --btn-inactive-border: #252520;
   --btn-inactive-text:   #606050;
-  --btn-hover-bg:        #181818;
-  --section-bg:          #080808;
-  --section-border:      #1e1e1e;
-  --osc-bg:              #0a0a0a;
-  --osc-border:          #1e1e1e;
-  --waveform-bg:         #040404;
-  --waveform-border:     #181818;
+  --btn-hover-bg:        #161610;
+  --section-bg:          #060606;
+  --section-border:      #1c1c18;
+  --osc-bg:              #080808;
+  --osc-border:          #1c1c18;
+  --waveform-bg:         #030303;
+  --waveform-border:     #161610;
 
-  --key-white-grad:   linear-gradient(180deg, #f0ece0 0%, #d8d4c8 85%, #c0bcb0 100%);
-  --key-white-active: linear-gradient(180deg, #c0bcb0 0%, #a0988c 100%);
-  --key-black-grad:   linear-gradient(180deg, #0e0e0e 0%, #050505 85%, #020202 100%);
-  --key-black-active: linear-gradient(180deg, #020202 0%, #0c0c0c 100%);
+  --key-white-grad:   #eceae0;
+  --key-white-active: #a09888;
+  --key-black-grad:   #0a0a0a;
+  --key-black-active: #020202;
 
-  --wheel-bg:         #050505;
-  --wheel-border:     #1e1e1e;
-  --wheel-thumb:      linear-gradient(to right, #484840 0%, #c9a84c 50%, #484840 100%);
+  --wheel-bg:         #040404;
+  --wheel-border:     #c9a84c;
+  --wheel-thumb:      linear-gradient(to right, #604820 0%, #c9a84c 50%, #604820 100%);
 
-  --tab-bar-bg:       #080808;
-  --tab-bar-border:   #1e1e1e;
-  --tab-active-bg:    rgba(201, 168, 76, 0.15);
+  --tab-bar-bg:       #060606;
+  --tab-bar-border:   #c9a84c;
+  --tab-active-bg:    rgba(201, 168, 76, 0.12);
   --tab-active-border:#c9a84c;
   --tab-active-text:  #c9a84c;
-  --tab-active-glow:  rgba(201, 168, 76, 0.3);
+  --tab-active-glow:  rgba(201, 168, 76, 0.5);
   --tab-inactive-text:#505040;
 
-  --body-bg:          #030303;
+  --body-bg:          #020202;
   --body-text:        #f0ece0;
-  --scrollbar-track:  #080808;
-  --scrollbar-thumb:  #202018;
-  --scrollbar-hover:  #302e20;
-  --badge-bg:         #0e0e0e;
-  --badge-border:     #2a2a1e;
+  --scrollbar-track:  #060606;
+  --scrollbar-thumb:  #1e1e14;
+  --scrollbar-hover:  #2e2e20;
+  --badge-bg:         #0a0a0a;
+  --badge-border:     #c9a84c;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -264,32 +262,33 @@
    ══════════════════════════════════════════════════════════════════════ */
 [data-theme="cyberpunk-crt"] {
   --chassis-bg:       #020308;
-  --chassis-gradient: radial-gradient(circle at 50% 0%, #0a0614 0%, #020308 100%);
-  --panel-bg:         #060812;
-  --panel-bg-alt:     #030408;
-  --panel-gradient:   linear-gradient(180deg, #080a16 0%, #040610 100%);
-  --panel-border:     #2a0a3e;
-  --panel-inset-hi:   rgba(255, 0, 204, 0.06);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.98);
-  --panel-shadow:     rgba(255, 0, 204, 0.15);
+  --chassis-gradient: #020308;
+  --panel-bg:         #050710;
+  --panel-bg-alt:     #020408;
+  --panel-gradient:   #050710;
+  --panel-border:     #ff00cc;
+  --panel-border-width: 2px;
+  --panel-inset-hi:   rgba(255, 0, 204, 0.08);
+  --panel-inset-lo:   rgba(0, 0, 0, 1);
+  --panel-shadow:     rgba(255, 0, 204, 0.25);
 
-  --oled-bg:          #02000a;
-  --oled-bg-grad:     radial-gradient(circle at 50% 30%, #0a0020 0%, #020008 100%);
-  --oled-border:      #4a0060;
-  --oled-glow:        rgba(255, 0, 204, 0.18);
+  --oled-bg:          #020008;
+  --oled-bg-grad:     #020008;
+  --oled-border:      #ff00cc;
+  --oled-glow:        rgba(255, 0, 204, 0.25);
   --oled-text:        #ff00cc;
-  --oled-scanline:    rgba(0, 0, 0, 0.4);
+  --oled-scanline:    rgba(0, 0, 0, 0.45);
 
   --knob-track:       #1a0028;
-  --knob-ribbed:      repeating-conic-gradient(#200030 0 6deg, #0c0016 6deg 12deg);
-  --knob-face-grad:   radial-gradient(circle at 35% 35%, #200034 0%, #080010 100%);
-  --knob-face-border: #0c0018;
-  --knob-hi:          rgba(255, 0, 204, 0.2);
-  --knob-lo:          rgba(0, 0, 0, 0.98);
+  --knob-ribbed:      #140020;
+  --knob-face-grad:   #1c0030;
+  --knob-face-border: #ff00cc;
+  --knob-hi:          rgba(255, 0, 204, 0.18);
+  --knob-lo:          rgba(0, 0, 0, 1);
 
-  --screw-grad:       linear-gradient(135deg, #cc00aa 0%, #1a001e 100%);
-  --screw-border:     #0a0012;
-  --screw-line:       #160020;
+  --screw-grad:       #240038;
+  --screw-border:     #ff00cc;
+  --screw-line:       #ff00cc;
 
   --accent-cyan:      #00ffee;
   --accent-amber:     #ff00cc;
@@ -301,41 +300,41 @@
   --text-muted:       #3a1850;
   --text-label:       #b080c0;
 
-  --btn-inactive-bg:     #08000e;
-  --btn-inactive-border: #2a0038;
-  --btn-inactive-text:   #6030a0;
-  --btn-hover-bg:        #100018;
-  --section-bg:          #04000a;
-  --section-border:      #200030;
-  --osc-bg:              #060010;
-  --osc-border:          #1a0030;
+  --btn-inactive-bg:     #06000e;
+  --btn-inactive-border: #280038;
+  --btn-inactive-text:   #5030a0;
+  --btn-hover-bg:        #0e0018;
+  --section-bg:          #040008;
+  --section-border:      #1e0030;
+  --osc-bg:              #05000e;
+  --osc-border:          #180028;
   --waveform-bg:         #020008;
-  --waveform-border:     #140020;
+  --waveform-border:     #12001e;
 
-  --key-white-grad:   linear-gradient(180deg, #e0d0f0 0%, #c0a8d8 85%, #a090c0 100%);
-  --key-white-active: linear-gradient(180deg, #a090c0 0%, #8060a8 100%);
-  --key-black-grad:   linear-gradient(180deg, #0e0018 0%, #060010 85%, #020008 100%);
-  --key-black-active: linear-gradient(180deg, #020008 0%, #0a0018 100%);
+  --key-white-grad:   #e0d0f8;
+  --key-white-active: #9070d0;
+  --key-black-grad:   #0c0018;
+  --key-black-active: #040010;
 
-  --wheel-bg:         #040008;
-  --wheel-border:     #200030;
+  --wheel-bg:         #03000a;
+  --wheel-border:     #ff00cc;
   --wheel-thumb:      linear-gradient(to right, #6000a0 0%, #ff00cc 50%, #6000a0 100%);
 
-  --tab-bar-bg:       #040008;
-  --tab-bar-border:   #200030;
-  --tab-active-bg:    rgba(255, 0, 204, 0.15);
+  --tab-bar-bg:       #03000a;
+  --tab-bar-border:   #ff00cc;
+  --tab-active-bg:    rgba(255, 0, 204, 0.14);
   --tab-active-border:#ff00cc;
   --tab-active-text:  #ff00cc;
-  --tab-active-glow:  rgba(255, 0, 204, 0.35);
-  --tab-inactive-text:#5030a0;
+  --tab-active-glow:  rgba(255, 0, 204, 0.6);
+  --tab-inactive-text:#4d2880;
 
   --body-bg:          #020308;
   --body-text:        #e0d0f0;
   --scrollbar-track:  #040008;
-  --scrollbar-thumb:  #1a0028;
-  --scrollbar-hover:  #2a0040;
-  --badge-bg:         #060010;
-  --badge-border:     #2a0040;
+  --scrollbar-thumb:  #180026;
+  --scrollbar-hover:  #280040;
+  --badge-bg:         #04000e;
+  --badge-border:     #ff00cc;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -406,38 +405,40 @@
 .font-brand    { font-family: 'Orbitron', sans-serif; }
 
 /* ══════════════════════════════════════════════════════════════════════
-   CHASSIS & PANELS
+   CHASSIS & PANELS — Cell-shade: flat fill, heavy border, hard shadow
    ══════════════════════════════════════════════════════════════════════ */
 .synth-chassis {
-  background: var(--chassis-gradient);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 50px rgba(0, 0, 0, 0.9);
+  background: var(--chassis-bg);
+  box-shadow: 0 8px 0 rgba(0,0,0,0.8), 0 12px 40px rgba(0,0,0,0.95);
   transition: var(--theme-transition);
 }
 
 .synth-panel {
-  background: var(--panel-gradient);
-  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  border: 2px solid var(--panel-border);
+  border-bottom: 4px solid var(--panel-border);
+  border-right: 3px solid var(--panel-border);
   box-shadow:
-    inset 0 1px 1px var(--panel-inset-hi),
-    inset 0 -1px 3px var(--panel-inset-lo),
-    0 4px 20px var(--panel-shadow);
+    4px 4px 0 rgba(0,0,0,0.9),
+    inset 0 1px 0 rgba(255,255,255,0.04);
   position: relative;
   transition: var(--theme-transition);
 }
 
 .panel-bevel {
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), inset 0 -1px 1px rgba(255,255,255,0.05);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.04), 3px 3px 0 rgba(0,0,0,0.7);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   OLED SCREEN
+   OLED SCREEN — flat black with sharp border + thick glow
    ══════════════════════════════════════════════════════════════════════ */
 .oled-screen {
-  background: var(--oled-bg-grad);
-  border: 1px solid var(--oled-border);
+  background: var(--oled-bg);
+  border: 2px solid var(--oled-border);
   box-shadow:
-    inset 0 2px 8px rgba(0, 0, 0, 0.9),
-    0 0 12px var(--oled-glow);
+    inset 0 0 20px rgba(0, 0, 0, 0.95),
+    0 0 16px var(--oled-glow),
+    0 0 32px var(--oled-glow);
   position: relative;
   overflow: hidden;
   transition: var(--theme-transition);
@@ -448,62 +449,70 @@
   display: block;
   position: absolute;
   top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, var(--oled-scanline) 50%);
-  background-size: 100% 4px;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 3px,
+    rgba(0,0,0,0.28) 3px,
+    rgba(0,0,0,0.28) 4px
+  );
   pointer-events: none;
-  opacity: 0.6;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   HEX SCREWS
+   HEX SCREWS — diamond/cross bolt, cell-shade flat
    ══════════════════════════════════════════════════════════════════════ */
 .synth-screw {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  /* Clipped octagon via clip-path for a bolt head shape */
+  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
   background: var(--screw-grad);
   border: 1px solid var(--screw-border);
-  box-shadow: 1px 1px 2px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.5);
   position: relative;
   transition: var(--theme-transition);
 }
 .synth-screw::after {
   content: "";
   position: absolute;
-  top: 50%; left: 15%; right: 15%;
-  height: 1px;
+  inset: 25%;
+  /* Cross-slot indicator */
   background: var(--screw-line);
-  transform: translateY(-50%) rotate(45deg);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.2);
+  clip-path: polygon(
+    40% 0%, 60% 0%, 60% 40%, 100% 40%, 100% 60%, 60% 60%, 60% 100%, 40% 100%, 40% 60%, 0% 60%, 0% 40%, 40% 40%
+  );
+  opacity: 0.85;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   LED GLOW EFFECTS
+   LED GLOW EFFECTS — punchy, cell-shade saturated
    ══════════════════════════════════════════════════════════════════════ */
-.led-glow-cyan    { box-shadow: 0 0 10px rgba(0, 229, 255, 0.7),   0 0 20px rgba(0, 229, 255, 0.3); }
-.led-glow-amber   { box-shadow: 0 0 10px rgba(255, 170, 0, 0.7),   0 0 20px rgba(255, 170, 0, 0.3); }
-.led-glow-emerald { box-shadow: 0 0 10px rgba(0, 255, 102, 0.7),   0 0 20px rgba(0, 255, 102, 0.3); }
-.led-glow-red     { box-shadow: 0 0 10px rgba(255, 51, 68, 0.7),   0 0 20px rgba(255, 51, 68, 0.3); }
+.led-glow-cyan    { box-shadow: 0 0 0 2px rgba(0,229,255,0.5), 0 0 16px rgba(0,229,255,0.9), 0 0 32px rgba(0,229,255,0.35); }
+.led-glow-amber   { box-shadow: 0 0 0 2px rgba(255,170,0,0.5), 0 0 16px rgba(255,170,0,0.9), 0 0 32px rgba(255,170,0,0.35); }
+.led-glow-emerald { box-shadow: 0 0 0 2px rgba(0,255,102,0.5), 0 0 16px rgba(0,255,102,0.9), 0 0 32px rgba(0,255,102,0.35); }
+.led-glow-red     { box-shadow: 0 0 0 2px rgba(255,51,68,0.5),  0 0 16px rgba(255,51,68,0.9),  0 0 32px rgba(255,51,68,0.35); }
 
 /* ══════════════════════════════════════════════════════════════════════
-   CYBERPUNK CRT — PANEL BORDER PULSE + SCANLINE OVERLAY
+   CYBERPUNK CRT — hard border flash instead of pulse
    ══════════════════════════════════════════════════════════════════════ */
-@keyframes crt-border-pulse {
-  0%, 100% { box-shadow: inset 0 1px 1px rgba(255, 0, 204, 0.06), inset 0 -1px 3px rgba(0,0,0,0.98), 0 4px 20px rgba(255, 0, 204, 0.12); }
-  50%       { box-shadow: inset 0 1px 1px rgba(255, 0, 204, 0.12), inset 0 -1px 3px rgba(0,0,0,0.98), 0 4px 28px rgba(255, 0, 204, 0.22); }
+@keyframes crt-border-flash {
+  0%, 92%, 100% { border-color: #ff00cc; box-shadow: 4px 4px 0 rgba(0,0,0,0.9), 0 0 18px rgba(255,0,204,0.5); }
+  94%           { border-color: #00ffee; box-shadow: 4px 4px 0 rgba(0,0,0,0.9), 0 0 28px rgba(0,255,238,0.8); }
+  96%           { border-color: #ff00cc; box-shadow: 4px 4px 0 rgba(0,0,0,0.9), 0 0 18px rgba(255,0,204,0.5); }
 }
 [data-theme="cyberpunk-crt"] .synth-panel {
-  animation: crt-border-pulse 3s ease-in-out infinite;
+  animation: crt-border-flash 5s ease-in-out infinite;
 }
 
-/* Global CRT scanline overlay on full chassis for cyberpunk */
 @keyframes crt-flicker {
-  0%   { opacity: 0.97; }
-  50%  { opacity: 1; }
-  100% { opacity: 0.97; }
+  0%   { opacity: 1; }
+  47%  { opacity: 1; }
+  48%  { opacity: 0.92; }
+  49%  { opacity: 1; }
+  100% { opacity: 1; }
 }
 [data-theme="cyberpunk-crt"] .synth-chassis {
-  animation: crt-flicker 8s ease-in-out infinite;
+  animation: crt-flicker 12s linear infinite;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -516,26 +525,32 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   PIANO KEYBED
+   PIANO KEYBED — flat cell-shade keys, hard borders, bold press depth
    ══════════════════════════════════════════════════════════════════════ */
 .key-white {
   background: var(--key-white-grad);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.4), inset 0 -2px 4px rgba(0,0,0,0.1);
+  border-right: 1px solid #1a2030;
+  border-bottom: 4px solid #1a2030;
+  box-shadow: none;
 }
 .key-white.active {
   background: var(--key-white-active);
-  transform: translateY(3px);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.6), inset 0 2px 4px rgba(0,0,0,0.3);
+  transform: translateY(4px);
+  border-bottom-width: 0px;
+  box-shadow: none;
 }
 
 .key-black {
   background: var(--key-black-grad);
-  box-shadow: 2px 4px 8px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.2);
+  border: 1px solid rgba(0,229,255,0.2);
+  border-bottom: 4px solid rgba(0,0,0,0.9);
+  box-shadow: 2px 0 0 rgba(0,0,0,0.9);
 }
 .key-black.active {
   background: var(--key-black-active);
-  transform: translateY(2px);
-  box-shadow: 1px 2px 4px rgba(0,0,0,0.8), inset 0 2px 4px rgba(0,0,0,0.5);
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+  box-shadow: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -587,7 +602,7 @@
 .touch-target { min-height: 44px; min-width: 44px; }
 
 /* ══════════════════════════════════════════════════════════════════════
-   MOBILE TAB BAR
+   MOBILE TAB BAR — cell-shade: solid bg, hard borders, bold active
    ══════════════════════════════════════════════════════════════════════ */
 .mobile-tab-btn {
   display: flex;
@@ -599,46 +614,91 @@
   font-family: 'Share Tech Mono', 'JetBrains Mono', monospace;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  border-radius: 4px;
+  border-radius: 2px;
   border: 1px solid transparent;
-  transition: all 0.12s ease;
+  transition: all 0.1s ease;
   user-select: none;
   -webkit-user-select: none;
 }
 .mobile-tab-btn.active {
   background: var(--tab-active-bg);
   border-color: var(--tab-active-border);
+  border-bottom: 3px solid var(--tab-active-border);
   color: var(--tab-active-text);
-  box-shadow: 0 0 8px var(--tab-active-glow), inset 0 0 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 0 12px var(--tab-active-glow), 2px 2px 0 rgba(0,0,0,0.8);
 }
 .mobile-tab-btn:not(.active) {
   color: var(--tab-inactive-text);
   background: transparent;
 }
 .mobile-tab-btn:not(.active):active {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.04);
   color: var(--text-label);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   THEME SWITCHER CHIP BUTTON
+   THEME SWITCHER CHIP BUTTON — square, flat, cell-shade
    ══════════════════════════════════════════════════════════════════════ */
 .theme-chip {
   width: 20px;
   height: 20px;
-  border-radius: 3px;
+  border-radius: 2px;
   border: 2px solid transparent;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
   position: relative;
   flex-shrink: 0;
 }
 .theme-chip.active {
-  transform: scale(1.2);
+  transform: scale(1.25);
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.4), 2px 2px 0 rgba(0,0,0,0.9);
 }
 .theme-chip:hover:not(.active) {
-  transform: scale(1.1);
-  opacity: 0.9;
+  transform: scale(1.15);
+  box-shadow: 1px 1px 0 rgba(0,0,0,0.8);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   WHEEL SLIDER — thick accent border
+   ══════════════════════════════════════════════════════════════════════ */
+.wheel-slider-h {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  background: var(--wheel-bg);
+  border: 2px solid var(--wheel-border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+  touch-action: none;
+  transition: var(--theme-transition);
+}
+.wheel-slider-h::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 28px;
+  height: 24px;
+  border-radius: 2px;
+  background: var(--wheel-thumb);
+  border: 2px solid rgba(0,0,0,0.9);
+  box-shadow: 2px 0 0 rgba(0,0,0,0.7), -2px 0 0 rgba(0,0,0,0.7);
+  cursor: ns-resize;
+}
+.wheel-slider-h.mod::-webkit-slider-thumb {
+  background: linear-gradient(to right, #007799 0%, #00e5ff 50%, #007799 100%);
+  box-shadow: 0 0 8px #00e5ff, 2px 0 0 rgba(0,0,0,0.7);
+}
+[data-theme="vintage-japanese"] .wheel-slider-h.mod::-webkit-slider-thumb {
+  background: linear-gradient(to right, #0e3880 0%, #1a5fe8 50%, #0e3880 100%);
+  box-shadow: 0 0 8px #1a5fe8;
+}
+[data-theme="german-industrial"] .wheel-slider-h.mod::-webkit-slider-thumb {
+  background: linear-gradient(to right, #806020 0%, #c9a84c 50%, #806020 100%);
+  box-shadow: 0 0 8px #c9a84c;
+}
+[data-theme="cyberpunk-crt"] .wheel-slider-h.mod::-webkit-slider-thumb {
+  background: linear-gradient(to right, #700090 0%, #ff00cc 50%, #700090 100%);
+  box-shadow: 0 0 12px #ff00cc;
 }
