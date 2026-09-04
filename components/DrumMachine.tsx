@@ -71,20 +71,22 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
   const activeStep = engine ? localStep : (propStep ?? localStep);
 
   return (
-    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center w-full select-none h-full">
-      <Screw className="top-2 left-2" />
-      <Screw className="top-2 right-2" />
-      <Screw className="bottom-2 left-2" />
-      <Screw className="bottom-2 right-2" />
+    <div className="synth-panel rounded-sm p-2.5 pt-3 md:p-3 md:pt-3 flex flex-col items-center w-full select-none h-full relative">
+      <Screw className="top-1.5 left-1.5" />
+      <Screw className="top-1.5 right-1.5" />
+      <Screw className="bottom-1.5 left-1.5" />
+      <Screw className="bottom-1.5 right-1.5" />
       
-      {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden" style={{ background: 'var(--badge-bg)', border: '1px solid var(--badge-border)' }}>
-        <div className="w-1.5 h-1.5 rounded-full bg-[#ffaa00] shadow-[0_0_6px_#ffaa00] shrink-0" />
-        <span className="font-mono text-[10px] md:text-xs font-bold tracking-[0.15em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>RHYTHM SEQUENCER</span>
+      {/* Module Title Header Bar */}
+      <div className="w-full flex items-center justify-between px-3 py-1 mb-2 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+        <div className="flex items-center gap-1.5 overflow-hidden">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#ffaa00] shadow-[0_0_6px_#ffaa00] shrink-0" />
+          <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>RHYTHM SEQUENCER</span>
+        </div>
       </div>
 
       {/* Control Bar: Play/Stop, BPM, Track Select, Swing, Bank Select */}
-      <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-2.5 px-0.5 py-0.5">
+      <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-2 px-0.5 py-0.5">
         
         {/* Play & Tempo & Swing & Bank */}
         <div className="flex items-center justify-around sm:justify-start flex-wrap gap-2 w-full lg:w-auto">

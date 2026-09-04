@@ -6,13 +6,29 @@ import { LEDButton } from './Switch';
 interface MasterFXPanelProps {
   fx: MasterFXParams;
   onChange: (fx: MasterFXParams) => void;
+  onMidiLearn?: (paramId: string) => void;
+  learningParamId?: string | null;
+  mappedCCs?: Record<number, string>;
 }
 
 const Screw = ({ className = "" }: { className?: string }) => (
   <div className={`synth-screw absolute ${className}`} />
 );
 
-export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) => {
+export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
+  fx,
+  onChange,
+  onMidiLearn,
+  learningParamId,
+  mappedCCs,
+}) => {
+  const getMappedCC = (paramId: string) => {
+    if (!mappedCCs) return null;
+    for (const [ccStr, id] of Object.entries(mappedCCs)) {
+      if (id === paramId) return parseInt(ccStr, 10);
+    }
+    return null;
+  };
   const toggleDrive = () => {
     onChange({ ...fx, drive: { ...fx.drive, enabled: !fx.drive.enabled } });
   };
@@ -34,19 +50,21 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
   };
 
   return (
-    <div className="synth-panel rounded-sm p-3 pt-6 md:p-3.5 md:pt-6 flex flex-col items-center select-none touch-lock w-full h-full">
-      <Screw className="top-2 left-2" />
-      <Screw className="top-2 right-2" />
-      <Screw className="bottom-2 left-2" />
-      <Screw className="bottom-2 right-2" />
+    <div className="synth-panel rounded-sm p-2.5 pt-3 md:p-3 md:pt-3 flex flex-col items-center select-none touch-lock w-full h-full relative">
+      <Screw className="top-1.5 left-1.5" />
+      <Screw className="top-1.5 right-1.5" />
+      <Screw className="bottom-1.5 left-1.5" />
+      <Screw className="bottom-1.5 right-1.5" />
       
-      {/* Module Title Badge */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 shadow-md z-20 flex items-center gap-1.5 max-w-[92%] whitespace-nowrap overflow-hidden" style={{ background: 'var(--badge-bg)', border: '1px solid var(--badge-border)' }}>
-        <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344] shrink-0" />
-        <span className="font-mono text-[10px] md:text-xs font-bold tracking-[0.15em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>MASTER FX RACK</span>
+      {/* Module Title Header Bar */}
+      <div className="w-full flex items-center justify-between px-3 py-1 mb-2 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+        <div className="flex items-center gap-1.5 overflow-hidden">
+          <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344] shrink-0" />
+          <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>MASTER FX RACK</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 w-full h-full pt-0.5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2 w-full flex-1 min-h-0">
         
         {/* Drive Module */}
         <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
@@ -70,6 +88,10 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
               onChange={(v) => onChange({ ...fx, drive: { ...fx.drive, amount: v } })}
               unit="%"
               color="red"
+              paramId="fx.drive.amount"
+              isLearning={learningParamId === 'fx.drive.amount'}
+              mappedCC={getMappedCC('fx.drive.amount')}
+              onMidiLearn={onMidiLearn}
             />
           </div>
         </div>
@@ -97,6 +119,10 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
               onChange={(v) => onChange({ ...fx, delay: { ...fx.delay, time: v } })}
               unit={fx.delay.sync ? "" : "s"}
               color="cyan"
+              paramId="fx.delay.time"
+              isLearning={learningParamId === 'fx.delay.time'}
+              mappedCC={getMappedCC('fx.delay.time')}
+              onMidiLearn={onMidiLearn}
             />
             <Knob
               label="Feedback"
@@ -107,6 +133,10 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
               onChange={(v) => onChange({ ...fx, delay: { ...fx.delay, feedback: v } })}
               unit="%"
               color="cyan"
+              paramId="fx.delay.feedback"
+              isLearning={learningParamId === 'fx.delay.feedback'}
+              mappedCC={getMappedCC('fx.delay.feedback')}
+              onMidiLearn={onMidiLearn}
             />
             <Knob
               label="Mix"
@@ -117,6 +147,10 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
               onChange={(v) => onChange({ ...fx, delay: { ...fx.delay, mix: v } })}
               unit="%"
               color="emerald"
+              paramId="fx.delay.mix"
+              isLearning={learningParamId === 'fx.delay.mix'}
+              mappedCC={getMappedCC('fx.delay.mix')}
+              onMidiLearn={onMidiLearn}
             />
           </div>
 
@@ -163,6 +197,10 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
               onChange={(v) => onChange({ ...fx, reverb: { ...fx.reverb, decay: v } })}
               unit="s"
               color="emerald"
+              paramId="fx.reverb.decay"
+              isLearning={learningParamId === 'fx.reverb.decay'}
+              mappedCC={getMappedCC('fx.reverb.decay')}
+              onMidiLearn={onMidiLearn}
             />
             <Knob
               label="Mix"
@@ -173,6 +211,10 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({ fx, onChange }) =>
               onChange={(v) => onChange({ ...fx, reverb: { ...fx.reverb, mix: v } })}
               unit="%"
               color="emerald"
+              paramId="fx.reverb.mix"
+              isLearning={learningParamId === 'fx.reverb.mix'}
+              mappedCC={getMappedCC('fx.reverb.mix')}
+              onMidiLearn={onMidiLearn}
             />
           </div>
         </div>

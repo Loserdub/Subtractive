@@ -444,6 +444,23 @@
   transition: var(--theme-transition);
 }
 
+/* Glass Reflection Highlight Overlay */
+.oled-screen::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.09) 0%,
+    rgba(255, 255, 255, 0.02) 28%,
+    transparent 45%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 12;
+}
+
+/* Authentic CRT Phosphor Scanline Texture */
 .oled-screen::after {
   content: " ";
   display: block;
@@ -453,10 +470,11 @@
     0deg,
     transparent 0px,
     transparent 3px,
-    rgba(0,0,0,0.28) 3px,
-    rgba(0,0,0,0.28) 4px
+    rgba(0, 0, 0, 0.35) 3px,
+    rgba(0, 0, 0, 0.35) 4px
   );
   pointer-events: none;
+  z-index: 11;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

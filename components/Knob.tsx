@@ -1,4 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { Waveform } from '../types';
 
 interface KnobProps {
   label: string;
@@ -11,6 +12,15 @@ interface KnobProps {
   logarithmic?: boolean;
   unit?: string;
   color?: 'cyan' | 'amber' | 'emerald' | 'red' | 'white';
+  modActive?: boolean;
+  modDepth?: number; // 0 to 1
+  modColor?: 'cyan' | 'amber' | 'emerald' | 'red' | 'white';
+  lfoRate?: number; // Hz
+  lfoWaveform?: Waveform;
+  paramId?: string;
+  isLearning?: boolean;
+  mappedCC?: number | null;
+  onMidiLearn?: (paramId: string) => void;
 }
 
 export const Knob: React.FC<KnobProps> = React.memo(({
@@ -23,7 +33,16 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   size = 56,
   logarithmic = false,
   unit = '',
-  color = 'cyan'
+  color = 'cyan',
+  modActive = false,
+  modDepth = 0,
+  modColor = 'emerald',
+  lfoRate = 2,
+  lfoWaveform = 'sine',
+  paramId,
+  isLearning = false,
+  mappedCC = null,
+  onMidiLearn,
 }) => {
   const knobRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef({ y: 0, x: 0, value: 0 });
@@ -31,12 +50,16 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   const [isHovered, setIsHovered] = useState(false);
   const defaultValRef = useRef(defaultValue ?? value);
 
+  // Modulation pip ref for zero-state-overhead 60 FPS animation
+  const modPipRef = useRef<SVGGElement>(null);
+  const modSweepArcRef = useRef<SVGCircleElement>(null);
+
   const onChangeRef = useRef(onChange);
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  // Color theme definitions — accent colors stay per-prop, cap material uses CSS vars
+  // Color theme definitions
   const colorMap = {
     cyan:    { stroke: '#00e5ff', glow: 'rgba(0, 229, 255, 0.6)',   text: 'text-[#00e5ff]' },
     amber:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.6)',   text: 'text-[#ffaa00]' },
@@ -46,6 +69,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   };
 
   const activeTheme = colorMap[color] || colorMap.cyan;
+  const activeModTheme = colorMap[modColor] || colorMap.emerald;
 
   // Convert value to normalized percentage (0-1)
   const getPercent = useCallback((val: number) => {
@@ -112,19 +136,84 @@ export const Knob: React.FC<KnobProps> = React.memo(({
     onChangeRef.current(defaultValRef.current);
   };
 
-  // Convert value to rotation (-135 to 135 degrees)
+  // Base value percent & rotation
   const percent = getPercent(value);
   const rotation = -135 + (percent * 270);
 
-  // SVG Arc calculations
+  // SVG Geometry calculations
   const center = size / 2;
-  const radius = center - 4;
-  const strokeWidth = 3;
+  const hasMod = modActive && modDepth > 0;
+
+  // Base arc radius
+  const radius = hasMod ? center - 5.5 : center - 4;
+  const strokeWidth = hasMod ? 2.5 : 3;
   const circumference = 2 * Math.PI * radius;
-  
-  // Total arc angle = 270deg (0.75 of full circle)
   const arcLength = circumference * 0.75;
   const dashOffset = arcLength * (1 - percent);
+
+  // Outer Modulation Ring Geometry
+  const modRadius = center - 2;
+  const modCircumference = 2 * Math.PI * modRadius;
+  const modArcLength = modCircumference * 0.75;
+
+  // Modulation range arc (centered on current percent)
+  const halfDepth = modDepth * 0.5;
+  const modMinPercent = Math.max(0, percent - halfDepth);
+  const modMaxPercent = Math.min(1, percent + halfDepth);
+  const modSpread = modMaxPercent - modMinPercent;
+  const modRangeDash = modArcLength * modSpread;
+  const modRangeOffset = modArcLength * (1 - modMaxPercent);
+
+  // 60 FPS LFO Animation Loop for sweeping ghost indicator
+  useEffect(() => {
+    if (!hasMod) return;
+
+    let animId: number;
+
+    const sampleLfo = (phase: number): number => {
+      const p = ((phase % 1) + 1) % 1;
+      switch (lfoWaveform) {
+        case 'sine':
+          return Math.sin(p * Math.PI * 2);
+        case 'triangle':
+          return p < 0.5 ? 4 * p - 1 : 3 - 4 * p;
+        case 'sawtooth':
+          return 1 - 2 * p;
+        case 'square':
+          return p < 0.5 ? 1 : -1;
+      }
+    };
+
+    const animate = () => {
+      const now = performance.now() / 1000;
+      const rate = Math.max(0.05, lfoRate);
+      const sample = sampleLfo(now * rate);
+
+      // Instantaneous modulated position (0 to 1)
+      const currentModPercent = Math.max(0, Math.min(1, percent + sample * halfDepth));
+      const modAngleDeg = -135 + currentModPercent * 270;
+
+      // Update ghost pip position
+      if (modPipRef.current) {
+        modPipRef.current.setAttribute('transform', `rotate(${modAngleDeg.toFixed(2)}, ${center}, ${center})`);
+      }
+
+      // Update sweep arc
+      if (modSweepArcRef.current) {
+        const sweepStart = Math.min(percent, currentModPercent);
+        const sweepEnd = Math.max(percent, currentModPercent);
+        const sweepLen = (sweepEnd - sweepStart) * modArcLength;
+        const sweepOffset = (1 - sweepEnd) * modArcLength;
+        modSweepArcRef.current.setAttribute('stroke-dasharray', `${sweepLen.toFixed(1)} ${modCircumference.toFixed(1)}`);
+        modSweepArcRef.current.setAttribute('stroke-dashoffset', sweepOffset.toFixed(1));
+      }
+
+      animId = requestAnimationFrame(animate);
+    };
+
+    animId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animId);
+  }, [hasMod, percent, halfDepth, lfoRate, lfoWaveform, center, modArcLength, modCircumference]);
 
   const formatValue = (val: number) => {
     if (unit === 'Hz') {
@@ -136,7 +225,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
       return `${val.toFixed(2)}s`;
     }
     if (unit === '%') {
-      return `${Math.round(val)}%`;
+      return `${Math.round(val * (max === 1 ? 100 : 1))}%`;
     }
     if (unit === 'cents') {
       return `${Math.round(val)} cents`;
@@ -148,28 +237,45 @@ export const Knob: React.FC<KnobProps> = React.memo(({
     return val.toFixed(0);
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (paramId && onMidiLearn) {
+      e.preventDefault();
+      onMidiLearn(paramId);
+    }
+  };
+
   return (
     <div 
-      className="flex flex-col items-center justify-center select-none group touch-lock min-w-0" 
-      style={{ width: size + 12 }}
+      className="flex flex-col items-center justify-center select-none group touch-lock min-w-0 relative" 
+      style={{ width: size + 14 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onContextMenu={handleContextMenu}
+      title={paramId ? (mappedCC !== null ? `${label} (Mapped to CC${mappedCC} — Right-click to reassign)` : `${label} (Right-click to MIDI Learn)`) : label}
     >
       <div
         ref={knobRef}
-        className="relative flex items-center justify-center rounded-full cursor-ns-resize touch-lock shrink-0"
+        className={`relative flex items-center justify-center rounded-full cursor-ns-resize touch-lock shrink-0 ${
+          isLearning ? 'ring-2 ring-[#ffaa00] shadow-[0_0_12px_#ffaa00] animate-pulse' : ''
+        }`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onDoubleClick={handleDoubleClick}
         style={{ width: size, height: size }}
       >
+        {/* MIDI Learn Pulsing Overlay */}
+        {isLearning && (
+          <div 
+            className="absolute inset-[-4px] rounded-full border border-[#ffaa00] animate-ping pointer-events-none z-30 opacity-75"
+          />
+        )}
         {/* Outer Ring & Arc SVG */}
         <svg 
           className="absolute inset-0 w-full h-full pointer-events-none"
           style={{ transform: 'rotate(135deg)' }}
         >
-          {/* Track Arc Background — uses CSS var for theme-aware color */}
+          {/* Base Track Arc Background */}
           <circle
             cx={center}
             cy={center}
@@ -180,6 +286,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
             strokeDasharray={`${arcLength} ${circumference}`}
             strokeLinecap="round"
           />
+
           {/* Dynamic Active Glowing Arc */}
           <circle
             cx={center}
@@ -196,13 +303,80 @@ export const Knob: React.FC<KnobProps> = React.memo(({
               transition: isDragging ? 'none' : 'stroke-dashoffset 0.05s ease-out'
             }}
           />
+
+          {/* Outer Dynamic Modulation Ring (Rendered when modulation is active) */}
+          {hasMod && (
+            <>
+              {/* Outer Mod Track */}
+              <circle
+                cx={center}
+                cy={center}
+                r={modRadius}
+                fill="none"
+                stroke="rgba(255, 255, 255, 0.07)"
+                strokeWidth={1.5}
+                strokeDasharray={`${modArcLength} ${modCircumference}`}
+                strokeLinecap="round"
+              />
+
+              {/* Modulation Range Bracket Arc */}
+              <circle
+                cx={center}
+                cy={center}
+                r={modRadius}
+                fill="none"
+                stroke={activeModTheme.stroke}
+                strokeWidth={1.8}
+                strokeDasharray={`${modRangeDash} ${modCircumference}`}
+                strokeDashoffset={modRangeOffset}
+                strokeLinecap="round"
+                opacity={0.5}
+                style={{
+                  filter: `drop-shadow(0 0 3px ${activeModTheme.stroke})`,
+                  transition: isDragging ? 'none' : 'stroke-dasharray 0.05s ease-out, stroke-dashoffset 0.05s ease-out'
+                }}
+              />
+
+              {/* Real-time Sweeping Modulation Arc */}
+              <circle
+                ref={modSweepArcRef}
+                cx={center}
+                cy={center}
+                r={modRadius}
+                fill="none"
+                stroke={activeModTheme.stroke}
+                strokeWidth={2.2}
+                strokeDasharray={`0 ${modCircumference}`}
+                strokeDashoffset={0}
+                strokeLinecap="round"
+                opacity={0.85}
+              />
+            </>
+          )}
         </svg>
 
-        {/* Outer Ribbed Ring — flat, accent-bordered */}
+        {/* Real-time Sweeping Ghost Indicator Pip */}
+        {hasMod && (
+          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+            <g ref={modPipRef} transform={`rotate(${rotation}, ${center}, ${center})`}>
+              <circle
+                cx={center}
+                cy={center - modRadius}
+                r={2}
+                fill="#ffffff"
+                stroke={activeModTheme.stroke}
+                strokeWidth={1}
+                style={{ filter: `drop-shadow(0 0 4px ${activeModTheme.stroke})` }}
+              />
+            </g>
+          </svg>
+        )}
+
+        {/* Outer Ribbed Ring */}
         <div 
           className="absolute rounded-full"
           style={{ 
-            inset: '6px',
+            inset: hasMod ? '7px' : '6px',
             background: 'var(--knob-ribbed)',
             border: `2px solid var(--knob-face-border)`,
             boxShadow: `2px 2px 0 rgba(0,0,0,0.9), -1px -1px 0 rgba(0,0,0,0.5)`
@@ -213,7 +387,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
         <div 
           className="absolute rounded-full"
           style={{ 
-            inset: '22%',
+            inset: hasMod ? '23%' : '22%',
             background: 'var(--knob-face-grad)',
             border: `1px solid var(--knob-face-border)`,
           }}
@@ -227,12 +401,12 @@ export const Knob: React.FC<KnobProps> = React.memo(({
             transition: isDragging ? 'none' : 'transform 0.05s ease-out'
           }}
         >
-          {/* Glowing Pointer Line — sharp, flat */}
+          {/* Glowing Pointer Line */}
           <div 
             className="absolute top-[18%] left-1/2 -translate-x-1/2"
             style={{ 
               width: size > 48 ? '3px' : '2px', 
-              height: `${size * 0.24}px`,
+              height: `${size * (hasMod ? 0.22 : 0.24)}px`,
               background: isDragging || isHovered ? activeTheme.stroke : 'rgba(255,255,255,0.85)',
               boxShadow: isDragging || isHovered ? `0 0 8px ${activeTheme.stroke}, 0 0 2px ${activeTheme.stroke}` : '1px 1px 0 rgba(0,0,0,0.8)'
             }}
@@ -250,16 +424,28 @@ export const Knob: React.FC<KnobProps> = React.memo(({
           }}
         >
           {formatValue(value)}
+          {hasMod && (
+            <span className="ml-1 text-[8px] text-[#00ff66] opacity-90">
+              [±{Math.round(modDepth * 50)}%]
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Label Underneath */}
-      <span 
-        className="mt-1.5 text-[8px] md:text-[9px] font-bold tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
-        style={{ color: 'var(--text-label)' }}
-      >
-        {label}
-      </span>
+      {/* Label Underneath with MIDI Learn indicator and CC tag */}
+      <div className="flex flex-col items-center mt-1.5 max-w-full">
+        <span 
+          className="text-[8px] md:text-[9px] font-bold tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
+          style={{ color: isLearning ? '#ffaa00' : hasMod ? activeModTheme.stroke : 'var(--text-label)' }}
+        >
+          {isLearning ? 'LEARN...' : label}
+        </span>
+        {mappedCC !== null && mappedCC !== undefined && (
+          <span className="text-[7px] font-mono font-bold text-[#ffaa00] bg-[#ffaa00]/10 border border-[#ffaa00]/40 rounded px-1 leading-none mt-0.5 shadow-[0_0_4px_rgba(255,170,0,0.3)]">
+            CC{mappedCC}
+          </span>
+        )}
+      </div>
     </div>
   );
 });

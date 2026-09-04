@@ -1,34 +1,70 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { KEYBOARD_LAYOUT } from '../constants';
-import { LEDButton } from './Switch';
+import React, { useState, useRef, useMemo } from 'react';
+import { KEYBOARD_LAYOUT, DAW_KEY_LABELS, CLASSIC_KEY_LABELS } from '../constants';
 
-interface KeyboardProps {
+export interface KeyboardProps {
   onNoteOn: (note: number) => void;
   onNoteOff: (note: number) => void;
   activeNotes: Set<number>;
   onModulationChange?: (val: number) => void;
   onPitchBendChange?: (val: number) => void;
+  octaveOffset?: number;
+  onOctaveChange?: (octave: number) => void;
+  isKeyboardMode?: boolean;
+  onToggleKeyboardMode?: () => void;
+  keyboardLayout?: 'daw' | 'classic';
+  onChangeKeyboardLayout?: (layout: 'daw' | 'classic') => void;
 }
-
-const BASE_KEY_MAP: Record<string, number> = {
-  'z': 60, 's': 61, 'x': 62, 'd': 63, 'c': 64, 'v': 65, 'g': 66, 'b': 67, 'h': 68, 'n': 69, 'j': 70, 'm': 71,
-  ',': 72, 'l': 73, '.': 74, ';': 75, '/': 76,
-  'q': 72, '2': 73, 'w': 74, '3': 75, 'e': 76, 'r': 77, '5': 78, 't': 79, '6': 80, 'y': 81, '7': 82, 'u': 83, 'i': 84,
-};
-
-const BASE_KEY_LABELS: Record<number, string> = {
-  60: 'Z', 61: 'S', 62: 'X', 63: 'D', 64: 'C', 65: 'V', 66: 'G', 67: 'B', 68: 'H', 69: 'N', 70: 'J', 71: 'M',
-  72: 'Q', 73: '2', 74: 'W', 75: '3', 76: 'E', 77: 'R', 78: '5', 79: 'T', 80: '6', 81: 'Y', 82: '7', 83: 'U', 84: 'I',
-};
 
 export const Keyboard: React.FC<KeyboardProps> = React.memo(({
   onNoteOn,
   onNoteOff,
   activeNotes,
   onModulationChange,
-  onPitchBendChange
+  onPitchBendChange,
+  octaveOffset: octaveOffsetProp,
+  onOctaveChange,
+  isKeyboardMode: isKeyboardModeProp,
+  onToggleKeyboardMode,
+  keyboardLayout: keyboardLayoutProp,
+  onChangeKeyboardLayout,
 }) => {
-  const [octaveOffset, setOctaveOffset] = useState<number>(0);
+  // Local fallbacks if uncontrolled
+  const [internalOctave, setInternalOctave] = useState<number>(0);
+  const currentOctave = octaveOffsetProp !== undefined ? octaveOffsetProp : internalOctave;
+  const setOctave = onOctaveChange || setInternalOctave;
+
+  const [internalKeyboardMode, setInternalKeyboardMode] = useState<boolean>(true);
+  const currentKeyboardMode = isKeyboardModeProp !== undefined ? isKeyboardModeProp : internalKeyboardMode;
+  const toggleKeyboardMode = onToggleKeyboardMode || (() => setInternalKeyboardMode(v => !v));
+
+  const [internalLayout, setInternalLayout] = useState<'daw' | 'classic'>('daw');
+  const currentLayout = keyboardLayoutProp !== undefined ? keyboardLayoutProp : internalLayout;
+  const changeLayout = onChangeKeyboardLayout || setInternalLayout;
+
+  // Collapsible toolbar state with localStorage persistence
+  const [isBarCollapsed, setIsBarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('subtractive_keyboard_bar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleBarCollapse = () => {
+    setIsBarCollapsed(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('subtractive_keyboard_bar_collapsed', String(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const decrementOctave = () => setOctave(Math.max(-2, currentOctave - 1));
+  const incrementOctave = () => setOctave(Math.min(2, currentOctave + 1));
+
   const activePointersRef = useRef<Map<number, number>>(new Map()); // pointerId -> midiNote
   const [pitchVal, setPitchVal] = useState(0.5); // 0..1 (0.5 center)
   const [modVal, setModVal] = useState(0); // 0..1
@@ -37,46 +73,15 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
   const { whiteKeys, blackKeys } = useMemo(() => {
     const transposed = KEYBOARD_LAYOUT.map(k => ({
       ...k,
-      midi: k.midi + octaveOffset * 12
+      midi: k.midi + currentOctave * 12
     }));
     return {
       whiteKeys: transposed.filter(k => k.type === 'white'),
       blackKeys: transposed.filter(k => k.type === 'black')
     };
-  }, [octaveOffset]);
+  }, [currentOctave]);
 
-  // Handle QWERTY Keyboard input
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      const key = e.key.toLowerCase();
-      const baseNote = BASE_KEY_MAP[key];
-      if (baseNote !== undefined) {
-        const transposed = baseNote + octaveOffset * 12;
-        onNoteOn(transposed);
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      const key = e.key.toLowerCase();
-      const baseNote = BASE_KEY_MAP[key];
-      if (baseNote !== undefined) {
-        const transposed = baseNote + octaveOffset * 12;
-        onNoteOff(transposed);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [onNoteOn, onNoteOff, octaveOffset]);
+  const activeLabels = currentLayout === 'daw' ? DAW_KEY_LABELS : CLASSIC_KEY_LABELS;
 
   // Pointer Event handlers for multi-touch performance
   const handlePointerDownKey = (e: React.PointerEvent, midiNote: number) => {
@@ -154,69 +159,214 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
   };
 
   return (
-    <div className="w-full flex flex-col bg-[#0c0f15] border-t-2 border-[#202736] p-2 gap-2 touch-lock select-none">
+    <div className="w-full flex flex-col bg-[#0c0f15] border-t border-[#202736] p-1.5 gap-1.5 touch-lock select-none">
       
-      {/* ── Control Bar: Octave + Wheels ──────────────────────────────── */}
-      {/* Mobile: horizontal strip across top. Desktop: vertical side column. */}
-      <div className="flex flex-col md:flex-row md:items-stretch gap-2">
-        
-        {/* Row 1 (mobile) / Column (desktop): Octave selector + Wheels */}
-        <div className="flex flex-row items-center justify-between gap-3 bg-[#131720] px-3 py-2 rounded-sm border border-[#252d3d] md:flex-col md:justify-between md:w-auto md:shrink-0">
-          
-          {/* Octave Buttons */}
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Octave</span>
-            <div className="flex gap-1">
+      {/* ── Collapsed Micro-Bar (Ultra-Thin ~20px) ────────────────────── */}
+      {isBarCollapsed ? (
+        <div className="w-full flex items-center justify-between px-2 py-0.5 bg-[#10141d] rounded-sm border border-[#1e2638] text-[8px] font-mono select-none">
+          {/* Left: Typing Status Indicator & Quick Toggle */}
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={toggleKeyboardMode}
+              title="Toggle Computer Keyboard Musical Typing (Hotkey: \)"
+              className={`px-1.5 py-0.5 rounded flex items-center gap-1 transition-all ${
+                currentKeyboardMode
+                  ? 'bg-[#00e5ff]/15 text-[#00e5ff] border border-[#00e5ff]/40 hover:bg-[#00e5ff]/25'
+                  : 'bg-[#181d28] text-gray-400 border border-[#252d3d] hover:text-gray-200'
+              }`}
+            >
+              <span className="text-[9px]">⌨️</span>
+              <span className="font-bold">{currentKeyboardMode ? `PLAY (${currentLayout.toUpperCase()})` : 'TYPING OFF'}</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${currentKeyboardMode ? 'bg-[#00ff66] shadow-[0_0_4px_#00ff66]' : 'bg-gray-600'}`} />
+            </button>
+          </div>
+
+          {/* Center: Micro Octave Shifter */}
+          <div className="flex items-center gap-1">
+            <span className="text-gray-400 font-bold uppercase tracking-wider text-[7px]">OCT:</span>
+            <button
+              type="button"
+              onClick={decrementOctave}
+              disabled={currentOctave <= -2}
+              className="w-4 h-4 flex items-center justify-center rounded bg-[#181d28] border border-[#2e374a] text-gray-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none text-[8px] font-bold"
+              title="Octave Down (Hotkeys: Z or [)"
+            >
+              -
+            </button>
+            <div className="flex gap-0.5">
               {[-2, -1, 0, 1, 2].map((oct) => (
                 <button
                   key={oct}
-                  onClick={() => setOctaveOffset(oct)}
-                  className={`min-w-[36px] min-h-[36px] px-1.5 text-[10px] font-mono font-bold rounded-sm border transition-all ${
-                    octaveOffset === oct
-                      ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
-                      : 'bg-[#1e2533] text-gray-400 border-[#2e374a] hover:text-white active:bg-[#263248]'
+                  type="button"
+                  onClick={() => setOctave(oct)}
+                  className={`w-4 h-4 flex items-center justify-center rounded text-[8px] font-mono font-bold transition-all ${
+                    currentOctave === oct
+                      ? 'bg-[#00e5ff] text-black shadow-[0_0_6px_#00e5ff]'
+                      : 'bg-[#181d28] text-gray-400 border border-[#242c3d] hover:text-white'
                   }`}
                 >
                   {oct > 0 ? `+${oct}` : oct}
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={incrementOctave}
+              disabled={currentOctave >= 2}
+              className="w-4 h-4 flex items-center justify-center rounded bg-[#181d28] border border-[#2e374a] text-gray-300 hover:text-white disabled:opacity-30 disabled:pointer-events-none text-[8px] font-bold"
+              title="Octave Up (Hotkeys: X or ])"
+            >
+              +
+            </button>
           </div>
 
-          {/* ── Desktop vertical wheels (hidden on mobile) ── */}
-          <div className="hidden md:flex flex-row gap-3 items-center">
-            {/* Pitch Wheel */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[7px] font-mono text-gray-400 uppercase">Pitch</span>
-              <div 
-                className="relative w-5 h-16 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
-                onPointerDown={handlePitchWheelPointerDown}
-              >
-                <div 
-                  className="absolute left-0 right-0 h-3 bg-gradient-to-r from-gray-400 via-white to-gray-400 rounded-sm border-y border-black/80 shadow-[0_0_4px_white]"
-                  style={{ top: `${(1 - pitchVal) * 80}%` }}
-                />
+          {/* Right: Expand Options Button */}
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline text-gray-400 text-[7px]">
+              {currentKeyboardMode && (currentLayout === 'daw' ? '[Z/X] Oct' : '[[/]] Oct')}
+            </span>
+            <button
+              type="button"
+              onClick={toggleBarCollapse}
+              title="Expand Keyboard Toolbar (Wheels & Options)"
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-[#181f2c] hover:bg-[#222b3d] text-[#00e5ff] border border-[#2b374e] rounded transition-all text-[8px] font-bold"
+            >
+              <span>OPTIONS</span>
+              <span className="text-[7px]">▼</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* ── Thin Expanded Toolbar (Sleek Single Row ~26px) ─────────────── */
+        <div className="w-full flex flex-wrap items-center justify-between gap-1.5 px-2 py-1 bg-[#121620] rounded-sm border border-[#222a3a] text-[8px] font-mono select-none">
+          {/* Left: Typing Mode & Layout Pills */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={toggleKeyboardMode}
+              title="Toggle Computer Keyboard Musical Typing (Hotkey: \)"
+              className={`h-5 px-2 text-[8px] font-mono font-bold rounded border flex items-center gap-1 transition-all ${
+                currentKeyboardMode
+                  ? 'bg-[#00e5ff]/20 text-[#00e5ff] border-[#00e5ff]/50 shadow-[0_0_6px_rgba(0,229,255,0.3)]'
+                  : 'bg-[#181d28] text-gray-400 border-[#2a3448] hover:text-gray-200'
+              }`}
+            >
+              <span className="text-[9px]">⌨️</span>
+              <span>{currentKeyboardMode ? 'TYPING ON' : 'TYPING OFF'}</span>
+              <div className={`w-1.5 h-1.5 rounded-full ${
+                currentKeyboardMode ? 'bg-[#00ff66] shadow-[0_0_4px_#00ff66]' : 'bg-gray-600'
+              }`} />
+            </button>
+
+            {currentKeyboardMode && (
+              <div className="flex items-center rounded p-0.5 bg-[#080a0f] border border-[#1e2638] h-5">
+                <button
+                  type="button"
+                  onClick={() => changeLayout('daw')}
+                  className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded transition-all ${
+                    currentLayout === 'daw'
+                      ? 'bg-[#00e5ff] text-black shadow-[0_0_4px_#00e5ff]'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  title="DAW Standard: [A S D F] naturals, [W E T Y] sharps, [Z / X] octave shift"
+                >
+                  DAW
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeLayout('classic')}
+                  className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded transition-all ${
+                    currentLayout === 'classic'
+                      ? 'bg-[#00e5ff] text-black shadow-[0_0_4px_#00e5ff]'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  title="Classic Tracker: [Z to M] lower octave, [Q to I] upper octave"
+                >
+                  CLASSIC
+                </button>
               </div>
-            </div>
-            {/* Mod Wheel */}
-            <div className="flex flex-col items-center gap-1">
-              <span className="text-[7px] font-mono text-gray-400 uppercase">Mod</span>
-              <div 
-                className="relative w-5 h-16 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
-                onPointerDown={handleModWheelPointerDown}
-              >
-                <div 
-                  className="absolute left-0 right-0 h-3 bg-gradient-to-r from-[#00b8d4] via-[#00e5ff] to-[#00b8d4] rounded-sm border-y border-black/80 shadow-[0_0_6px_#00e5ff]"
-                  style={{ top: `${(1 - modVal) * 80}%` }}
-                />
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* ── Mobile horizontal wheel sliders (hidden on desktop) ── */}
-          <div className="flex md:hidden flex-col gap-1.5 min-w-[140px]">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Pitch</span>
+          {/* Center: Inline Octave Selector */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[7px] font-mono text-gray-400 uppercase tracking-wider font-bold">OCT:</span>
+            <button
+              type="button"
+              onClick={decrementOctave}
+              disabled={currentOctave <= -2}
+              className="w-5 h-5 flex items-center justify-center rounded bg-[#181d28] border border-[#2a3448] text-gray-300 hover:text-white text-[9px] font-bold disabled:opacity-30 disabled:pointer-events-none"
+              title="Octave Down (Hotkey: Z or [)"
+            >
+              -
+            </button>
+            <div className="flex gap-1">
+              {[-2, -1, 0, 1, 2].map((oct) => (
+                <button
+                  key={oct}
+                  type="button"
+                  onClick={() => setOctave(oct)}
+                  className={`w-5 h-5 flex items-center justify-center text-[8px] font-mono font-bold rounded border transition-all ${
+                    currentOctave === oct
+                      ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_6px_#00e5ff]'
+                      : 'bg-[#181d28] text-gray-400 border-[#273244] hover:text-white'
+                  }`}
+                >
+                  {oct > 0 ? `+${oct}` : oct}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={incrementOctave}
+              disabled={currentOctave >= 2}
+              className="w-5 h-5 flex items-center justify-center rounded bg-[#181d28] border border-[#2a3448] text-gray-300 hover:text-white text-[9px] font-bold disabled:opacity-30 disabled:pointer-events-none"
+              title="Octave Up (Hotkey: X or ])"
+            >
+              +
+            </button>
+            {currentKeyboardMode && (
+              <span className="hidden sm:inline text-[7px] font-mono text-[#00e5ff]/70 ml-1">
+                {currentLayout === 'daw' ? '[Z/X]' : '[[/]]'}
+              </span>
+            )}
+          </div>
+
+          {/* Right: Pitch & Mod Wheels + Collapse Toggle */}
+          <div className="flex items-center gap-2.5 shrink-0">
+            {/* Desktop Mini Wheels */}
+            <div className="hidden md:flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <span className="text-[7px] font-mono text-gray-400 uppercase">PITCH</span>
+                <div 
+                  className="relative w-3.5 h-5 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
+                  onPointerDown={handlePitchWheelPointerDown}
+                  title="Pitch Bend (Click & drag vertically)"
+                >
+                  <div 
+                    className="absolute left-0 right-0 h-1 bg-white rounded-sm shadow-[0_0_3px_white]"
+                    style={{ top: `${(1 - pitchVal) * 75}%` }}
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[7px] font-mono text-gray-400 uppercase">MOD</span>
+                <div 
+                  className="relative w-3.5 h-5 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
+                  onPointerDown={handleModWheelPointerDown}
+                  title="Modulation Wheel (Click & drag vertically)"
+                >
+                  <div 
+                    className="absolute left-0 right-0 h-1 bg-[#00e5ff] rounded-sm shadow-[0_0_4px_#00e5ff]"
+                    style={{ top: `${(1 - modVal) * 75}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Sliders */}
+            <div className="flex md:hidden items-center gap-1">
               <input
                 type="range"
                 min="0"
@@ -232,11 +382,9 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   setPitchVal(0.5);
                   if (onPitchBendChange) onPitchBendChange(0.5);
                 }}
-                className="wheel-slider-h touch-lock"
+                className="w-12 h-2 accent-[#00e5ff]"
+                title="Pitch Bend"
               />
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[8px] font-mono text-gray-400 uppercase tracking-widest">Mod</span>
               <input
                 type="range"
                 min="0"
@@ -248,23 +396,33 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   setModVal(v);
                   if (onModulationChange) onModulationChange(v);
                 }}
-                className="wheel-slider-h mod touch-lock"
+                className="w-12 h-2 accent-[#00e5ff]"
+                title="Modulation"
               />
             </div>
+
+            {/* Collapse Button */}
+            <button
+              type="button"
+              onClick={toggleBarCollapse}
+              title="Collapse Toolbar to Micro-Bar"
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-[#181f2c] hover:bg-[#222b3d] text-gray-400 hover:text-[#00e5ff] border border-[#2b374e] rounded transition-all text-[8px] font-bold"
+            >
+              <span>HIDE</span>
+              <span className="text-[7px]">▲</span>
+            </button>
           </div>
-
         </div>
+      )}
 
-      </div>{/* end control-bar wrapper */}
-
-      {/* Main Piano Keybed */}
-      <div className="relative w-full h-40 md:h-40 min-h-[160px] bg-[#07090d] p-1 rounded-sm border border-[#202736] overflow-hidden shadow-2xl">
+      {/* ── Main Piano Keybed ────────────────────────────────────────── */}
+      <div className="relative w-full h-36 md:h-40 min-h-[140px] bg-[#07090d] p-1 rounded-sm border border-[#202736] overflow-hidden shadow-2xl">
         
         {/* White Keys Row */}
         <div className="absolute top-1 left-1 right-1 bottom-1 flex gap-[2px]">
           {whiteKeys.map(key => {
             const isActive = activeNotes.has(key.midi);
-            const label = BASE_KEY_LABELS[key.midi - octaveOffset * 12];
+            const keyLabel = currentKeyboardMode ? activeLabels[key.midi - currentOctave * 12] : null;
             return (
               <div
                 key={key.midi}
@@ -283,9 +441,19 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   }`} 
                 />
 
-                {label && (
-                  <span className="text-[9px] font-mono text-gray-500 font-bold pointer-events-none">
-                    {label}
+                {/* Keycap or Musical Note Label */}
+                {currentKeyboardMode && keyLabel ? (
+                  <div className="flex flex-col items-center pointer-events-none mb-1">
+                    <span className="text-[10px] md:text-[11px] font-mono font-black text-black bg-[#00e5ff]/25 px-1 rounded shadow-sm border border-black/20">
+                      {keyLabel}
+                    </span>
+                    <span className="text-[7px] font-mono text-gray-500 font-semibold">
+                      {key.note}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-[8px] font-mono text-gray-500 font-bold pointer-events-none mb-1">
+                    {key.note}
                   </span>
                 )}
                 
@@ -305,7 +473,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
             }
 
             const isActive = activeNotes.has(blackKey.midi);
-            const label = BASE_KEY_LABELS[blackKey.midi - octaveOffset * 12];
+            const keyLabel = currentKeyboardMode ? activeLabels[blackKey.midi - currentOctave * 12] : null;
 
             return (
               <div key={`container-${key.midi}`} className="flex-1 flex">
@@ -331,9 +499,14 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                       }`} 
                     />
 
-                    {label && (
-                      <span className="text-[8px] font-mono text-gray-400 font-bold pointer-events-none">
-                        {label}
+                    {/* Keycap or Musical Note Label on Black Key */}
+                    {currentKeyboardMode && keyLabel ? (
+                      <span className="text-[9px] md:text-[10px] font-mono text-[#ffaa00] font-black pointer-events-none bg-black/60 px-1 rounded border border-[#ffaa00]/30 shadow-sm">
+                        {keyLabel}
+                      </span>
+                    ) : (
+                      <span className="text-[7px] font-mono text-gray-500 font-bold pointer-events-none">
+                        {blackKey.note.replace(/[0-9]/g, '')}
                       </span>
                     )}
 

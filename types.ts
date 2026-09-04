@@ -2,7 +2,7 @@
 export type Waveform = 'sine' | 'square' | 'sawtooth' | 'triangle';
 export type FilterType = 'lowpass' | 'highpass' | 'bandpass' | 'notch';
 export type VoiceMode = 'poly' | 'mono' | 'legato';
-export type ArpMode = 'up' | 'down' | 'updown' | 'random';
+export type ArpMode = 'up' | 'down' | 'updown' | 'converge' | 'diverge' | 'random';
 
 export interface ADSR {
   attack: number;
@@ -16,6 +16,19 @@ export interface OscillatorParams {
   detune: number; // In cents
   enabled: boolean;
   gain: number; // 0 to 1
+  unison?: number; // 1 to 8 voices (default: 1)
+  detuneSpread?: number; // In cents (0 to 100, default: 12)
+  stereoPanSpread?: number; // 0 to 1 (default: 0.5)
+}
+
+export type FilterModel = 'clean' | 'ladder24' | 'diode12';
+
+export interface FilterParams {
+  cutoff: number;
+  resonance: number;
+  type: FilterType;
+  model?: FilterModel; // 'clean' | 'ladder24' | 'diode12'
+  drive?: number; // 0 to 1 (pre-filter analog saturation)
 }
 
 export type LFOTarget = 'pitch' | 'filter' | 'amp' | 'pwm';
@@ -32,10 +45,49 @@ export interface LFOParams {
   retrigger: boolean;
 }
 
+// Modulation Matrix Types
+export type ModSource =
+  | 'lfo1'
+  | 'lfo2'
+  | 'modWheel'
+  | 'velocity'
+  | 'pitchBend'
+  | 'filterEnv'
+  | 'ampEnv';
+
+export type ModDestination =
+  | 'osc1Pitch'
+  | 'osc2Pitch'
+  | 'allPitch'
+  | 'cutoff'
+  | 'resonance'
+  | 'filterDrive'
+  | 'pwm'
+  | 'osc1Gain'
+  | 'osc2Gain'
+  | 'noiseGain'
+  | 'subGain'
+  | 'fxMix'
+  | 'pan';
+
+export interface ModMatrixRoute {
+  id: string;
+  source: ModSource;
+  destination: ModDestination;
+  amount: number; // -1 to +1 bipolar modulation depth
+  enabled: boolean;
+}
+
 export interface MasterFXParams {
   drive: {
     enabled: boolean;
     amount: number; // 0 to 1
+  };
+  chorus?: {
+    enabled: boolean;
+    rate: number; // 0.1 to 8 Hz
+    depth: number; // 0 to 1
+    mix: number; // 0 to 1
   };
   delay: {
     enabled: boolean;
@@ -50,6 +102,19 @@ export interface MasterFXParams {
     enabled: boolean;
     decay: number; // seconds
     mix: number; // 0 to 1
+    damping?: number; // 0 to 1
+  };
+  compressor?: {
+    enabled: boolean;
+    threshold: number; // -40 to 0 dB
+    ratio: number; // 1 to 20
+    attack: number; // 0.001 to 0.1 s
+    release: number; // 0.01 to 1 s
+    makeup: number; // 0 to 12 dB
+  };
+  limiter?: {
+    enabled: boolean;
+    ceiling: number; // -1.0 to 0 dB
   };
 }
 
@@ -57,8 +122,22 @@ export interface ArpeggiatorParams {
   enabled: boolean;
   mode: ArpMode;
   octaves: number; // 1 to 3
-  division: string; // e.g. '1/16', '1/8', '1/4'
+  division: string; // e.g. '1/16', '1/8', '1/4', '1/32'
   gate: number; // 0.1 to 1
+  swing?: number; // 50 to 75 (%)
+  ratchet?: number; // 1, 2, 3, 4 (flam / roll burst)
+}
+
+export type PresetCategory = 'Bass' | 'Lead' | 'Pad' | 'Pluck' | 'Keys' | 'Arp' | 'FX' | 'User' | string;
+
+export interface PresetPatch {
+  id?: string;
+  name: string;
+  category: PresetCategory;
+  author?: string;
+  tags?: string[];
+  description?: string;
+  params: SynthParameters;
 }
 
 export interface SynthParameters {
@@ -73,11 +152,9 @@ export interface SynthParameters {
   osc3: OscillatorParams;
   osc4: OscillatorParams;
   lfo: LFOParams;
-  filter: {
-    cutoff: number;
-    resonance: number;
-    type: FilterType;
-  };
+  lfo2?: LFOParams;
+  modMatrix?: ModMatrixRoute[];
+  filter: FilterParams;
   ampEnvelope: ADSR;
   filterEnvelope: ADSR & {
     amount: number;

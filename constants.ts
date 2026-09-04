@@ -1,161 +1,20 @@
+import { StepSequencePattern, DrumTrackName, DrumTrackSettings, PresetPatch } from './types';
+import { DEFAULT_SYNTH_PARAMS } from './defaultParams';
+import { RAW_FACTORY_PRESETS } from './presets/factoryPresets';
 
-import { SynthParameters, StepSequencePattern, DrumTrackName, DrumTrackSettings } from './types';
-
-export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
-  masterGain: 0.8,
-  voiceMode: 'poly',
-  glide: 0.05,
-  pwm: 0.5,
-  noiseGain: 0,
-  subGain: 0,
-  osc1: {
-    waveform: 'sawtooth',
-    detune: 0,
-    enabled: true,
-    gain: 0.6,
-  },
-  osc2: {
-    waveform: 'sawtooth',
-    detune: 12, // subtle detune
-    enabled: true,
-    gain: 0.5,
-  },
-  osc3: {
-    waveform: 'square',
-    detune: -1200, // Sub-octave
-    enabled: false,
-    gain: 0.4,
-  },
-  osc4: {
-    waveform: 'triangle',
-    detune: 700, // Fifth
-    enabled: false,
-    gain: 0.3,
-  },
-  lfo: {
-    waveform: 'sine',
-    rate: 5,
-    depth: 0,
-    delay: 0,
-    fade: 0,
-    target: 'pitch',
-    sync: false,
-    division: '1/8',
-    retrigger: true,
-  },
-  filter: {
-    cutoff: 3500,
-    resonance: 4,
-    type: 'lowpass',
-  },
-  ampEnvelope: {
-    attack: 0.01,
-    decay: 0.25,
-    sustain: 0.7,
-    release: 0.4,
-  },
-  filterEnvelope: {
-    attack: 0.02,
-    decay: 0.4,
-    sustain: 0.3,
-    release: 0.5,
-    amount: 3200,
-  },
-  fx: {
-    drive: {
-      enabled: false,
-      amount: 0.3,
-    },
-    delay: {
-      enabled: false,
-      time: 0.25,
-      feedback: 0.4,
-      mix: 0.3,
-      pingPong: true,
-      sync: true,
-      division: '1/8',
-    },
-    reverb: {
-      enabled: false,
-      decay: 2.0,
-      mix: 0.3,
-    },
-  },
-  arpeggiator: {
-    enabled: false,
-    mode: 'up',
-    octaves: 1,
-    division: '1/16',
-    gate: 0.8,
-  },
-};
-
-
-export interface PresetPatch {
-  name: string;
-  category: string;
-  params: SynthParameters;
-}
+export { DEFAULT_SYNTH_PARAMS };
 
 export const SYNTH_PRESETS: PresetPatch[] = [
   {
+    id: 'init-analog',
     name: 'Analog Init',
     category: 'Basic',
+    author: 'Subtractive',
+    tags: ['init', 'clean', 'analog'],
+    description: 'Clean default analog initialization patch with dual oscillators.',
     params: { ...DEFAULT_SYNTH_PARAMS }
   },
-  {
-    name: 'Resonant Lead',
-    category: 'Lead',
-    params: {
-      ...DEFAULT_SYNTH_PARAMS,
-      osc1: { waveform: 'sawtooth', detune: -7, enabled: true, gain: 0.7 },
-      osc2: { waveform: 'square', detune: 7, enabled: true, gain: 0.6 },
-      filter: { cutoff: 1800, resonance: 14, type: 'lowpass' },
-      filterEnvelope: { attack: 0.01, decay: 0.3, sustain: 0.2, release: 0.3, amount: 6000 },
-      ampEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.8, release: 0.3 }
-    }
-  },
-  {
-    name: 'Deep Sub Bass',
-    category: 'Bass',
-    params: {
-      ...DEFAULT_SYNTH_PARAMS,
-      osc1: { waveform: 'square', detune: 0, enabled: true, gain: 0.8 },
-      osc2: { waveform: 'sine', detune: -1200, enabled: true, gain: 0.9 },
-      osc3: { waveform: 'triangle', detune: -2400, enabled: true, gain: 0.5 },
-      osc4: { waveform: 'sawtooth', detune: 0, enabled: false, gain: 0.2 },
-      filter: { cutoff: 800, resonance: 2, type: 'lowpass' },
-      filterEnvelope: { attack: 0.01, decay: 0.25, sustain: 0.1, release: 0.2, amount: 2000 },
-      ampEnvelope: { attack: 0.002, decay: 0.3, sustain: 0.6, release: 0.2 }
-    }
-  },
-  {
-    name: 'Warm Poly Pad',
-    category: 'Pad',
-    params: {
-      ...DEFAULT_SYNTH_PARAMS,
-      osc1: { waveform: 'sawtooth', detune: -10, enabled: true, gain: 0.5 },
-      osc2: { waveform: 'sawtooth', detune: 10, enabled: true, gain: 0.5 },
-      osc3: { waveform: 'triangle', detune: 0, enabled: true, gain: 0.4 },
-      filter: { cutoff: 2200, resonance: 3, type: 'lowpass' },
-      ampEnvelope: { attack: 0.6, decay: 1.2, sustain: 0.8, release: 1.5 },
-      filterEnvelope: { attack: 0.8, decay: 1.0, sustain: 0.6, release: 1.2, amount: 2500 },
-      lfo: { ...DEFAULT_SYNTH_PARAMS.lfo, waveform: 'sine', rate: 3.5, depth: 0.15, delay: 0.3, fade: 0.5, target: 'filter' }
-    }
-  },
-  {
-    name: 'Filter Sweep Synth',
-    category: 'FX',
-    params: {
-      ...DEFAULT_SYNTH_PARAMS,
-      osc1: { waveform: 'sawtooth', detune: -15, enabled: true, gain: 0.6 },
-      osc2: { waveform: 'square', detune: 15, enabled: true, gain: 0.6 },
-      filter: { cutoff: 500, resonance: 18, type: 'bandpass' },
-      filterEnvelope: { attack: 0.4, decay: 0.8, sustain: 0.3, release: 0.6, amount: 8000 },
-      ampEnvelope: { attack: 0.1, decay: 0.5, sustain: 0.7, release: 0.8 },
-      lfo: { ...DEFAULT_SYNTH_PARAMS.lfo, waveform: 'triangle', rate: 6, depth: 0.4, delay: 0, fade: 0, target: 'filter' }
-    }
-  }
+  ...RAW_FACTORY_PRESETS
 ];
 
 export const KEYBOARD_LAYOUT = [
@@ -205,4 +64,29 @@ export const DEFAULT_DRUM_TRACK_SETTINGS: Record<DrumTrackName, DrumTrackSetting
 };
 
 export type DrumMachinePatternName = 'Techno' | 'House' | 'Hip-Hop';
+
+// Computer Keyboard Musical Typing (DAW Standard: Ableton / Logic / FL Studio style)
+export const DAW_KEY_MAP: Record<string, number> = {
+  'a': 60, 'w': 61, 's': 62, 'e': 63, 'd': 64, 'f': 65, 't': 66, 'g': 67,
+  'y': 68, 'h': 69, 'u': 70, 'j': 71, 'k': 72, 'o': 73, 'l': 74, 'p': 75,
+  ';': 76, "'": 77, ']': 78,
+};
+
+export const DAW_KEY_LABELS: Record<number, string> = {
+  60: 'A', 61: 'W', 62: 'S', 63: 'E', 64: 'D', 65: 'F', 66: 'T', 67: 'G',
+  68: 'Y', 69: 'H', 70: 'U', 71: 'J', 72: 'K', 73: 'O', 74: 'L', 75: 'P',
+  76: ';', 77: "'", 78: ']'
+};
+
+// Computer Keyboard Musical Typing (Classic Tracker: ZXCV lower octave + QWERTY upper octave)
+export const CLASSIC_KEY_MAP: Record<string, number> = {
+  'z': 60, 's': 61, 'x': 62, 'd': 63, 'c': 64, 'v': 65, 'g': 66, 'b': 67, 'h': 68, 'n': 69, 'j': 70, 'm': 71,
+  ',': 72, 'l': 73, '.': 74, ';': 75, '/': 76,
+  'q': 72, '2': 73, 'w': 74, '3': 75, 'e': 76, 'r': 77, '5': 78, 't': 79, '6': 80, 'y': 81, '7': 82, 'u': 83, 'i': 84,
+};
+
+export const CLASSIC_KEY_LABELS: Record<number, string> = {
+  60: 'Z', 61: 'S', 62: 'X', 63: 'D', 64: 'C', 65: 'V', 66: 'G', 67: 'B', 68: 'H', 69: 'N', 70: 'J', 71: 'M',
+  72: 'Q', 73: '2', 74: 'W', 75: '3', 76: 'E', 77: 'R', 78: '5', 79: 'T', 80: '6', 81: 'Y', 82: '7', 83: 'U', 84: 'I',
+};
 
