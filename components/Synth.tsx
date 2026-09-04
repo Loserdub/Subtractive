@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings } from '../types';
+import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings, PresetPatch } from '../types';
 import { patchParams } from '../utils/patchParams';
 import { AudioEngine } from '../services/AudioEngine';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
@@ -18,7 +18,6 @@ import { EnvelopeEditor } from './EnvelopeEditor';
 import { PresetBrowser } from './PresetBrowser';
 import { AudioRecorder } from '../services/AudioRecorder';
 import { MidiManager } from '../services/MidiManager';
-import { PresetPatch } from '../constants';
 import { useTheme, THEMES } from '../contexts/ThemeContext';
 
 interface PanelProps {
@@ -355,6 +354,20 @@ export const Synth: React.FC = () => {
     await midiMgr.initialize();
     midiManagerRef.current = midiMgr;
   }, [isStarted, params, drumPattern, swing, drumSettings, bpm, handleMidiParamChange]);
+
+  const handlePlayToggle = useCallback(async () => {
+    if (!isStarted) {
+      await handleStart();
+    }
+    if (!drumMachineEngine.current) return;
+    const nextIsPlaying = !isDrumMachinePlaying;
+    setIsDrumMachinePlaying(nextIsPlaying);
+    if (nextIsPlaying) {
+      drumMachineEngine.current.play();
+    } else {
+      drumMachineEngine.current.stop();
+    }
+  }, [isStarted, handleStart, isDrumMachinePlaying]);
 
   useEffect(() => {
     if (audioEngine.current) {
@@ -693,18 +706,6 @@ export const Synth: React.FC = () => {
     setParams(p => patchParams(p, { filter: { type } }));
   };
 
-  const handlePlayToggle = () => {
-    if (!drumMachineEngine.current) return;
-    const nextIsPlaying = !isDrumMachinePlaying;
-    setIsDrumMachinePlaying(nextIsPlaying);
-    if (nextIsPlaying) {
-      drumMachineEngine.current.play();
-    } else {
-      drumMachineEngine.current.stop();
-      setCurrentStep(null);
-    }
-  };
-
   const renderOscControl = (oscKey: 'osc1' | 'osc2' | 'osc3' | 'osc4', label: string) => {
     const oscParams = params[oscKey];
     return (
@@ -948,8 +949,8 @@ export const Synth: React.FC = () => {
               mappedCC={mappedCCs['masterGain'] ?? null}
               onMidiLearn={handleMidiLearn}
             />
-            {/* Mobile Theme Chips */}
-            <div className="flex flex-col gap-0.5 pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
+            {/* Mobile Theme Chips (compact 2x2 grid) */}
+            <div className="grid grid-cols-2 gap-1 pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
               {THEMES.map(t => (
                 <button
                   key={t.id}
@@ -958,9 +959,9 @@ export const Synth: React.FC = () => {
                   className={`theme-chip ${theme === t.id ? 'active' : ''}`}
                   style={{
                     background: t.chipColor,
-                    borderColor: theme === t.id ? t.chipBorder : 'transparent',
+                    borderColor: theme === t.id ? t.chipBorder : 'rgba(255,255,255,0.2)',
                     boxShadow: theme === t.id ? `0 0 6px ${t.chipBorder}` : 'none',
-                    width: 14, height: 14,
+                    width: 12, height: 12,
                   }}
                 />
               ))}

@@ -1271,12 +1271,12 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
   },
 
   // ══════════════════════════════════════════════════════════════════════
-  // PLUCKS & KEYS (20 Presets)
+  // KEYS & ORGANS (9 Presets)
   // ══════════════════════════════════════════════════════════════════════
   {
-    id: 'pluck-neosoul-epiano',
+    id: 'keys-neosoul-epiano',
     name: 'Neo-Soul E-Piano',
-    category: 'Pluck',
+    category: 'Keys',
     author: 'Subtractive Soundlab',
     tags: ['neosoul', 'rhodes', 'epiano', 'warm', 'jazz'],
     description: 'Velvety electric piano with warm harmonic bark, subtle tremolo, and jazz warmth.',
@@ -1294,6 +1294,161 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
     })
   },
   {
+    id: 'keys-80s-dx-bell',
+    name: '80s DX FM Bell',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['dx7', 'fm', 'bell', '80s', 'crystalline'],
+    description: 'Bright crystalline FM tubular bell with metallic overtone chime.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0,
+      osc1: { waveform: 'sine', detune: 0, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'sine', detune: 1900, enabled: true, gain: 0.6 },
+      osc3: { waveform: 'triangle', detune: 3100, enabled: true, gain: 0.35 },
+      filter: { cutoff: 5800, resonance: 8, type: 'lowpass' },
+      ampEnvelope: { attack: 0.002, decay: 1.2, sustain: 0.15, release: 0.8 },
+      filterEnvelope: { attack: 0.002, decay: 0.6, sustain: 0.1, release: 0.6, amount: 5200 },
+      fx: { drive: { enabled: false, amount: 0 }, delay: { enabled: true, time: 0.375, feedback: 0.45, mix: 0.3, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 3.2, mix: 0.35 } }
+    })
+  },
+  {
+    id: 'keys-lofi-rhodes',
+    name: 'Lo-Fi Vintage Rhodes',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['rhodes', 'lofi', 'vintage', 'mellow', 'chill'],
+    description: 'Mellow electric piano with warm saturation and gentle analog vibrato.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0,
+      osc1: { waveform: 'sine', detune: -4, enabled: true, gain: 0.85 },
+      osc2: { waveform: 'triangle', detune: 4, enabled: true, gain: 0.65 },
+      filter: { cutoff: 1800, resonance: 2.5, type: 'lowpass' },
+      ampEnvelope: { attack: 0.008, decay: 0.9, sustain: 0.35, release: 0.45 },
+      filterEnvelope: { attack: 0.01, decay: 0.4, sustain: 0.2, release: 0.4, amount: 2600 },
+      lfo: { waveform: 'sine', rate: 4, depth: 0.1, target: 'pitch', sync: false, division: '1/4', delay: 0.1, fade: 0.3, retrigger: true },
+      fx: { drive: { enabled: true, amount: 0.22 }, delay: { enabled: true, time: 0.25, feedback: 0.25, mix: 0.2, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 1.8, mix: 0.22 } }
+    })
+  },
+  {
+    id: 'keys-clavinet-74',
+    name: 'Funky Clavinet 1974',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['clavinet', 'funk', '70s', 'percussive', 'groove'],
+    description: 'Biting, percussive clavinet tone ideal for fast 16th-note funk riffs.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0,
+      osc1: { waveform: 'sawtooth', detune: 0, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'square', detune: 0, enabled: true, gain: 0.7 },
+      pwm: 0.8,
+      filter: { cutoff: 2600, resonance: 9, type: 'bandpass' },
+      ampEnvelope: { attack: 0.002, decay: 0.22, sustain: 0.1, release: 0.12 },
+      filterEnvelope: { attack: 0.002, decay: 0.16, sustain: 0.05, release: 0.12, amount: 5500 },
+      fx: { drive: { enabled: true, amount: 0.4 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 1.0, mix: 0.12 } }
+    })
+  },
+  {
+    id: 'keys-harpsichord-8bit',
+    name: 'Bright Harpsichord 8-Bit',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['harpsichord', 'baroque', '8bit', 'crisp', 'arcade'],
+    description: 'Baroque-meets-arcade plucky keyboard with ultra fast attack and crisp bite.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0,
+      osc1: { waveform: 'square', detune: -4, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'sawtooth', detune: 4, enabled: true, gain: 0.7 },
+      filter: { cutoff: 6000, resonance: 5, type: 'lowpass' },
+      ampEnvelope: { attack: 0.001, decay: 0.3, sustain: 0.1, release: 0.15 },
+      filterEnvelope: { attack: 0.001, decay: 0.18, sustain: 0.05, release: 0.15, amount: 4800 },
+      fx: { drive: { enabled: true, amount: 0.2 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 1.4, mix: 0.18 } }
+    })
+  },
+  {
+    id: 'keys-vaporwave-epiano',
+    name: 'Vaporwave Electric Piano',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['vaporwave', 'epiano', 'chorus', '80s', 'nostalgic'],
+    description: 'Chorus-drenched DX7 style tine electric piano with lush nostalgic shimmer.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0,
+      osc1: { waveform: 'sine', detune: -8, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'sine', detune: 8, enabled: true, gain: 0.8 },
+      osc3: { waveform: 'triangle', detune: 1200, enabled: true, gain: 0.4 },
+      filter: { cutoff: 3200, resonance: 4, type: 'lowpass' },
+      ampEnvelope: { attack: 0.005, decay: 0.8, sustain: 0.35, release: 0.5 },
+      filterEnvelope: { attack: 0.008, decay: 0.4, sustain: 0.2, release: 0.4, amount: 3000 },
+      fx: { drive: { enabled: true, amount: 0.15 }, delay: { enabled: true, time: 0.3, feedback: 0.35, mix: 0.25, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.6, mix: 0.3 } }
+    })
+  },
+  {
+    id: 'keys-toy-piano',
+    name: 'Toy Piano Kawaii',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['toypiano', 'kawaii', 'cute', 'bell', 'playful'],
+    description: 'Playful, slightly detuned miniature acoustic piano with bell-like tone.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0,
+      osc1: { waveform: 'triangle', detune: -12, enabled: true, gain: 0.85 },
+      osc2: { waveform: 'sine', detune: 12, enabled: true, gain: 0.85 },
+      filter: { cutoff: 4500, resonance: 5, type: 'lowpass' },
+      ampEnvelope: { attack: 0.002, decay: 0.5, sustain: 0.08, release: 0.3 },
+      filterEnvelope: { attack: 0.002, decay: 0.25, sustain: 0.04, release: 0.25, amount: 3500 },
+      fx: { drive: { enabled: false, amount: 0 }, delay: { enabled: true, time: 0.25, feedback: 0.25, mix: 0.18, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 1.6, mix: 0.2 } }
+    })
+  },
+  {
+    id: 'keys-m1-house-organ',
+    name: 'Deep House Organ M1',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['m1', 'house', 'organ', '90s', 'classic'],
+    description: 'Classic Korg M1 style house organ with punchy attack and deep bass weight.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0,
+      osc1: { waveform: 'triangle', detune: 0, enabled: true, gain: 0.85 },
+      osc2: { waveform: 'sine', detune: 1200, enabled: true, gain: 0.65 },
+      osc3: { waveform: 'square', detune: 1900, enabled: true, gain: 0.35 },
+      subGain: 0.4,
+      filter: { cutoff: 2400, resonance: 5, type: 'lowpass' },
+      ampEnvelope: { attack: 0.003, decay: 0.25, sustain: 0.1, release: 0.15 },
+      filterEnvelope: { attack: 0.003, decay: 0.15, sustain: 0.05, release: 0.15, amount: 3800 },
+      fx: { drive: { enabled: true, amount: 0.2 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 1.4, mix: 0.2 } }
+    })
+  },
+  {
+    id: 'keys-analog-tines',
+    name: 'Analog Tines Vibraphone',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['vibraphone', 'mallet', 'tines', 'jazz', 'warm'],
+    description: 'Warm mallet instrument with subtle sine tremolo and ringing sustain.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0,
+      osc1: { waveform: 'sine', detune: 0, enabled: true, gain: 0.9 },
+      osc2: { waveform: 'triangle', detune: 1200, enabled: true, gain: 0.4 },
+      filter: { cutoff: 2600, resonance: 4, type: 'lowpass' },
+      ampEnvelope: { attack: 0.003, decay: 0.7, sustain: 0.2, release: 0.5 },
+      filterEnvelope: { attack: 0.003, decay: 0.35, sustain: 0.1, release: 0.4, amount: 3200 },
+      lfo: { waveform: 'sine', rate: 5.2, depth: 0.18, target: 'amp', sync: false, division: '1/4', delay: 0.1, fade: 0.3, retrigger: true },
+      fx: { drive: { enabled: false, amount: 0 }, delay: { enabled: true, time: 0.25, feedback: 0.3, mix: 0.2, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.2, mix: 0.28 } }
+    })
+  },
+
+  // ══════════════════════════════════════════════════════════════════════
+  // PLUCKS (11 Presets)
+  // ══════════════════════════════════════════════════════════════════════
+  {
     id: 'pluck-marimba-wood',
     name: 'African Marimba Wood',
     category: 'Pluck',
@@ -1309,25 +1464,6 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
       ampEnvelope: { attack: 0.002, decay: 0.28, sustain: 0.05, release: 0.15 },
       filterEnvelope: { attack: 0.002, decay: 0.15, sustain: 0.02, release: 0.15, amount: 4500 },
       fx: { drive: { enabled: false, amount: 0 }, delay: { enabled: true, time: 0.25, feedback: 0.3, mix: 0.2, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 1.5, mix: 0.25 } }
-    })
-  },
-  {
-    id: 'pluck-80s-dx-bell',
-    name: '80s DX FM Bell',
-    category: 'Pluck',
-    author: 'Subtractive Soundlab',
-    tags: ['dx7', 'fm', 'bell', '80s', 'crystalline'],
-    description: 'Bright crystalline FM tubular bell with metallic overtone chime.',
-    params: patchParams(b, {
-      voiceMode: 'poly',
-      glide: 0,
-      osc1: { waveform: 'sine', detune: 0, enabled: true, gain: 0.8 },
-      osc2: { waveform: 'sine', detune: 1900, enabled: true, gain: 0.6 },
-      osc3: { waveform: 'triangle', detune: 3100, enabled: true, gain: 0.35 },
-      filter: { cutoff: 5800, resonance: 8, type: 'lowpass' },
-      ampEnvelope: { attack: 0.002, decay: 1.2, sustain: 0.15, release: 0.8 },
-      filterEnvelope: { attack: 0.002, decay: 0.6, sustain: 0.1, release: 0.6, amount: 5200 },
-      fx: { drive: { enabled: false, amount: 0 }, delay: { enabled: true, time: 0.375, feedback: 0.45, mix: 0.3, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 3.2, mix: 0.35 } }
     })
   },
   {
@@ -1364,44 +1500,6 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
       ampEnvelope: { attack: 0.001, decay: 0.16, sustain: 0.05, release: 0.12 },
       filterEnvelope: { attack: 0.002, decay: 0.12, sustain: 0.02, release: 0.12, amount: 7200 },
       fx: { drive: { enabled: true, amount: 0.35 }, delay: { enabled: true, time: 0.125, feedback: 0.3, mix: 0.22, pingPong: true, sync: true, division: '1/16' }, reverb: { enabled: true, decay: 1.8, mix: 0.25 } }
-    })
-  },
-  {
-    id: 'pluck-lofi-rhodes',
-    name: 'Lo-Fi Vintage Rhodes',
-    category: 'Pluck',
-    author: 'Subtractive Soundlab',
-    tags: ['rhodes', 'lofi', 'vintage', 'mellow', 'chill'],
-    description: 'Mellow electric piano with warm saturation and gentle analog vibrato.',
-    params: patchParams(b, {
-      voiceMode: 'poly',
-      glide: 0,
-      osc1: { waveform: 'sine', detune: -4, enabled: true, gain: 0.85 },
-      osc2: { waveform: 'triangle', detune: 4, enabled: true, gain: 0.65 },
-      filter: { cutoff: 1800, resonance: 2.5, type: 'lowpass' },
-      ampEnvelope: { attack: 0.008, decay: 0.9, sustain: 0.35, release: 0.45 },
-      filterEnvelope: { attack: 0.01, decay: 0.4, sustain: 0.2, release: 0.4, amount: 2600 },
-      lfo: { waveform: 'sine', rate: 4, depth: 0.1, target: 'pitch', sync: false, division: '1/4', delay: 0.1, fade: 0.3, retrigger: true },
-      fx: { drive: { enabled: true, amount: 0.22 }, delay: { enabled: true, time: 0.25, feedback: 0.25, mix: 0.2, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 1.8, mix: 0.22 } }
-    })
-  },
-  {
-    id: 'pluck-clavinet-74',
-    name: 'Funky Clavinet 1974',
-    category: 'Pluck',
-    author: 'Subtractive Soundlab',
-    tags: ['clavinet', 'funk', '70s', 'percussive', 'groove'],
-    description: 'Biting, percussive clavinet tone ideal for fast 16th-note funk riffs.',
-    params: patchParams(b, {
-      voiceMode: 'poly',
-      glide: 0,
-      osc1: { waveform: 'sawtooth', detune: 0, enabled: true, gain: 0.8 },
-      osc2: { waveform: 'square', detune: 0, enabled: true, gain: 0.7 },
-      pwm: 0.8,
-      filter: { cutoff: 2600, resonance: 9, type: 'bandpass' },
-      ampEnvelope: { attack: 0.002, decay: 0.22, sustain: 0.1, release: 0.12 },
-      filterEnvelope: { attack: 0.002, decay: 0.16, sustain: 0.05, release: 0.12, amount: 5500 },
-      fx: { drive: { enabled: true, amount: 0.4 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 1.0, mix: 0.12 } }
     })
   },
   {
@@ -1460,24 +1558,6 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
     })
   },
   {
-    id: 'pluck-harpsichord-8bit',
-    name: 'Bright Harpsichord 8-Bit',
-    category: 'Pluck',
-    author: 'Subtractive Soundlab',
-    tags: ['harpsichord', 'baroque', '8bit', 'crisp', 'arcade'],
-    description: 'Baroque-meets-arcade plucky keyboard with ultra fast attack and crisp bite.',
-    params: patchParams(b, {
-      voiceMode: 'poly',
-      glide: 0,
-      osc1: { waveform: 'square', detune: -4, enabled: true, gain: 0.8 },
-      osc2: { waveform: 'sawtooth', detune: 4, enabled: true, gain: 0.7 },
-      filter: { cutoff: 6000, resonance: 5, type: 'lowpass' },
-      ampEnvelope: { attack: 0.001, decay: 0.3, sustain: 0.1, release: 0.15 },
-      filterEnvelope: { attack: 0.001, decay: 0.18, sustain: 0.05, release: 0.15, amount: 4800 },
-      fx: { drive: { enabled: true, amount: 0.2 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 1.4, mix: 0.18 } }
-    })
-  },
-  {
     id: 'pluck-muted-guitar',
     name: 'Muted Guitar Synth',
     category: 'Pluck',
@@ -1514,25 +1594,6 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
     })
   },
   {
-    id: 'pluck-vaporwave-epiano',
-    name: 'Vaporwave Electric Piano',
-    category: 'Pluck',
-    author: 'Subtractive Soundlab',
-    tags: ['vaporwave', 'epiano', 'chorus', '80s', 'nostalgic'],
-    description: 'Chorus-drenched DX7 style tine electric piano with lush nostalgic shimmer.',
-    params: patchParams(b, {
-      voiceMode: 'poly',
-      glide: 0,
-      osc1: { waveform: 'sine', detune: -8, enabled: true, gain: 0.8 },
-      osc2: { waveform: 'sine', detune: 8, enabled: true, gain: 0.8 },
-      osc3: { waveform: 'triangle', detune: 1200, enabled: true, gain: 0.4 },
-      filter: { cutoff: 3200, resonance: 4, type: 'lowpass' },
-      ampEnvelope: { attack: 0.005, decay: 0.8, sustain: 0.35, release: 0.5 },
-      filterEnvelope: { attack: 0.008, decay: 0.4, sustain: 0.2, release: 0.4, amount: 3000 },
-      fx: { drive: { enabled: true, amount: 0.15 }, delay: { enabled: true, time: 0.3, feedback: 0.35, mix: 0.25, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.6, mix: 0.3 } }
-    })
-  },
-  {
     id: 'pluck-koto-oriental',
     name: 'Koto Pluck Oriental',
     category: 'Pluck',
@@ -1548,44 +1609,6 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
       ampEnvelope: { attack: 0.002, decay: 0.3, sustain: 0.05, release: 0.2 },
       filterEnvelope: { attack: 0.002, decay: 0.15, sustain: 0.02, release: 0.2, amount: 5500 },
       fx: { drive: { enabled: false, amount: 0 }, delay: { enabled: true, time: 0.25, feedback: 0.3, mix: 0.2, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.0, mix: 0.25 } }
-    })
-  },
-  {
-    id: 'pluck-toy-piano',
-    name: 'Toy Piano Kawaii',
-    category: 'Pluck',
-    author: 'Subtractive Soundlab',
-    tags: ['toypiano', 'kawaii', 'cute', 'bell', 'playful'],
-    description: 'Playful, slightly detuned miniature acoustic piano with bell-like tone.',
-    params: patchParams(b, {
-      voiceMode: 'poly',
-      glide: 0,
-      osc1: { waveform: 'triangle', detune: -12, enabled: true, gain: 0.85 },
-      osc2: { waveform: 'sine', detune: 12, enabled: true, gain: 0.85 },
-      filter: { cutoff: 4500, resonance: 5, type: 'lowpass' },
-      ampEnvelope: { attack: 0.002, decay: 0.5, sustain: 0.08, release: 0.3 },
-      filterEnvelope: { attack: 0.002, decay: 0.25, sustain: 0.04, release: 0.25, amount: 3500 },
-      fx: { drive: { enabled: false, amount: 0 }, delay: { enabled: true, time: 0.25, feedback: 0.25, mix: 0.18, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 1.6, mix: 0.2 } }
-    })
-  },
-  {
-    id: 'pluck-m1-house-organ',
-    name: 'Deep House Organ M1',
-    category: 'Pluck',
-    author: 'Subtractive Soundlab',
-    tags: ['m1', 'house', 'organ', '90s', 'classic'],
-    description: 'Classic Korg M1 style house organ with punchy attack and deep bass weight.',
-    params: patchParams(b, {
-      voiceMode: 'poly',
-      glide: 0,
-      osc1: { waveform: 'triangle', detune: 0, enabled: true, gain: 0.85 },
-      osc2: { waveform: 'sine', detune: 1200, enabled: true, gain: 0.65 },
-      osc3: { waveform: 'square', detune: 1900, enabled: true, gain: 0.35 },
-      subGain: 0.4,
-      filter: { cutoff: 2400, resonance: 5, type: 'lowpass' },
-      ampEnvelope: { attack: 0.003, decay: 0.25, sustain: 0.1, release: 0.15 },
-      filterEnvelope: { attack: 0.003, decay: 0.15, sustain: 0.05, release: 0.15, amount: 3800 },
-      fx: { drive: { enabled: true, amount: 0.2 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 1.4, mix: 0.2 } }
     })
   },
   {
@@ -1623,25 +1646,6 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
       ampEnvelope: { attack: 0.002, decay: 0.35, sustain: 0.15, release: 0.25 },
       filterEnvelope: { attack: 0.003, decay: 0.2, sustain: 0.08, release: 0.2, amount: 4800 },
       fx: { drive: { enabled: true, amount: 0.2 }, delay: { enabled: true, time: 0.25, feedback: 0.35, mix: 0.25, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.2, mix: 0.28 } }
-    })
-  },
-  {
-    id: 'pluck-analog-tines',
-    name: 'Analog Tines Vibraphone',
-    category: 'Pluck',
-    author: 'Subtractive Soundlab',
-    tags: ['vibraphone', 'mallet', 'tines', 'jazz', 'warm'],
-    description: 'Warm mallet instrument with subtle sine tremolo and ringing sustain.',
-    params: patchParams(b, {
-      voiceMode: 'poly',
-      glide: 0,
-      osc1: { waveform: 'sine', detune: 0, enabled: true, gain: 0.9 },
-      osc2: { waveform: 'triangle', detune: 1200, enabled: true, gain: 0.4 },
-      filter: { cutoff: 2600, resonance: 4, type: 'lowpass' },
-      ampEnvelope: { attack: 0.003, decay: 0.7, sustain: 0.2, release: 0.5 },
-      filterEnvelope: { attack: 0.003, decay: 0.35, sustain: 0.1, release: 0.4, amount: 3200 },
-      lfo: { waveform: 'sine', rate: 5.2, depth: 0.18, target: 'amp', sync: false, division: '1/4', delay: 0.1, fade: 0.3, retrigger: true },
-      fx: { drive: { enabled: false, amount: 0 }, delay: { enabled: true, time: 0.25, feedback: 0.3, mix: 0.2, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.2, mix: 0.28 } }
     })
   },
 
