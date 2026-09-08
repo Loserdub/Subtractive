@@ -25,7 +25,7 @@ interface DrumMachineProps {
 }
 
 const TRACK_THEMES: Record<DrumTrackName, { color: 'cyan' | 'amber' | 'emerald' | 'red'; activeBg: string; accentBg: string }> = {
-  kick: { color: 'cyan', activeBg: 'bg-[#002f3d] border-[#00e5ff] text-[#00e5ff]', accentBg: 'bg-[#00e5ff] text-black shadow-[0_0_12px_#00e5ff]' },
+  kick: { color: 'cyan', activeBg: 'bg-[#04261a] border-[#10b981] text-[#10b981]', accentBg: 'bg-[#10b981] text-black shadow-[0_0_12px_#10b981]' },
   snare: { color: 'red', activeBg: 'bg-[#3d000a] border-[#ff3344] text-[#ff3344]', accentBg: 'bg-[#ff3344] text-white shadow-[0_0_12px_#ff3344]' },
   hihat: { color: 'emerald', activeBg: 'bg-[#003d19] border-[#00ff66] text-[#00ff66]', accentBg: 'bg-[#00ff66] text-black shadow-[0_0_12px_#00ff66]' },
   crash: { color: 'amber', activeBg: 'bg-[#3d2900] border-[#ffaa00] text-[#ffaa00]', accentBg: 'bg-[#ffaa00] text-black shadow-[0_0_12px_#ffaa00]' },
@@ -200,7 +200,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
             if (isAccent) {
               stepBg = isPlayingStep ? 'bg-white text-black border-white shadow-[0_0_12px_white]' : currentTheme.accentBg;
             } else if (isNormal) {
-              stepBg = isPlayingStep ? 'bg-[#00e5ff] border-white shadow-[0_0_10px_#00e5ff]' : currentTheme.activeBg;
+              stepBg = isPlayingStep ? 'bg-[#10b981] border-white shadow-[0_0_10px_#10b981]' : currentTheme.activeBg;
             } else if (isPlayingStep) {
               stepBg = 'bg-[#3b475e] border-white';
             } else if (stepGroup % 2 === 0) {

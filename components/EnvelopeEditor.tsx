@@ -57,7 +57,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
   });
 
   const colorMap = {
-    cyan:    { stroke: '#00e5ff', glow: 'rgba(0, 229, 255, 0.45)',  fill: 'rgba(0, 229, 255, 0.12)' },
+    cyan:    { stroke: '#10b981', glow: 'rgba(16, 185, 129, 0.45)',  fill: 'rgba(16, 185, 129, 0.12)' },
     amber:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.45)',  fill: 'rgba(255, 170, 0, 0.12)' },
     emerald: { stroke: '#00ff66', glow: 'rgba(0, 255, 102, 0.45)',  fill: 'rgba(0, 255, 102, 0.12)' },
   };

@@ -69,7 +69,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
       {/* Module Title Header Bar */}
       <div className="w-full flex items-center justify-between px-3 py-1 mb-2 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
         <div className="flex items-center gap-1.5 overflow-hidden">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] shadow-[0_0_6px_#00e5ff] shrink-0" />
+          <div className="w-1.5 h-1.5 rounded-full bg-[#10b981] shadow-[0_0_6px_#10b981] shrink-0" />
           <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>
             POLY ARPEGGIATOR
           </span>
@@ -101,7 +101,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                 onClick={() => setOctaves(oct)}
                 className={`w-4 h-4 md:w-5 md:h-5 rounded-sm text-[8px] md:text-[9px] font-mono font-bold transition-all ${
                   arp.octaves === oct
-                    ? 'bg-[#00e5ff] text-black shadow-[0_0_6px_#00e5ff]'
+                    ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
                     : 'bg-[#141a26] text-gray-400 hover:text-white'
                 }`}
               >

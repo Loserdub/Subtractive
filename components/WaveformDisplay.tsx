@@ -14,7 +14,7 @@ interface WaveformDisplayProps {
 export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   waveform = 'sawtooth',
   isPlaying = true,
-  color = '#00e5ff',
+  color = '#10b981',
   amplitudeScale = 1,
   analyser = null,
   stereoAnalysers = null,
@@ -27,6 +27,16 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
 
   // Peak hold array for 64-band logarithmic spectrum
   const peakHoldRef = useRef<Float32Array>(new Float32Array(64));
+
+  // Mutable refs for continuous props to avoid rebuilding rAF loop on every knob change
+  const amplitudeScaleRef = useRef(amplitudeScale);
+  amplitudeScaleRef.current = amplitudeScale;
+  const colorRef = useRef(color);
+  colorRef.current = color;
+  const waveformRef = useRef(waveform);
+  waveformRef.current = waveform;
+  const isPlayingRef = useRef(isPlaying);
+  isPlayingRef.current = isPlaying;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -57,7 +67,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
         gctx.fillRect(0, 0, width, height);
 
         gctx.beginPath();
-        gctx.strokeStyle = 'rgba(0, 229, 255, 0.09)';
+        gctx.strokeStyle = 'rgba(16, 185, 129, 0.09)';
         gctx.lineWidth = 1 * dpr;
 
         const centerY = height / 2;
@@ -147,7 +157,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           // Pass 1: Phosphor Bloom Glow
           ctx.save();
           ctx.globalAlpha = 0.35;
-          ctx.strokeStyle = color;
+          ctx.strokeStyle = colorRef.current;
           ctx.lineWidth = 4 * dpr;
           ctx.lineJoin = 'round';
           ctx.stroke(path);
@@ -175,12 +185,12 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           }
 
           ctx.save();
-          ctx.globalAlpha = isPlaying ? 0.4 : 0.2;
-          ctx.strokeStyle = color;
+          ctx.globalAlpha = isPlayingRef.current ? 0.4 : 0.2;
+          ctx.strokeStyle = colorRef.current;
           ctx.lineWidth = 3 * dpr;
           ctx.stroke(path);
 
-          ctx.globalAlpha = isPlaying ? 0.85 : 0.4;
+          ctx.globalAlpha = isPlayingRef.current ? 0.85 : 0.4;
           ctx.lineWidth = 1.2 * dpr;
           ctx.stroke(path);
           ctx.restore();
@@ -232,8 +242,8 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
 
             // Gradient bar
             const grad = ctx.createLinearGradient(0, height, 0, by);
-            grad.addColorStop(0, 'rgba(0, 229, 255, 0.1)');
-            grad.addColorStop(0.7, color);
+            grad.addColorStop(0, 'rgba(16, 185, 129, 0.1)');
+            grad.addColorStop(0.7, colorRef.current);
             grad.addColorStop(1, '#ffffff');
 
             ctx.fillStyle = grad;
@@ -252,11 +262,11 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           for (let b = 0; b < numBands; b++) {
             const decay = Math.exp(-b / 14);
             const ripple = (Math.sin(b * 0.4 + t) + 1) * 0.5;
-            const barH = (decay * 0.7 + ripple * 0.2) * height * 0.6 * Math.max(0.1, amplitudeScale);
+            const barH = (decay * 0.7 + ripple * 0.2) * height * 0.6 * Math.max(0.1, amplitudeScaleRef.current);
             const bx = b * barWidth;
             const by = height - barH;
 
-            ctx.fillStyle = color;
+            ctx.fillStyle = colorRef.current;
             ctx.globalAlpha = 0.35;
             ctx.fillRect(bx + 1, by, Math.max(1, barWidth - 1.5 * dpr), barH);
             ctx.globalAlpha = 1.0;
@@ -298,7 +308,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           // Pass 1: Phosphor Bloom Halo
           ctx.save();
           ctx.globalAlpha = 0.35;
-          ctx.strokeStyle = color;
+          ctx.strokeStyle = colorRef.current;
           ctx.lineWidth = 4 * dpr;
           ctx.lineJoin = 'round';
           ctx.lineCap = 'round';
@@ -313,13 +323,13 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
 
         } else {
           // Synthetic Waveform Preview
-          const amplitude = height * 0.35 * Math.max(0.05, amplitudeScale);
+          const amplitude = height * 0.35 * Math.max(0.05, amplitudeScaleRef.current);
           const cycles = 2.5;
           const path = new Path2D();
           const phase = phaseRef.current;
 
           const sample = (normP: number): number => {
-            switch (waveform) {
+            switch (waveformRef.current) {
               case 'sine':
                 return Math.sin(normP * Math.PI * 2);
               case 'square':
@@ -336,7 +346,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
             const t = (px / width) * cycles + phase;
             const normP = ((t % 1) + 1) % 1;
 
-            const isDiscontinuous = waveform === 'square' || waveform === 'sawtooth';
+            const isDiscontinuous = waveformRef.current === 'square' || waveformRef.current === 'sawtooth';
             const wrapped = prevNormP > 0 && normP < prevNormP - 0.3;
             
             if (isDiscontinuous && wrapped) {
@@ -353,11 +363,11 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           }
 
           ctx.save();
-          ctx.strokeStyle = color;
+          ctx.strokeStyle = colorRef.current;
           ctx.lineJoin = 'miter';
           ctx.lineCap = 'butt';
 
-          if (isPlaying) {
+          if (isPlayingRef.current) {
             ctx.globalAlpha = 0.3;
             ctx.lineWidth = 4 * dpr;
             ctx.stroke(path);
@@ -377,7 +387,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
       }
 
       // If synthetic preview and not playing, draw static resting frame
-      if (!analyser && !stereoAnalysers && !isPlaying) {
+      if (!analyser && !stereoAnalysers && !isPlayingRef.current) {
         return;
       }
 
@@ -389,7 +399,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
     return () => {
       cancelAnimationFrame(animationRef.current);
     };
-  }, [waveform, isPlaying, color, amplitudeScale, analyser, stereoAnalysers, mode]);
+  }, [analyser, stereoAnalysers, mode]);
 
   return (
     <canvas 

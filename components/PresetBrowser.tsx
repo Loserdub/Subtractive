@@ -32,7 +32,7 @@ type CategoryTab = typeof CATEGORIES[number];
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   Bass: { bg: 'bg-[#ffaa00]/10', text: 'text-[#ffaa00]', border: 'border-[#ffaa00]/40' },
-  Lead: { bg: 'bg-[#00e5ff]/10', text: 'text-[#00e5ff]', border: 'border-[#00e5ff]/40' },
+  Lead: { bg: 'bg-[#10b981]/10', text: 'text-[#10b981]', border: 'border-[#10b981]/40' },
   Pad: { bg: 'bg-[#00ff66]/10', text: 'text-[#00ff66]', border: 'border-[#00ff66]/40' },
   Pluck: { bg: 'bg-[#d946ef]/10', text: 'text-[#d946ef]', border: 'border-[#d946ef]/40' },
   Keys: { bg: 'bg-[#a855f7]/10', text: 'text-[#a855f7]', border: 'border-[#a855f7]/40' },
@@ -327,7 +327,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--section-border)', background: 'var(--section-bg)' }}>
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-sm bg-[#00e5ff] text-black font-brand font-black flex items-center justify-center transform skew-x-[-6deg] text-base shadow-[0_0_10px_#00e5ff]">
+            <div className="w-8 h-8 rounded-sm bg-[#10b981] text-black font-brand font-black flex items-center justify-center transform skew-x-[-6deg] text-base shadow-[0_0_10px_#10b981]">
               P
             </div>
             <div>
@@ -335,7 +335,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                 <h2 className="text-sm md:text-base font-brand font-black tracking-widest uppercase text-white">
                   PRESET VAULT
                 </h2>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#00e5ff]/10 border border-[#00e5ff]/30 text-[#00e5ff]">
+                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#10b981]/10 border border-[#10b981]/30 text-[#10b981]">
                   {allPresets.length} PATCHES
                 </span>
               </div>
@@ -349,7 +349,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
             {/* Save Current Patch Button */}
             <button
               onClick={() => setIsSaveModalOpen(true)}
-              className="px-2.5 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff] hover:bg-[#00e5ff]/20 transition-all flex items-center gap-1.5"
+              className="px-2.5 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#10b981]/10 text-[#10b981] border border-[#10b981] hover:bg-[#10b981]/20 transition-all flex items-center gap-1.5"
             >
               <span>+</span>
               <span>Save Current Patch</span>
@@ -358,7 +358,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
             {/* Import Button */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#141b28] text-gray-300 border border-[#2b3548] hover:border-[#00e5ff] hover:text-white transition-all flex items-center gap-1"
+              className="px-2.5 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#141b28] text-gray-300 border border-[#2b3548] hover:border-[#10b981] hover:text-white transition-all flex items-center gap-1"
             >
               <span>📥</span>
               <span>Import</span>
@@ -392,7 +392,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by patch name, author, tag..."
-              className="w-full bg-[#080c14] border border-[#1e2638] focus:border-[#00e5ff] rounded px-3 py-1.5 text-xs font-mono text-[#00e5ff] placeholder-gray-500 outline-none transition-all pr-8"
+              className="w-full bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-3 py-1.5 text-xs font-mono text-[#10b981] placeholder-gray-500 outline-none transition-all pr-8"
             />
             {searchQuery && (
               <button
@@ -415,7 +415,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   onClick={() => setSelectedCategory(category)}
                   className={`px-2.5 py-1 rounded text-[10px] font-mono font-bold tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1 ${
                     isActive
-                      ? 'bg-[#00e5ff] text-black shadow-[0_0_8px_#00e5ff]'
+                      ? 'bg-[#10b981] text-black shadow-[0_0_8px_#10b981]'
                       : 'bg-[#0e131e] text-gray-400 hover:text-gray-200 border border-[#1e2638]'
                   }`}
                 >
@@ -453,8 +453,8 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   }}
                   className={`p-3 rounded-sm border transition-all cursor-pointer flex flex-col justify-between group relative ${
                     isSelected
-                      ? 'bg-[#00e5ff]/10 border-[#00e5ff] shadow-[0_0_12px_rgba(0,229,255,0.25)]'
-                      : 'bg-[#0c1018] border-[#1c2436] hover:border-[#00e5ff]/60 hover:bg-[#111722]'
+                      ? 'bg-[#10b981]/10 border-[#10b981] shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                      : 'bg-[#0c1018] border-[#1c2436] hover:border-[#10b981]/60 hover:bg-[#111722]'
                   }`}
                 >
                   {/* Top Row: Name + Favorite + Category Badge */}
@@ -469,7 +469,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                       >
                         ★
                       </button>
-                      <span className={`font-mono text-xs font-bold truncate ${isSelected ? 'text-[#00e5ff]' : 'text-white'}`}>
+                      <span className={`font-mono text-xs font-bold truncate ${isSelected ? 'text-[#10b981]' : 'text-white'}`}>
                         {patch.name}
                       </span>
                     </div>
@@ -499,7 +499,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                       {/* Export button */}
                       <button
                         onClick={(e) => handleExportPreset(patch, e)}
-                        className="text-gray-400 hover:text-[#00e5ff] px-1 py-0.5 rounded"
+                        className="text-gray-400 hover:text-[#10b981] px-1 py-0.5 rounded"
                         title="Export this preset (.json)"
                       >
                         💾
@@ -528,21 +528,21 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
           <div className="flex items-center gap-4 text-gray-400">
             <span>Showing <b className="text-white">{filteredPresets.length}</b> of {allPresets.length}</span>
             <span className="hidden sm:inline text-gray-600">•</span>
-            <span className="hidden sm:inline">Use <kbd className="bg-black/40 px-1 rounded text-[#00e5ff]">↑</kbd> <kbd className="bg-black/40 px-1 rounded text-[#00e5ff]">↓</kbd> to audition patches</span>
+            <span className="hidden sm:inline">Use <kbd className="bg-black/40 px-1 rounded text-[#10b981]">↑</kbd> <kbd className="bg-black/40 px-1 rounded text-[#10b981]">↓</kbd> to audition patches</span>
           </div>
 
           <div className="flex items-center gap-2">
             {userPresets.length > 0 && (
               <button
                 onClick={handleExportAll}
-                className="text-[9px] font-mono text-gray-400 hover:text-[#00e5ff] transition-all"
+                className="text-[9px] font-mono text-gray-400 hover:text-[#10b981] transition-all"
               >
                 📦 Backup User Library ({userPresets.length})
               </button>
             )}
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-[#00e5ff] text-black shadow-[0_0_10px_#00e5ff] hover:opacity-95 transition-all"
+              className="px-4 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-[#10b981] text-black shadow-[0_0_10px_#10b981] hover:opacity-95 transition-all"
             >
               Done
             </button>
@@ -554,7 +554,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
           <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
             <form
               onSubmit={handleSaveUserPatch}
-              className="synth-panel max-w-md w-full p-5 rounded-sm border border-[#00e5ff] shadow-2xl relative flex flex-col gap-3"
+              className="synth-panel max-w-md w-full p-5 rounded-sm border border-[#10b981] shadow-2xl relative flex flex-col gap-3"
               style={{ background: 'var(--panel-bg)' }}
             >
               <h3 className="font-brand font-black text-sm tracking-wider uppercase text-white">
@@ -573,7 +573,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
                   placeholder="e.g. My Heavy Reese"
-                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#00e5ff] rounded px-2.5 py-1.5 text-xs font-mono text-[#00e5ff] outline-none"
+                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2.5 py-1.5 text-xs font-mono text-[#10b981] outline-none"
                 />
               </div>
 
@@ -583,7 +583,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   <select
                     value={saveCategory}
                     onChange={(e) => setSaveCategory(e.target.value)}
-                    className="bg-[#080c14] border border-[#1e2638] focus:border-[#00e5ff] rounded px-2 py-1.5 text-xs font-mono text-white outline-none cursor-pointer"
+                    className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2 py-1.5 text-xs font-mono text-white outline-none cursor-pointer"
                   >
                     {['Bass', 'Lead', 'Pad', 'Pluck', 'Keys', 'Arp', 'FX', 'User'].map(cat => (
                       <option key={cat} value={cat} className="bg-[#080c14] text-white">{cat}</option>
@@ -598,7 +598,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                     value={saveAuthor}
                     onChange={(e) => setSaveAuthor(e.target.value)}
                     placeholder="Your Name"
-                    className="bg-[#080c14] border border-[#1e2638] focus:border-[#00e5ff] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
+                    className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
                   />
                 </div>
               </div>
@@ -610,7 +610,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   value={saveDescription}
                   onChange={(e) => setSaveDescription(e.target.value)}
                   placeholder="e.g. Dual saws with heavy drive and sub punch"
-                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#00e5ff] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
+                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
                 />
               </div>
 
@@ -621,7 +621,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   value={saveTags}
                   onChange={(e) => setSaveTags(e.target.value)}
                   placeholder="e.g. reese, dnb, heavy, detuned"
-                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#00e5ff] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
+                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
                 />
               </div>
 
@@ -635,7 +635,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-[#00e5ff] text-black shadow-[0_0_10px_#00e5ff]"
+                  className="px-4 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-[#10b981] text-black shadow-[0_0_10px_#10b981]"
                 >
                   Save Patch
                 </button>
@@ -646,7 +646,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
 
         {/* ── Toast Notification Banner ── */}
         {notification && (
-          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded bg-[#00e5ff] text-black font-mono text-xs font-bold shadow-[0_0_16px_#00e5ff] z-50 animate-bounce">
+          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded bg-[#10b981] text-black font-mono text-xs font-bold shadow-[0_0_16px_#10b981] z-50 animate-bounce">
             {notification}
           </div>
         )}

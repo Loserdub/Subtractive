@@ -15,8 +15,8 @@ export const THEMES: ThemeDefinition[] = [
     id: 'mono-dark',
     label: 'MONO',
     chipColor: '#1a1d24',
-    chipBorder: '#4a5568',
-    description: 'Minimalist Dark',
+    chipBorder: '#10b981',
+    description: 'Nordic Forest Dark',
   },
   {
     id: 'vintage-japanese',

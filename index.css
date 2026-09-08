@@ -9,35 +9,35 @@
   --panel-bg:         #12151c;
   --panel-bg-alt:     #0a0c12;
   --panel-gradient:   #12151c;
-  --panel-border:     #00e5ff;
+  --panel-border:     #10b981;
   --panel-border-width: 2px;
-  --panel-inset-hi:   rgba(0, 229, 255, 0.06);
+  --panel-inset-hi:   rgba(16, 185, 129, 0.08);
   --panel-inset-lo:   rgba(0, 0, 0, 1);
   --panel-shadow:     rgba(0, 0, 0, 0.9);
 
   /* OLED / LCD Screen */
-  --oled-bg:          #02060a;
-  --oled-bg-grad:     #02060a;
-  --oled-border:      #00e5ff;
-  --oled-glow:        rgba(0, 229, 255, 0.18);
-  --oled-text:        #00e5ff;
+  --oled-bg:          #020a06;
+  --oled-bg-grad:     #020a06;
+  --oled-border:      #10b981;
+  --oled-glow:        rgba(16, 185, 129, 0.22);
+  --oled-text:        #10b981;
   --oled-scanline:    rgba(0, 0, 0, 0.4);
 
   /* Knob Material — flat cell-shade */
-  --knob-track:       #1c222e;
-  --knob-ribbed:      #1a1f2c;
-  --knob-face-grad:   #232838;
-  --knob-face-border: #00e5ff;
-  --knob-hi:          rgba(0, 229, 255, 0.08);
+  --knob-track:       #12221b;
+  --knob-ribbed:      #101d17;
+  --knob-face-grad:   #182e23;
+  --knob-face-border: #10b981;
+  --knob-hi:          rgba(16, 185, 129, 0.12);
   --knob-lo:          rgba(0, 0, 0, 1);
 
   /* Screw — hexagonal bolt look */
-  --screw-grad:       #2a3048;
-  --screw-border:     #00e5ff;
-  --screw-line:       #00e5ff;
+  --screw-grad:       #1b3327;
+  --screw-border:     #10b981;
+  --screw-line:       #10b981;
 
   /* Accent Colors — signal and UI */
-  --accent-cyan:      #00e5ff;
+  --accent-cyan:      #10b981;
   --accent-amber:     #ffaa00;
   --accent-emerald:   #00ff66;
   --accent-red:       #ff3344;
@@ -67,17 +67,17 @@
   --key-black-active: #080a10;
 
   /* Wheel Slider */
-  --wheel-bg:         #080c12;
-  --wheel-border:     #00e5ff;
-  --wheel-thumb:      linear-gradient(to right, #007799 0%, #00e5ff 50%, #007799 100%);
+  --wheel-bg:         #06140e;
+  --wheel-border:     #10b981;
+  --wheel-thumb:      linear-gradient(to right, #064e3b 0%, #10b981 50%, #064e3b 100%);
 
   /* Mobile Tab Bar */
-  --tab-bar-bg:       #080c12;
-  --tab-bar-border:   #00e5ff;
-  --tab-active-bg:    rgba(0, 229, 255, 0.12);
-  --tab-active-border:#00e5ff;
-  --tab-active-text:  #00e5ff;
-  --tab-active-glow:  rgba(0, 229, 255, 0.5);
+  --tab-bar-bg:       #06140e;
+  --tab-bar-border:   #10b981;
+  --tab-active-bg:    rgba(16, 185, 129, 0.15);
+  --tab-active-border:#10b981;
+  --tab-active-text:  #10b981;
+  --tab-active-glow:  rgba(16, 185, 129, 0.5);
   --tab-inactive-text:#4b5568;
 
   /* Body */
@@ -90,8 +90,8 @@
   --scrollbar-hover:  #2a3548;
 
   /* Badge (panel title) */
-  --badge-bg:         #080c12;
-  --badge-border:     #00e5ff;
+  --badge-bg:         #06140e;
+  --badge-border:     #10b981;
 
   /* Theme crossfade */
   --theme-transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
@@ -505,7 +505,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    LED GLOW EFFECTS — punchy, cell-shade saturated
    ══════════════════════════════════════════════════════════════════════ */
-.led-glow-cyan    { box-shadow: 0 0 0 2px rgba(0,229,255,0.5), 0 0 16px rgba(0,229,255,0.9), 0 0 32px rgba(0,229,255,0.35); }
+.led-glow-cyan    { box-shadow: 0 0 0 2px rgba(16,185,129,0.5), 0 0 16px rgba(16,185,129,0.9), 0 0 32px rgba(16,185,129,0.35); }
 .led-glow-amber   { box-shadow: 0 0 0 2px rgba(255,170,0,0.5), 0 0 16px rgba(255,170,0,0.9), 0 0 32px rgba(255,170,0,0.35); }
 .led-glow-emerald { box-shadow: 0 0 0 2px rgba(0,255,102,0.5), 0 0 16px rgba(0,255,102,0.9), 0 0 32px rgba(0,255,102,0.35); }
 .led-glow-red     { box-shadow: 0 0 0 2px rgba(255,51,68,0.5),  0 0 16px rgba(255,51,68,0.9),  0 0 32px rgba(255,51,68,0.35); }
@@ -560,7 +560,7 @@
 
 .key-black {
   background: var(--key-black-grad);
-  border: 1px solid rgba(0,229,255,0.2);
+  border: 1px solid rgba(16,185,129,0.2);
   border-bottom: 4px solid rgba(0,0,0,0.9);
   box-shadow: 2px 0 0 rgba(0,0,0,0.9);
 }
@@ -598,8 +598,8 @@
   cursor: ns-resize;
 }
 .wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #00b8d4 0%, #00e5ff 50%, #00b8d4 100%);
-  box-shadow: 0 0 6px #00e5ff;
+  background: linear-gradient(to right, #047857 0%, #10b981 50%, #047857 100%);
+  box-shadow: 0 0 6px #10b981;
 }
 [data-theme="vintage-japanese"] .wheel-slider-h.mod::-webkit-slider-thumb {
   background: linear-gradient(to right, #1040a0 0%, #1a5fe8 50%, #1040a0 100%);
@@ -705,8 +705,8 @@
   cursor: ns-resize;
 }
 .wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #007799 0%, #00e5ff 50%, #007799 100%);
-  box-shadow: 0 0 8px #00e5ff, 2px 0 0 rgba(0,0,0,0.7);
+  background: linear-gradient(to right, #065f46 0%, #10b981 50%, #065f46 100%);
+  box-shadow: 0 0 8px #10b981, 2px 0 0 rgba(0,0,0,0.7);
 }
 [data-theme="vintage-japanese"] .wheel-slider-h.mod::-webkit-slider-thumb {
   background: linear-gradient(to right, #0e3880 0%, #1a5fe8 50%, #0e3880 100%);

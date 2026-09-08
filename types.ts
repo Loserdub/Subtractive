@@ -175,4 +175,7 @@ export interface DrumTrackSettings {
   pitch: number; // semitones (-12 to 12)
 }
 
+export type WorkspaceMode = 'synth' | 'groove' | 'perform';
+
+
 

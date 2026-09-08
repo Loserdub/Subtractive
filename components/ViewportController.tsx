@@ -264,7 +264,7 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
       >
         {/* Monospaced Readout */}
         <div className="oled-screen px-2 py-0.5 rounded flex items-center justify-between min-w-[70px]">
-          <span className="font-mono-lcd text-[9px] text-[#00e5ff] uppercase tracking-wider">
+          <span className="font-mono-lcd text-[9px] text-[#10b981] uppercase tracking-wider">
             {Math.round(zoom * 100)}%
           </span>
           <span className="font-mono-lcd text-[8px] text-gray-400 ml-1">
@@ -292,7 +292,7 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
             step="0.05"
             value={zoom}
             onChange={(e) => setZoom(parseFloat(e.target.value))}
-            className="w-16 h-1.5 bg-[#18202e] accent-[#00e5ff] rounded cursor-pointer"
+            className="w-16 h-1.5 bg-[#18202e] accent-[#10b981] rounded cursor-pointer"
             title="Drag mouse slider to zoom in/out"
           />
         </div>
@@ -329,7 +329,7 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
           title={isPanMode ? "Disable Drag Pan" : "Enable Drag Pan (🖐)"}
           className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold border transition-all flex items-center gap-1 ${
             isPanMode
-              ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.6)]'
+              ? 'bg-[#10b981] text-black border-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.6)]'
               : 'bg-[#18202e] text-gray-400 border-[#2d384e] hover:text-gray-200'
           }`}
         >
@@ -341,7 +341,7 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
           type="button"
           onClick={handleFit}
           title="Fit synth to screen height & width"
-          className="px-2 py-0.5 rounded bg-[#18202e] hover:bg-[#263248] text-[#00e5ff] border border-[#2d384e] text-[9px] font-mono font-bold transition-all"
+          className="px-2 py-0.5 rounded bg-[#18202e] hover:bg-[#263248] text-[#10b981] border border-[#2d384e] text-[9px] font-mono font-bold transition-all"
         >
           FIT
         </button>

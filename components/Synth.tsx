@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings, PresetPatch } from '../types';
+import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings, PresetPatch, WorkspaceMode } from '../types';
 import { patchParams } from '../utils/patchParams';
 import { AudioEngine } from '../services/AudioEngine';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
@@ -8,6 +8,8 @@ import { Keyboard } from './Keyboard';
 import { DrumMachine } from './DrumMachine';
 import { MasterFXPanel } from './MasterFXPanel';
 import { ArpeggiatorPanel } from './ArpeggiatorPanel';
+import { GrooveWorkspace } from './GrooveWorkspace';
+import { PerformWorkspace } from './PerformWorkspace';
 import { LEDButton, ToggleSwitch } from './Switch';
 import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN, DEFAULT_DRUM_TRACK_SETTINGS, SYNTH_PRESETS, DAW_KEY_MAP, CLASSIC_KEY_MAP } from '../constants';
 import { SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from './Icon';
@@ -33,7 +35,7 @@ const Screw = ({ className = "" }: { className?: string }) => (
 
 const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, className = "" }) => {
   const badgeGlows = {
-    cyan:    'bg-[#00e5ff] shadow-[0_0_6px_#00e5ff]',
+    cyan:    'bg-[#10b981] shadow-[0_0_6px_#10b981]',
     amber:   'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]',
     emerald: 'bg-[#00ff66] shadow-[0_0_6px_#00ff66]',
     red:     'bg-[#ff3344] shadow-[0_0_6px_#ff3344]',
@@ -68,6 +70,25 @@ export const Synth: React.FC = () => {
   const [isStarted, setIsStarted] = useState(false);
   const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
   
+  // Workspace Focus Modes: 'synth' (Sound Design) | 'groove' (Rhythm) | 'perform' (Live Deck)
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(() => {
+    try {
+      const saved = localStorage.getItem('subtractive_workspace_mode') as WorkspaceMode;
+      return (saved === 'synth' || saved === 'groove' || saved === 'perform') ? saved : 'synth';
+    } catch {
+      return 'synth';
+    }
+  });
+
+  const handleWorkspaceModeChange = useCallback((mode: WorkspaceMode) => {
+    setWorkspaceMode(mode);
+    try {
+      localStorage.setItem('subtractive_workspace_mode', mode);
+    } catch {}
+  }, []);
+
+  const [runningStep, setRunningStep] = useState<number | null>(null);
+
   // Explicit mobile tabs
   type MobileTab = 'vco' | 'vcf' | 'env' | 'fx' | 'arp' | 'seq' | 'keys';
   const [activeTab, setActiveTab] = useState<MobileTab>('vco');
@@ -313,6 +334,7 @@ export const Synth: React.FC = () => {
     audioEngine.current.setBpm(bpm);
     
     drumMachineEngine.current = new DrumMachineEngine(audioContext, undefined, engine.getMasterGainNode());
+    drumMachineEngine.current.subscribeStep((step) => setRunningStep(step));
     drumMachineEngine.current.setPattern(drumPattern);
     drumMachineEngine.current.setSwing(swing);
     drumMachineEngine.current.setBpm(bpm);
@@ -475,6 +497,15 @@ export const Synth: React.FC = () => {
     }
   };
 
+  const handlePatternChange = (newPattern: StepSequencePattern) => {
+    const newBanks = [...banks];
+    newBanks[currentBankIndex] = newPattern;
+    setBanks(newBanks);
+    if (drumMachineEngine.current) {
+      drumMachineEngine.current.setPattern(newPattern);
+    }
+  };
+
   const handleMidiMessage = (message: MIDIMessageEvent) => {
     if (!audioEngine.current) return;
     const data = message.data;
@@ -583,18 +614,6 @@ export const Synth: React.FC = () => {
   // Global window computer keyboard musical typing listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Shortcut: Backslash (\) toggles Keyboard Mode ON/OFF
-      if (e.key === '\\') {
-        if (!(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
-          e.preventDefault();
-          setIsKeyboardMode(prev => !prev);
-          return;
-        }
-      }
-
-      // If Keyboard Mode is disabled, pass all keystrokes through
-      if (!isKeyboardMode) return;
-
       // Ignore if user is typing in a text field, input, or contenteditable
       if (
         e.target instanceof HTMLInputElement ||
@@ -606,6 +625,32 @@ export const Synth: React.FC = () => {
 
       // Ignore when Preset Browser modal is open
       if (isPresetBrowserOpen) return;
+
+      // Workspace Mode shortcuts (Alt+1/2/3 or 1/2/3 in DAW layout)
+      if (e.altKey && (e.key === '1' || e.key === '2' || e.key === '3')) {
+        e.preventDefault();
+        if (e.key === '1') handleWorkspaceModeChange('synth');
+        if (e.key === '2') handleWorkspaceModeChange('groove');
+        if (e.key === '3') handleWorkspaceModeChange('perform');
+        return;
+      }
+      if ((!isKeyboardMode || keyboardLayout === 'daw') && (e.key === '1' || e.key === '2' || e.key === '3')) {
+        e.preventDefault();
+        if (e.key === '1') handleWorkspaceModeChange('synth');
+        if (e.key === '2') handleWorkspaceModeChange('groove');
+        if (e.key === '3') handleWorkspaceModeChange('perform');
+        return;
+      }
+
+      // Shortcut: Backslash (\) toggles Keyboard Mode ON/OFF
+      if (e.key === '\\') {
+        e.preventDefault();
+        setIsKeyboardMode(prev => !prev);
+        return;
+      }
+
+      // If Keyboard Mode is disabled, pass all keystrokes through
+      if (!isKeyboardMode) return;
 
       // Space bar: standard transport toggle (Play / Stop beat)
       if (e.key === ' ') {
@@ -734,7 +779,7 @@ export const Synth: React.FC = () => {
                   onClick={() => setOscWaveform(oscKey, w)} 
                   className={`p-0.5 rounded-sm transition-all flex items-center justify-center h-5 w-5 md:h-5 md:w-5
                     ${isActive 
-                      ? 'bg-[#00e5ff] text-black shadow-[0_0_8px_#00e5ff]' 
+                      ? 'bg-[#10b981] text-black shadow-[0_0_8px_#10b981]' 
                       : 'text-gray-500 hover:text-gray-200'
                     }`}
                 >
@@ -760,7 +805,7 @@ export const Synth: React.FC = () => {
                 waveform={oscParams.waveform} 
                 isPlaying={oscParams.enabled} 
                 amplitudeScale={oscParams.gain}
-                color="#00e5ff"
+                color="#10b981"
               />
             </div>
 
@@ -818,8 +863,8 @@ export const Synth: React.FC = () => {
           <Screw className="bottom-2 left-2" />
           <Screw className="bottom-2 right-2" />
           
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#00e5ff]/10 border border-[#00e5ff] flex items-center justify-center mb-3 led-glow-cyan">
-            <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#00e5ff]" />
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#10b981]/10 border border-[#10b981] flex items-center justify-center mb-3 led-glow-cyan">
+            <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#10b981]" />
           </div>
 
           <h2 className="text-xl md:text-2xl font-brand font-black tracking-widest uppercase mb-1 md:mb-2" style={{ color: 'var(--text-primary)' }}>
@@ -856,7 +901,7 @@ export const Synth: React.FC = () => {
         <div className="flex md:hidden items-center justify-between gap-1.5">
           {/* Logo */}
           <div className="flex items-center gap-1 shrink-0">
-            <div className="w-6 h-6 bg-[#00e5ff] text-black font-brand font-black text-sm flex items-center justify-center rounded-sm transform skew-x-[-6deg] shrink-0">
+            <div className="w-6 h-6 bg-[#10b981] text-black font-brand font-black text-sm flex items-center justify-center rounded-sm transform skew-x-[-6deg] shrink-0">
               S
             </div>
             <h1 className="font-brand font-bold text-xs text-white tracking-wider uppercase leading-none">
@@ -882,10 +927,10 @@ export const Synth: React.FC = () => {
               <select
                 value={selectedPresetName}
                 onChange={(e) => loadPreset(e.target.value)}
-                className="bg-transparent text-[#00e5ff] font-mono-lcd text-[9px] focus:outline-none cursor-pointer flex-1 truncate"
+                className="bg-transparent text-[#10b981] font-mono-lcd text-[9px] focus:outline-none cursor-pointer flex-1 truncate"
               >
                 {[...SYNTH_PRESETS, ...userPresets].map(p => (
-                  <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#00e5ff]">
+                  <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#10b981]">
                     {p.name}
                   </option>
                 ))}
@@ -893,7 +938,7 @@ export const Synth: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsPresetBrowserOpen(true)}
-                className="px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider border bg-[#0d1422] text-[#00e5ff] border-[#00e5ff]/40 shrink-0"
+                className="px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider border bg-[#0d1422] text-[#10b981] border-[#10b981]/40 shrink-0"
               >
                 BROWSE
               </button>
@@ -917,7 +962,7 @@ export const Synth: React.FC = () => {
                 title="Toggle Computer Keyboard Musical Typing Mode (Hotkey: \)"
                 className={`px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider border transition-all shrink-0 flex items-center gap-1 ${
                   isKeyboardMode
-                    ? 'bg-[#00e5ff]/20 text-[#00e5ff] border-[#00e5ff]/60 shadow-[0_0_6px_rgba(0,229,255,0.4)]'
+                    ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/60 shadow-[0_0_6px_rgba(16,185,129,0.4)]'
                     : 'bg-[#121620] text-gray-500 border-[#222c3c]'
                 }`}
               >
@@ -972,7 +1017,7 @@ export const Synth: React.FC = () => {
         {/* Desktop header: full layout */}
         <div className="hidden md:flex flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 bg-[#00e5ff] text-black font-brand font-black text-base flex items-center justify-center rounded-sm transform skew-x-[-6deg]">
+            <div className="w-7 h-7 bg-[#10b981] text-black font-brand font-black text-base flex items-center justify-center rounded-sm transform skew-x-[-6deg]">
               S
             </div>
             <div>
@@ -985,6 +1030,49 @@ export const Synth: React.FC = () => {
             </div>
           </div>
 
+          {/* Workspace Focus Mode Selector */}
+          <div className="flex items-center gap-1 bg-[#090e18] p-1 rounded-sm border border-[#1e2a3c] shadow-inner shrink-0">
+            <button
+              type="button"
+              onClick={() => handleWorkspaceModeChange('synth')}
+              title="Sound Design Lab (Hotkey: 1)"
+              className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
+                workspaceMode === 'synth'
+                  ? 'bg-[#10b981] text-black shadow-[0_0_10px_#10b981]'
+                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
+              }`}
+            >
+              <span className="text-[10px]">🎛️</span>
+              <span>SYNTH</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleWorkspaceModeChange('groove')}
+              title="16-Step Rhythm Workstation (Hotkey: 2)"
+              className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
+                workspaceMode === 'groove'
+                  ? 'bg-[#ffaa00] text-black shadow-[0_0_10px_#ffaa00]'
+                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
+              }`}
+            >
+              <span className="text-[10px]">🥁</span>
+              <span>GROOVE</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleWorkspaceModeChange('perform')}
+              title="Live Jam & Expression Deck (Hotkey: 3)"
+              className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
+                workspaceMode === 'perform'
+                  ? 'bg-[#00ff66] text-black shadow-[0_0_10px_#00ff66]'
+                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
+              }`}
+            >
+              <span className="text-[10px]">⚡</span>
+              <span>PERFORM</span>
+            </button>
+          </div>
+
           <div className="oled-screen px-3 py-1.5 rounded-sm flex items-center gap-4 flex-1 md:flex-initial justify-between shadow-inner">
             <div className="flex flex-col">
               <div className="flex items-center justify-between gap-2">
@@ -992,7 +1080,7 @@ export const Synth: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsPresetBrowserOpen(true)}
-                  className="text-[8px] font-mono font-bold text-[#00e5ff] hover:underline"
+                  className="text-[8px] font-mono font-bold text-[#10b981] hover:underline"
                 >
                   [BROWSE ALL]
                 </button>
@@ -1000,10 +1088,10 @@ export const Synth: React.FC = () => {
               <select
                 value={selectedPresetName}
                 onChange={(e) => loadPreset(e.target.value)}
-                className="bg-transparent text-[#00e5ff] font-mono-lcd text-xs focus:outline-none cursor-pointer"
+                className="bg-transparent text-[#10b981] font-mono-lcd text-xs focus:outline-none cursor-pointer"
               >
                 {[...SYNTH_PRESETS, ...userPresets].map(p => (
-                  <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#00e5ff]">
+                  <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#10b981]">
                     {p.name}
                   </option>
                 ))}
@@ -1037,7 +1125,7 @@ export const Synth: React.FC = () => {
                 title="Toggle Computer Keyboard Musical Typing Mode (Hotkey: \)"
                 className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold tracking-wider flex items-center gap-1.5 border transition-all ${
                   isKeyboardMode
-                    ? 'bg-[#00e5ff]/15 text-[#00e5ff] border-[#00e5ff]/60 shadow-[0_0_8px_rgba(0,229,255,0.3)]'
+                    ? 'bg-[#10b981]/15 text-[#10b981] border-[#10b981]/60 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
                     : 'bg-[#101622] text-gray-500 border-[#222e42] hover:text-gray-300'
                 }`}
               >
@@ -1136,8 +1224,66 @@ export const Synth: React.FC = () => {
       <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-1.5">
 
         {/* ════════════════════ DESKTOP LAYOUT (md+) ════════════════════ */}
-        {/* Single unified two-row layout that fills 100% of remaining viewport */}
-        <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1">
+        {workspaceMode === 'groove' ? (
+          <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
+            <GrooveWorkspace
+              isPlaying={isDrumMachinePlaying}
+              onPlayToggle={handlePlayToggle}
+              bpm={bpm}
+              onBpmChange={setBpm}
+              swing={swing}
+              onSwingChange={setSwing}
+              currentBank={currentBankIndex}
+              onBankSelect={setCurrentBankIndex}
+              pattern={drumPattern}
+              onStepToggle={handleStepToggle}
+              trackSettings={drumSettings}
+              onTrackSettingsChange={handleDrumTrackSettingsChange}
+              engine={drumMachineEngine.current}
+              onPatternChange={handlePatternChange}
+              arpParams={params.arpeggiator}
+              onArpChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
+              synthParams={params}
+              onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+              selectedPresetName={selectedPresetName}
+              onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+              onSwitchWorkspace={handleWorkspaceModeChange}
+              onMidiLearn={handleMidiLearn}
+              learningParamId={learningParamId}
+              mappedCCs={rawMappedCCs}
+            />
+          </div>
+        ) : workspaceMode === 'perform' ? (
+          <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
+            <PerformWorkspace
+              synthParams={params}
+              audioEngine={audioEngine.current}
+              onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+              onNoteOn={handleNoteOn}
+              onNoteOff={handleNoteOff}
+              activeNotes={activeNotes}
+              onPitchBendChange={handlePitchBendChange}
+              onModulationChange={handleModulationChange}
+              octaveOffset={octaveOffset}
+              onOctaveChange={setOctaveOffset}
+              isKeyboardMode={isKeyboardMode}
+              onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
+              keyboardLayout={keyboardLayout}
+              onChangeKeyboardLayout={setKeyboardLayout}
+              isDrumPlaying={isDrumMachinePlaying}
+              onDrumPlayToggle={handlePlayToggle}
+              bpm={bpm}
+              onBpmChange={setBpm}
+              currentBank={currentBankIndex}
+              onBankSelect={setCurrentBankIndex}
+              drumEngine={drumMachineEngine.current}
+              onSwitchWorkspace={handleWorkspaceModeChange}
+              selectedPresetName={selectedPresetName}
+              onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+            />
+          </div>
+        ) : (
+          <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1">
 
           {/* Upper row: VCO | VCF | ENV — gets more vertical space */}
           <div className="flex flex-1 min-h-0 gap-2.5">
@@ -1234,7 +1380,7 @@ export const Synth: React.FC = () => {
               <div className="flex items-center justify-between px-1 mb-0.5">
                 <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
                 <div className="flex gap-1">
-                  <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#00e5ff]' : 'text-gray-500' }`}>OSC</button>
+                  <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
                   <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
                   <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
                 </div>
@@ -1244,7 +1390,7 @@ export const Synth: React.FC = () => {
                   analyser={audioEngine.current?.getAnalyser() || null} 
                   stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
                   isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
-                  color="#00e5ff" 
+                  color="#10b981" 
                   mode={visualizerMode} 
                 />
               </div>
@@ -1402,7 +1548,7 @@ export const Synth: React.FC = () => {
                       onClick={() => setSelectedEnvTab('amp')}
                       className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-sm border transition-all ${
                         selectedEnvTab === 'amp'
-                          ? 'bg-[#00e5ff]/20 text-[#00e5ff] border-[#00e5ff] shadow-[0_0_6px_rgba(0,229,255,0.4)]'
+                          ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981] shadow-[0_0_6px_rgba(16,185,129,0.4)]'
                           : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
                       }`}
                     >
@@ -1523,7 +1669,68 @@ export const Synth: React.FC = () => {
           </div>
         </div>{/* end lower row */}
 
-        </div>{/* end desktop flex column */}
+        {/* Beat Transport Bar in Synth mode */}
+        <div 
+          className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
+          style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+        >
+          <div className="flex items-center gap-3">
+            <LEDButton
+              label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
+              active={isDrumMachinePlaying}
+              onClick={handlePlayToggle}
+              color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
+              size="sm"
+              className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
+            />
+            <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
+            <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
+            <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
+              <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
+              {[0, 1, 2, 3].map(b => (
+                <button
+                  key={b}
+                  onClick={() => setCurrentBankIndex(b)}
+                  className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
+                    currentBankIndex === b
+                      ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                      : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                  }`}
+                >
+                  {String.fromCharCode(65 + b)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 16-step running LED indicators */}
+          <div className="flex items-center gap-1">
+            {Array.from({ length: 16 }).map((_, idx) => (
+              <div
+                key={idx}
+                className={`w-2 h-2.5 rounded-xs transition-all ${
+                  runningStep === idx
+                    ? 'bg-white shadow-[0_0_8px_white] scale-110'
+                    : idx % 4 === 0
+                    ? 'bg-[#2b374c]'
+                    : 'bg-[#141b27]'
+                }`}
+              />
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleWorkspaceModeChange('groove')}
+            className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
+          >
+            <span>OPEN 4-TRACK GROOVE MATRIX</span>
+            <span>↗</span>
+          </button>
+        </div>
+
+        </div>
+      )}
 
         {/* ════════════════════ MOBILE LAYOUT (<md) ════════════════════ */}
         <div className="md:hidden relative flex-1 min-h-0 overflow-hidden">
@@ -1609,7 +1816,7 @@ export const Synth: React.FC = () => {
                     <button key={osc} onClick={() => setSelectedMobileOsc(osc)}
                       className={`min-h-[38px] px-3 text-[9px] font-mono font-bold rounded-sm border flex-1 transition-all ${
                         selectedMobileOsc === osc
-                          ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
+                          ? 'bg-[#10b981] text-black border-[#10b981] shadow-[0_0_8px_#10b981]'
                           : 'bg-[#121620] text-gray-400 border-[#222a3a] active:bg-[#1e2633]'
                       }`}>
                       {osc.toUpperCase()}
@@ -1633,7 +1840,7 @@ export const Synth: React.FC = () => {
                 <div className="flex items-center justify-between px-1 mb-1">
                   <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
                   <div className="flex gap-1">
-                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#00e5ff]' : 'text-gray-500' }`}>OSC</button>
+                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
                     <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
                     <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
                   </div>
@@ -1643,7 +1850,7 @@ export const Synth: React.FC = () => {
                     analyser={audioEngine.current?.getAnalyser() || null} 
                     stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
                     isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
-                    color="#00e5ff" 
+                    color="#10b981" 
                     mode={visualizerMode} 
                   />
                 </div>
@@ -1801,7 +2008,7 @@ export const Synth: React.FC = () => {
                         onClick={() => setSelectedEnvTab('amp')}
                         className={`text-[9px] font-mono font-bold px-3 py-1 rounded-sm border transition-all ${
                           selectedEnvTab === 'amp'
-                            ? 'bg-[#00e5ff]/20 text-[#00e5ff] border-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.4)]'
+                            ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.4)]'
                             : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
                         }`}
                       >
@@ -1949,22 +2156,24 @@ export const Synth: React.FC = () => {
 
       </main>
 
-      {/* Desktop Virtual Keyboard Footer */}
-      <footer className="shrink-0 hidden md:block">
-        <Keyboard 
-          onNoteOn={handleNoteOn} 
-          onNoteOff={handleNoteOff} 
-          activeNotes={activeNotes} 
-          onPitchBendChange={handlePitchBendChange}
-          onModulationChange={handleModulationChange}
-          octaveOffset={octaveOffset}
-          onOctaveChange={setOctaveOffset}
-          isKeyboardMode={isKeyboardMode}
-          onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
-          keyboardLayout={keyboardLayout}
-          onChangeKeyboardLayout={setKeyboardLayout}
-        />
-      </footer>
+      {/* Desktop Virtual Keyboard Footer (shown in Synth and Groove modes) */}
+      {workspaceMode !== 'perform' && (
+        <footer className="shrink-0 hidden md:block">
+          <Keyboard 
+            onNoteOn={handleNoteOn} 
+            onNoteOff={handleNoteOff} 
+            activeNotes={activeNotes} 
+            onPitchBendChange={handlePitchBendChange}
+            onModulationChange={handleModulationChange}
+            octaveOffset={octaveOffset}
+            onOctaveChange={setOctaveOffset}
+            isKeyboardMode={isKeyboardMode}
+            onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
+            keyboardLayout={keyboardLayout}
+            onChangeKeyboardLayout={setKeyboardLayout}
+          />
+        </footer>
+      )}
 
       {/* Studio Preset Browser Modal */}
       <PresetBrowser

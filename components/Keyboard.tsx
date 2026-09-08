@@ -172,7 +172,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               title="Toggle Computer Keyboard Musical Typing (Hotkey: \)"
               className={`px-1.5 py-0.5 rounded flex items-center gap-1 transition-all ${
                 currentKeyboardMode
-                  ? 'bg-[#00e5ff]/15 text-[#00e5ff] border border-[#00e5ff]/40 hover:bg-[#00e5ff]/25'
+                  ? 'bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/40 hover:bg-[#10b981]/25'
                   : 'bg-[#181d28] text-gray-400 border border-[#252d3d] hover:text-gray-200'
               }`}
             >
@@ -202,7 +202,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   onClick={() => setOctave(oct)}
                   className={`w-4 h-4 flex items-center justify-center rounded text-[8px] font-mono font-bold transition-all ${
                     currentOctave === oct
-                      ? 'bg-[#00e5ff] text-black shadow-[0_0_6px_#00e5ff]'
+                      ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
                       : 'bg-[#181d28] text-gray-400 border border-[#242c3d] hover:text-white'
                   }`}
                 >
@@ -230,7 +230,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               type="button"
               onClick={toggleBarCollapse}
               title="Expand Keyboard Toolbar (Wheels & Options)"
-              className="flex items-center gap-1 px-1.5 py-0.5 bg-[#181f2c] hover:bg-[#222b3d] text-[#00e5ff] border border-[#2b374e] rounded transition-all text-[8px] font-bold"
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-[#181f2c] hover:bg-[#222b3d] text-[#10b981] border border-[#2b374e] rounded transition-all text-[8px] font-bold"
             >
               <span>OPTIONS</span>
               <span className="text-[7px]">▼</span>
@@ -248,7 +248,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               title="Toggle Computer Keyboard Musical Typing (Hotkey: \)"
               className={`h-5 px-2 text-[8px] font-mono font-bold rounded border flex items-center gap-1 transition-all ${
                 currentKeyboardMode
-                  ? 'bg-[#00e5ff]/20 text-[#00e5ff] border-[#00e5ff]/50 shadow-[0_0_6px_rgba(0,229,255,0.3)]'
+                  ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/50 shadow-[0_0_6px_rgba(16,185,129,0.3)]'
                   : 'bg-[#181d28] text-gray-400 border-[#2a3448] hover:text-gray-200'
               }`}
             >
@@ -266,7 +266,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   onClick={() => changeLayout('daw')}
                   className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded transition-all ${
                     currentLayout === 'daw'
-                      ? 'bg-[#00e5ff] text-black shadow-[0_0_4px_#00e5ff]'
+                      ? 'bg-[#10b981] text-black shadow-[0_0_4px_#10b981]'
                       : 'text-gray-400 hover:text-white'
                   }`}
                   title="DAW Standard: [A S D F] naturals, [W E T Y] sharps, [Z / X] octave shift"
@@ -278,7 +278,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   onClick={() => changeLayout('classic')}
                   className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded transition-all ${
                     currentLayout === 'classic'
-                      ? 'bg-[#00e5ff] text-black shadow-[0_0_4px_#00e5ff]'
+                      ? 'bg-[#10b981] text-black shadow-[0_0_4px_#10b981]'
                       : 'text-gray-400 hover:text-white'
                   }`}
                   title="Classic Tracker: [Z to M] lower octave, [Q to I] upper octave"
@@ -309,7 +309,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   onClick={() => setOctave(oct)}
                   className={`w-5 h-5 flex items-center justify-center text-[8px] font-mono font-bold rounded border transition-all ${
                     currentOctave === oct
-                      ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_6px_#00e5ff]'
+                      ? 'bg-[#10b981] text-black border-[#10b981] shadow-[0_0_6px_#10b981]'
                       : 'bg-[#181d28] text-gray-400 border-[#273244] hover:text-white'
                   }`}
                 >
@@ -327,7 +327,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               +
             </button>
             {currentKeyboardMode && (
-              <span className="hidden sm:inline text-[7px] font-mono text-[#00e5ff]/70 ml-1">
+              <span className="hidden sm:inline text-[7px] font-mono text-[#10b981]/70 ml-1">
                 {currentLayout === 'daw' ? '[Z/X]' : '[[/]]'}
               </span>
             )}
@@ -358,7 +358,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   title="Modulation Wheel (Click & drag vertically)"
                 >
                   <div 
-                    className="absolute left-0 right-0 h-1 bg-[#00e5ff] rounded-sm shadow-[0_0_4px_#00e5ff]"
+                    className="absolute left-0 right-0 h-1 bg-[#10b981] rounded-sm shadow-[0_0_4px_#10b981]"
                     style={{ top: `${(1 - modVal) * 75}%` }}
                   />
                 </div>
@@ -382,7 +382,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   setPitchVal(0.5);
                   if (onPitchBendChange) onPitchBendChange(0.5);
                 }}
-                className="w-12 h-2 accent-[#00e5ff]"
+                className="w-12 h-2 accent-[#10b981]"
                 title="Pitch Bend"
               />
               <input
@@ -396,7 +396,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   setModVal(v);
                   if (onModulationChange) onModulationChange(v);
                 }}
-                className="w-12 h-2 accent-[#00e5ff]"
+                className="w-12 h-2 accent-[#10b981]"
                 title="Modulation"
               />
             </div>
@@ -406,7 +406,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               type="button"
               onClick={toggleBarCollapse}
               title="Collapse Toolbar to Micro-Bar"
-              className="flex items-center gap-1 px-1.5 py-0.5 bg-[#181f2c] hover:bg-[#222b3d] text-gray-400 hover:text-[#00e5ff] border border-[#2b374e] rounded transition-all text-[8px] font-bold"
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-[#181f2c] hover:bg-[#222b3d] text-gray-400 hover:text-[#10b981] border border-[#2b374e] rounded transition-all text-[8px] font-bold"
             >
               <span>HIDE</span>
               <span className="text-[7px]">▲</span>
@@ -437,14 +437,14 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                 {/* Active Key Accent LED Glow */}
                 <div 
                   className={`w-full h-1.5 mb-1 rounded-full transition-all duration-100 ${
-                    isActive ? 'bg-[#00e5ff] shadow-[0_0_8px_#00e5ff]' : 'bg-transparent'
+                    isActive ? 'bg-[#10b981] shadow-[0_0_8px_#10b981]' : 'bg-transparent'
                   }`} 
                 />
 
                 {/* Keycap or Musical Note Label */}
                 {currentKeyboardMode && keyLabel ? (
                   <div className="flex flex-col items-center pointer-events-none mb-1">
-                    <span className="text-[10px] md:text-[11px] font-mono font-black text-black bg-[#00e5ff]/25 px-1 rounded shadow-sm border border-black/20">
+                    <span className="text-[10px] md:text-[11px] font-mono font-black text-black bg-[#10b981]/25 px-1 rounded shadow-sm border border-black/20">
                       {keyLabel}
                     </span>
                     <span className="text-[7px] font-mono text-gray-500 font-semibold">

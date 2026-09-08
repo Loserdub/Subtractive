@@ -16,7 +16,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = React.memo(({
   size = 'md'
 }) => {
   const ledColors = {
-    cyan:    checked ? 'bg-[#00e5ff] shadow-[0_0_10px_#00e5ff]' : 'bg-[#003344]',
+    cyan:    checked ? 'bg-[#10b981] shadow-[0_0_10px_#10b981]' : 'bg-[#042014]',
     amber:   checked ? 'bg-[#ffaa00] shadow-[0_0_10px_#ffaa00]' : 'bg-[#442200]',
     emerald: checked ? 'bg-[#00ff66] shadow-[0_0_10px_#00ff66]' : 'bg-[#003311]',
     red:     checked ? 'bg-[#ff3344] shadow-[0_0_10px_#ff3344]' : 'bg-[#440011]',
@@ -79,7 +79,7 @@ export const LEDButton: React.FC<LEDButtonProps> = React.memo(({
   className = ''
 }) => {
   const activeStyles = {
-    cyan:    'bg-[#002f3d] border-[#00e5ff] text-[#00e5ff] shadow-[0_0_12px_rgba(0,229,255,0.4)]',
+    cyan:    'bg-[#04261a] border-[#10b981] text-[#10b981] shadow-[0_0_12px_rgba(16,185,129,0.4)]',
     amber:   'bg-[#3d2900] border-[#ffaa00] text-[#ffaa00] shadow-[0_0_12px_rgba(255,170,0,0.4)]',
     emerald: 'bg-[#003d19] border-[#00ff66] text-[#00ff66] shadow-[0_0_12px_rgba(0,255,102,0.4)]',
     red:     'bg-[#3d000a] border-[#ff3344] text-[#ff3344] shadow-[0_0_12px_rgba(255,51,68,0.4)]',

@@ -61,7 +61,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
 
   const colors = {
     amber:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.4)',  fill: 'rgba(255, 170, 0, 0.12)' },
-    cyan:    { stroke: '#00e5ff', glow: 'rgba(0, 229, 255, 0.4)',  fill: 'rgba(0, 229, 255, 0.12)' },
+    cyan:    { stroke: '#10b981', glow: 'rgba(16, 185, 129, 0.4)',  fill: 'rgba(16, 185, 129, 0.12)' },
     emerald: { stroke: '#00ff66', glow: 'rgba(0, 255, 102, 0.4)',  fill: 'rgba(0, 255, 102, 0.12)' },
     red:     { stroke: '#ff3344', glow: 'rgba(255, 51, 68, 0.4)',   fill: 'rgba(255, 51, 68, 0.12)' },
   };

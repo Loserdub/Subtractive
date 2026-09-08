@@ -61,7 +61,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
 
   // Color theme definitions
   const colorMap = {
-    cyan:    { stroke: '#00e5ff', glow: 'rgba(0, 229, 255, 0.6)',   text: 'text-[#00e5ff]' },
+    cyan:    { stroke: '#10b981', glow: 'rgba(16, 185, 129, 0.6)',   text: 'text-[#10b981]' },
     amber:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.6)',   text: 'text-[#ffaa00]' },
     emerald: { stroke: '#00ff66', glow: 'rgba(0, 255, 102, 0.6)',   text: 'text-[#00ff66]' },
     red:     { stroke: '#ff3344', glow: 'rgba(255, 51, 68, 0.6)',   text: 'text-[#ff3344]' },
@@ -94,12 +94,18 @@ export const Knob: React.FC<KnobProps> = React.memo(({
     return min + p * (max - min);
   }, [logarithmic, min, max]);
 
+  const lastDispatchedValRef = useRef(value);
+  useEffect(() => {
+    lastDispatchedValRef.current = value;
+  }, [value]);
+
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     if (!knobRef.current) return;
     
     knobRef.current.setPointerCapture(e.pointerId);
     dragStartRef.current = { y: e.clientY, x: e.clientX, value: value };
+    lastDispatchedValRef.current = value;
     setIsDragging(true);
   };
 
@@ -120,6 +126,8 @@ export const Knob: React.FC<KnobProps> = React.memo(({
     const newPercent = Math.max(0, Math.min(1, startPercent + changePercent));
     const newValue = getValue(newPercent);
     
+    if (Math.abs(lastDispatchedValRef.current - newValue) < 0.00001) return;
+    lastDispatchedValRef.current = newValue;
     onChangeRef.current(newValue);
   };
 

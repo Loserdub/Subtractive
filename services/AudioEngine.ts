@@ -77,6 +77,8 @@ export class AudioEngine {
   private meterBufferL: Uint8Array | null = null;
   private meterBufferR: Uint8Array | null = null;
   private reverbCache = new Map<string, AudioBuffer>();
+  private driveCurveCache = new Map<number, Float32Array>();
+  private prevParams: SynthParameters | null = null;
 
   // Shared Saturation Curves
   private ladderCurve: Float32Array | null = null;
@@ -504,18 +506,28 @@ export class AudioEngine {
     return { left: this.peakLeft, right: this.peakRight };
   }
 
-  private updateDriveCurveOnNode(node: WaveShaperNode, amount: number) {
-    const k = amount * 50;
-    const n_samples = 4096;
-    const curve = new Float32Array(n_samples);
-    const deg = Math.PI / 180;
-    for (let i = 0; i < n_samples; ++i) {
-      const x = (i * 2) / n_samples - 1;
-      if (amount <= 0.01) {
-        curve[i] = x;
-      } else {
-        curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+  private updateDriveCurveOnNode(node: WaveShaperNode & { _cachedDrive?: number }, amount: number) {
+    const quantAmount = Math.round(Math.max(0, amount) * 500) / 500;
+    if (node._cachedDrive === quantAmount && node.curve) {
+      return;
+    }
+    node._cachedDrive = quantAmount;
+
+    let curve = this.driveCurveCache.get(quantAmount);
+    if (!curve) {
+      const k = quantAmount * 50;
+      const n_samples = 4096;
+      curve = new Float32Array(n_samples);
+      const deg = Math.PI / 180;
+      for (let i = 0; i < n_samples; ++i) {
+        const x = (i * 2) / n_samples - 1;
+        if (quantAmount <= 0.01) {
+          curve[i] = x;
+        } else {
+          curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
+        }
       }
+      this.driveCurveCache.set(quantAmount, curve);
     }
     node.curve = curve;
   }
@@ -651,17 +663,20 @@ export class AudioEngine {
   }
 
   public updateParams(newParams: SynthParameters) {
+    const prev = this.prevParams;
     this.params = newParams;
     if (!this.audioContext) return;
 
     const now = this.audioContext.currentTime;
 
-    if (this.masterGainNode) {
+    // 0. Master Gain
+    if (this.masterGainNode && (!prev || prev.masterGain !== newParams.masterGain)) {
       this.masterGainNode.gain.setTargetAtTime(this.params.masterGain ?? 0.8, now, 0.01);
     }
 
     // 1. Update Drive
-    if (this.driveNode && this.driveDryGain && this.driveWetGain) {
+    if (this.driveNode && this.driveDryGain && this.driveWetGain && 
+        (!prev || prev.fx.drive.amount !== newParams.fx.drive.amount || prev.fx.drive.enabled !== newParams.fx.drive.enabled)) {
       this.updateDriveCurveOnNode(this.driveNode, this.params.fx.drive.amount);
       const driveMix = this.params.fx.drive.enabled ? 1.0 : 0.0;
       this.driveDryGain.gain.setTargetAtTime(1 - driveMix, now, 0.01);
@@ -669,7 +684,8 @@ export class AudioEngine {
     }
 
     // 2. Update Chorus
-    if (this.chorusDryGain && this.chorusWetGain && this.chorusLfoLeft && this.chorusLfoRight) {
+    if (this.chorusDryGain && this.chorusWetGain && this.chorusLfoLeft && this.chorusLfoRight &&
+        (!prev || prev.fx.chorus !== newParams.fx.chorus)) {
       const chorusParams = this.params.fx.chorus || { enabled: false, rate: 0.8, depth: 0.5, mix: 0.4 };
       const chorusMix = chorusParams.enabled ? chorusParams.mix : 0;
       this.chorusDryGain.gain.setTargetAtTime(1 - chorusMix, now, 0.01);
@@ -684,7 +700,8 @@ export class AudioEngine {
     }
 
     // 3. Update Delay
-    if (this.delayDryGain && this.delayWetGain) {
+    if (this.delayDryGain && this.delayWetGain &&
+        (!prev || prev.fx.delay !== newParams.fx.delay)) {
       const delayMix = this.params.fx.delay.enabled ? this.params.fx.delay.mix : 0;
       this.delayDryGain.gain.setTargetAtTime(1 - delayMix, now, 0.01);
       this.delayWetGain.gain.setTargetAtTime(delayMix, now, 0.01);
@@ -692,14 +709,16 @@ export class AudioEngine {
     }
 
     // 4. Update Reverb
-    if (this.reverbDryGain && this.reverbWetGain) {
+    if (this.reverbDryGain && this.reverbWetGain &&
+        (!prev || prev.fx.reverb !== newParams.fx.reverb)) {
       const revMix = this.params.fx.reverb.enabled ? this.params.fx.reverb.mix : 0;
       this.reverbDryGain.gain.setTargetAtTime(1 - revMix, now, 0.01);
       this.reverbWetGain.gain.setTargetAtTime(revMix, now, 0.01);
     }
 
     // 5. Update Compressor
-    if (this.compressorNode && this.compressorDryGain && this.compressorWetGain) {
+    if (this.compressorNode && this.compressorDryGain && this.compressorWetGain &&
+        (!prev || prev.fx.compressor !== newParams.fx.compressor)) {
       const compParams = this.params.fx.compressor || {
         enabled: false,
         threshold: -20,
@@ -717,64 +736,162 @@ export class AudioEngine {
       this.compressorMakeupGain?.gain.setTargetAtTime(makeupLinear, now, 0.01);
     }
 
-    // 6. Update Limiter
-    // Limiter is always active to prevent digital overs; ceiling can be adjusted if provided
-
     // Update params for all currently playing notes
+    const lfo1Changed = !prev || prev.lfo !== newParams.lfo;
+    const lfo2Changed = !prev || prev.lfo2 !== newParams.lfo2;
     const lfo1Rate = this.getLfoRateHz(this.params.lfo);
     const lfo2Rate = this.params.lfo2 ? this.getLfoRateHz(this.params.lfo2) : 2.0;
 
+    const osc1Changed = !prev || prev.osc1 !== newParams.osc1;
+    const osc2Changed = !prev || prev.osc2 !== newParams.osc2;
+    const osc3Changed = !prev || prev.osc3 !== newParams.osc3;
+    const osc4Changed = !prev || prev.osc4 !== newParams.osc4;
+
+    const subNoiseChanged = !prev || prev.subGain !== newParams.subGain || prev.noiseGain !== newParams.noiseGain;
+    const filterChanged = !prev || prev.filter !== newParams.filter;
+    const filterEnvChanged = !prev || prev.filterEnvelope.amount !== newParams.filterEnvelope.amount;
+    const pwmChanged = !prev || prev.pwm !== newParams.pwm;
+    const modMatrixChanged = !prev || prev.modMatrix !== newParams.modMatrix || (prev.lfo && prev.lfo.target !== newParams.lfo.target);
+
+    const masterHeadroom = 0.25;
+    const isLadder = (this.params.filter.model || 'clean') === 'ladder24';
+    const qScale = isLadder ? 0.7 : 1.0;
+    const targetFilterType = (this.params.filter.type || 'lowpass') as BiquadFilterType;
+
     for (const note of this.activeNotes.values()) {
       // Oscillators 1-4 Unison Groups
-      this.updateOscGroupParams(note.osc1, this.params.osc1, now);
-      this.updateOscGroupParams(note.osc2, this.params.osc2, now);
-      this.updateOscGroupParams(note.osc3, this.params.osc3, now);
-      this.updateOscGroupParams(note.osc4, this.params.osc4, now);
+      if (osc1Changed) this.updateOscGroupParams(note.osc1, this.params.osc1, now);
+      if (osc2Changed) this.updateOscGroupParams(note.osc2, this.params.osc2, now);
+      if (osc3Changed) this.updateOscGroupParams(note.osc3, this.params.osc3, now);
+      if (osc4Changed) this.updateOscGroupParams(note.osc4, this.params.osc4, now);
 
       // Sub-Oscillator & Noise
-      const masterHeadroom = 0.25;
-      note.subGain.gain.setTargetAtTime(this.params.subGain * masterHeadroom, now, 0.01);
-      note.noiseGain.gain.setTargetAtTime(this.params.noiseGain * 0.15, now, 0.01);
+      if (subNoiseChanged) {
+        note.subGain.gain.setTargetAtTime(this.params.subGain * masterHeadroom, now, 0.01);
+        note.noiseGain.gain.setTargetAtTime(this.params.noiseGain * 0.15, now, 0.01);
+      }
 
       // Pre-Filter Saturation & Filter Stages
-      this.updateDriveCurveOnNode(note.preFilterDrive, this.params.filter.drive ?? 0);
+      if (filterChanged) {
+        this.updateDriveCurveOnNode(note.preFilterDrive, this.params.filter.drive ?? 0);
 
-      const targetFilterType = (this.params.filter.type || 'lowpass') as BiquadFilterType;
-      if (note.filterStage1.type !== targetFilterType) {
-        note.filterStage1.type = targetFilterType;
-      }
-      note.filterStage1.frequency.setTargetAtTime(this.params.filter.cutoff, now, 0.01);
-
-      const isLadder = (this.params.filter.model || 'clean') === 'ladder24';
-      const qScale = isLadder ? 0.7 : 1.0;
-      note.filterStage1.Q.setTargetAtTime(this.params.filter.resonance * qScale, now, 0.01);
-
-      if (note.filterStage2) {
-        if (note.filterStage2.type !== targetFilterType) {
-          note.filterStage2.type = targetFilterType;
+        if (note.filterStage1.type !== targetFilterType) {
+          note.filterStage1.type = targetFilterType;
         }
-        note.filterStage2.frequency.setTargetAtTime(this.params.filter.cutoff, now, 0.01);
-        note.filterStage2.Q.setTargetAtTime(this.params.filter.resonance * qScale, now, 0.01);
+        note.filterStage1.frequency.setTargetAtTime(this.params.filter.cutoff, now, 0.01);
+        note.filterStage1.Q.setTargetAtTime(this.params.filter.resonance * qScale, now, 0.01);
+
+        if (note.filterStage2) {
+          if (note.filterStage2.type !== targetFilterType) {
+            note.filterStage2.type = targetFilterType;
+          }
+          note.filterStage2.frequency.setTargetAtTime(this.params.filter.cutoff, now, 0.01);
+          note.filterStage2.Q.setTargetAtTime(this.params.filter.resonance * qScale, now, 0.01);
+        }
       }
 
-      note.filterEnvGain.gain.setTargetAtTime(this.params.filterEnvelope.amount * note.velocity, now, 0.01);
+      if (filterEnvChanged) {
+        note.filterEnvGain.gain.setTargetAtTime(this.params.filterEnvelope.amount * note.velocity, now, 0.01);
+      }
 
       // LFOs
-      if (note.lfo1Osc.type !== this.params.lfo.waveform) note.lfo1Osc.type = this.params.lfo.waveform;
-      note.lfo1Osc.frequency.setTargetAtTime(lfo1Rate, now, 0.01);
+      if (lfo1Changed) {
+        if (note.lfo1Osc.type !== this.params.lfo.waveform) note.lfo1Osc.type = this.params.lfo.waveform;
+        note.lfo1Osc.frequency.setTargetAtTime(lfo1Rate, now, 0.01);
+        this.applyPrimaryLfoDepth(note, this.params.lfo.target, now);
+      }
 
-      if (this.params.lfo2) {
+      if (lfo2Changed && this.params.lfo2) {
         if (note.lfo2Osc.type !== this.params.lfo2.waveform) note.lfo2Osc.type = this.params.lfo2.waveform;
         note.lfo2Osc.frequency.setTargetAtTime(lfo2Rate, now, 0.01);
       }
 
-      this.applyPrimaryLfoDepth(note, this.params.lfo.target, now);
-
       // PWM offset update
-      note.pwmOffset.offset.setTargetAtTime(this.params.pwm * 10, now, 0.01);
+      if (pwmChanged) {
+        note.pwmOffset.offset.setTargetAtTime(this.params.pwm * 10, now, 0.01);
+      }
 
-      // Refresh Modulation Matrix routing for active notes
-      this.refreshVoiceModMatrix(note, now);
+      // Refresh Modulation Matrix routing ONLY when modMatrix or target actually changed
+      if (modMatrixChanged) {
+        this.refreshVoiceModMatrix(note, now);
+      }
+    }
+
+    this.prevParams = newParams;
+  }
+
+  // ── Fast-Path Real-Time AudioParam Setters ──────────────────────────────────
+  // These bypass React state tree reconciliation during high-frequency manipulation (knobs, XY pads)
+  
+  public setFilterCutoff(cutoff: number) {
+    if (!this.audioContext) return;
+    this.params = { ...this.params, filter: { ...this.params.filter, cutoff } };
+    const now = this.audioContext.currentTime;
+    for (const note of this.activeNotes.values()) {
+      note.filterStage1.frequency.setTargetAtTime(cutoff, now, 0.005);
+      if (note.filterStage2) {
+        note.filterStage2.frequency.setTargetAtTime(cutoff, now, 0.005);
+      }
+    }
+  }
+
+  public setFilterResonance(resonance: number) {
+    if (!this.audioContext) return;
+    this.params = { ...this.params, filter: { ...this.params.filter, resonance } };
+    const now = this.audioContext.currentTime;
+    const isLadder = (this.params.filter.model || 'clean') === 'ladder24';
+    const qScale = isLadder ? 0.7 : 1.0;
+    for (const note of this.activeNotes.values()) {
+      note.filterStage1.Q.setTargetAtTime(resonance * qScale, now, 0.005);
+      if (note.filterStage2) {
+        note.filterStage2.Q.setTargetAtTime(resonance * qScale, now, 0.005);
+      }
+    }
+  }
+
+  public setMasterGain(gain: number) {
+    if (!this.audioContext || !this.masterGainNode) return;
+    this.params = { ...this.params, masterGain: gain };
+    const now = this.audioContext.currentTime;
+    this.masterGainNode.gain.setTargetAtTime(gain, now, 0.005);
+  }
+
+  public setReverbMix(mix: number) {
+    if (!this.audioContext || !this.reverbDryGain || !this.reverbWetGain) return;
+    this.params = { ...this.params, fx: { ...this.params.fx, reverb: { ...this.params.fx.reverb, mix } } };
+    const now = this.audioContext.currentTime;
+    const revMix = this.params.fx.reverb.enabled ? mix : 0;
+    this.reverbDryGain.gain.setTargetAtTime(1 - revMix, now, 0.005);
+    this.reverbWetGain.gain.setTargetAtTime(revMix, now, 0.005);
+  }
+
+  public setDelayMix(mix: number) {
+    if (!this.audioContext || !this.delayDryGain || !this.delayWetGain) return;
+    this.params = { ...this.params, fx: { ...this.params.fx, delay: { ...this.params.fx.delay, mix } } };
+    const now = this.audioContext.currentTime;
+    const delayMix = this.params.fx.delay.enabled ? mix : 0;
+    this.delayDryGain.gain.setTargetAtTime(1 - delayMix, now, 0.005);
+    this.delayWetGain.gain.setTargetAtTime(delayMix, now, 0.005);
+  }
+
+  public setDriveAmount(amount: number) {
+    if (!this.audioContext) return;
+    this.params = { ...this.params, fx: { ...this.params.fx, drive: { ...this.params.fx.drive, amount } } };
+    if (this.driveNode) {
+      this.updateDriveCurveOnNode(this.driveNode, amount);
+    }
+    for (const note of this.activeNotes.values()) {
+      this.updateDriveCurveOnNode(note.preFilterDrive, this.params.filter.drive ?? 0);
+    }
+  }
+
+  public setSubGain(gain: number) {
+    if (!this.audioContext) return;
+    this.params = { ...this.params, subGain: gain };
+    const now = this.audioContext.currentTime;
+    const masterHeadroom = 0.25;
+    for (const note of this.activeNotes.values()) {
+      note.subGain.gain.setTargetAtTime(gain * masterHeadroom, now, 0.005);
     }
   }
 
