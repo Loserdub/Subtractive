@@ -159,7 +159,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
   };
 
   return (
-    <div className="w-full flex flex-col bg-[#0c0f15] border-t border-[#202736] p-1.5 gap-1.5 touch-lock select-none">
+    <div className="w-full flex flex-col synth-panel rounded p-1.5 gap-1.5 touch-lock select-none">
       
       {/* ── Collapsed Micro-Bar (Ultra-Thin ~20px) ────────────────────── */}
       {isBarCollapsed ? (
@@ -416,7 +416,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
       )}
 
       {/* ── Main Piano Keybed ────────────────────────────────────────── */}
-      <div className="relative w-full h-36 md:h-40 min-h-[140px] bg-[#07090d] p-1 rounded-sm border border-[#202736] overflow-hidden shadow-2xl">
+      <div className="relative w-full h-36 md:h-40 min-h-[140px] bg-[#06080c] p-1 rounded border border-[#1b2230] overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)]">
         
         {/* White Keys Row */}
         <div className="absolute top-1 left-1 right-1 bottom-1 flex gap-[2px]">

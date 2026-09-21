@@ -11,10 +11,6 @@ interface MasterFXPanelProps {
   mappedCCs?: Record<number, string>;
 }
 
-const Screw = ({ className = "" }: { className?: string }) => (
-  <div className={`synth-screw absolute ${className}`} />
-);
-
 export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
   fx,
   onChange,
@@ -50,14 +46,9 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
   };
 
   return (
-    <div className="synth-panel rounded-sm p-2.5 pt-3 md:p-3 md:pt-3 flex flex-col items-center select-none touch-lock w-full h-full relative">
-      <Screw className="top-1.5 left-1.5" />
-      <Screw className="top-1.5 right-1.5" />
-      <Screw className="bottom-1.5 left-1.5" />
-      <Screw className="bottom-1.5 right-1.5" />
-      
+    <div className="synth-panel rounded p-2 md:p-2.5 flex flex-col items-center select-none touch-lock w-full h-full relative">
       {/* Module Title Header Bar */}
-      <div className="w-full flex items-center justify-between px-3 py-1 mb-2 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
         <div className="flex items-center gap-1.5 overflow-hidden">
           <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344] shrink-0" />
           <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>MASTER FX RACK</span>

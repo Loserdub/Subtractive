@@ -4,24 +4,24 @@
 :root,
 [data-theme="mono-dark"] {
   /* Chassis & Structure */
-  --chassis-bg:       #080a0e;
-  --chassis-gradient: #080a0e;
-  --panel-bg:         #12151c;
-  --panel-bg-alt:     #0a0c12;
-  --panel-gradient:   #12151c;
-  --panel-border:     #10b981;
-  --panel-border-width: 2px;
-  --panel-inset-hi:   rgba(16, 185, 129, 0.08);
-  --panel-inset-lo:   rgba(0, 0, 0, 1);
-  --panel-shadow:     rgba(0, 0, 0, 0.9);
+  --chassis-bg:       #07090e;
+  --chassis-gradient: linear-gradient(180deg, #0b0e15 0%, #06080c 100%);
+  --panel-bg:         #0f131c;
+  --panel-bg-alt:     #0a0d14;
+  --panel-gradient:   linear-gradient(180deg, #131722 0%, #0d1017 100%);
+  --panel-border:     rgba(16, 185, 129, 0.28);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(255, 255, 255, 0.08);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.65);
+  --panel-shadow:     0 3px 12px -2px rgba(0, 0, 0, 0.65);
 
   /* OLED / LCD Screen */
-  --oled-bg:          #020a06;
-  --oled-bg-grad:     #020a06;
-  --oled-border:      #10b981;
-  --oled-glow:        rgba(16, 185, 129, 0.22);
+  --oled-bg:          #020604;
+  --oled-bg-grad:     linear-gradient(180deg, #030805 0%, #010403 100%);
+  --oled-border:      rgba(16, 185, 129, 0.45);
+  --oled-glow:        rgba(16, 185, 129, 0.18);
   --oled-text:        #10b981;
-  --oled-scanline:    rgba(0, 0, 0, 0.4);
+  --oled-scanline:    rgba(0, 0, 0, 0.12);
 
   /* Knob Material — flat cell-shade */
   --knob-track:       #12221b;
@@ -101,23 +101,23 @@
    VINTAGE JAPANESE — Roland / Korg (Orange × Blue × Brushed Aluminum)
    ══════════════════════════════════════════════════════════════════════ */
 [data-theme="vintage-japanese"] {
-  --chassis-bg:       #b4b8c0;
-  --chassis-gradient: #b4b8c0;
-  --panel-bg:         #ccd0d8;
+  --chassis-bg:       #b0b4bc;
+  --chassis-gradient: linear-gradient(180deg, #b8bcc4 0%, #a8acb4 100%);
+  --panel-bg:         #c8ccd4;
   --panel-bg-alt:     #bcc0c8;
-  --panel-gradient:   #ccd0d8;
-  --panel-border:     #1a5fe8;
-  --panel-border-width: 2px;
-  --panel-inset-hi:   rgba(255, 255, 255, 0.5);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.3);
-  --panel-shadow:     rgba(0, 0, 80, 0.4);
+  --panel-gradient:   linear-gradient(180deg, #d2d6de 0%, #c4c8d0 100%);
+  --panel-border:     rgba(26, 95, 232, 0.35);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(255, 255, 255, 0.65);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.15);
+  --panel-shadow:     0 3px 10px -2px rgba(0, 0, 80, 0.2);
 
-  --oled-bg:          #140a00;
-  --oled-bg-grad:     #140a00;
-  --oled-border:      #e8541a;
-  --oled-glow:        rgba(232, 84, 26, 0.25);
+  --oled-bg:          #100800;
+  --oled-bg-grad:     linear-gradient(180deg, #160b00 0%, #0c0600 100%);
+  --oled-border:      rgba(232, 84, 26, 0.5);
+  --oled-glow:        rgba(232, 84, 26, 0.2);
   --oled-text:        #ffa500;
-  --oled-scanline:    rgba(0, 0, 0, 0.35);
+  --oled-scanline:    rgba(0, 0, 0, 0.1);
 
   --knob-track:       #8890a0;
   --knob-ribbed:      #a0a8b4;
@@ -181,23 +181,23 @@
    GERMAN INDUSTRIAL — Moog Black & Machined Aluminum / Gold
    ══════════════════════════════════════════════════════════════════════ */
 [data-theme="german-industrial"] {
-  --chassis-bg:       #020202;
-  --chassis-gradient: #020202;
-  --panel-bg:         #0e0e0e;
+  --chassis-bg:       #030303;
+  --chassis-gradient: linear-gradient(180deg, #080808 0%, #020202 100%);
+  --panel-bg:         #0c0c0c;
   --panel-bg-alt:     #060606;
-  --panel-gradient:   #0e0e0e;
-  --panel-border:     #c9a84c;
-  --panel-border-width: 2px;
-  --panel-inset-hi:   rgba(201, 168, 76, 0.06);
-  --panel-inset-lo:   rgba(0, 0, 0, 1);
-  --panel-shadow:     rgba(0, 0, 0, 0.95);
+  --panel-gradient:   linear-gradient(180deg, #121212 0%, #090909 100%);
+  --panel-border:     rgba(201, 168, 76, 0.32);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(201, 168, 76, 0.14);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.8);
+  --panel-shadow:     0 3px 12px -2px rgba(0, 0, 0, 0.8);
 
-  --oled-bg:          #000e00;
-  --oled-bg-grad:     #000e00;
-  --oled-border:      #aac840;
-  --oled-glow:        rgba(170, 200, 64, 0.2);
+  --oled-bg:          #010601;
+  --oled-bg-grad:     linear-gradient(180deg, #020a02 0%, #000400 100%);
+  --oled-border:      rgba(170, 200, 64, 0.45);
+  --oled-glow:        rgba(170, 200, 64, 0.18);
   --oled-text:        #00ff44;
-  --oled-scanline:    rgba(0, 0, 0, 0.4);
+  --oled-scanline:    rgba(0, 0, 0, 0.12);
 
   --knob-track:       #1a1a1a;
   --knob-ribbed:      #181818;
@@ -261,23 +261,23 @@
    CYBERPUNK CRT — Neon Magenta + Cyan on void black, scanlines
    ══════════════════════════════════════════════════════════════════════ */
 [data-theme="cyberpunk-crt"] {
-  --chassis-bg:       #020308;
-  --chassis-gradient: #020308;
-  --panel-bg:         #050710;
-  --panel-bg-alt:     #020408;
-  --panel-gradient:   #050710;
-  --panel-border:     #ff00cc;
-  --panel-border-width: 2px;
-  --panel-inset-hi:   rgba(255, 0, 204, 0.08);
-  --panel-inset-lo:   rgba(0, 0, 0, 1);
-  --panel-shadow:     rgba(255, 0, 204, 0.25);
+  --chassis-bg:       #030409;
+  --chassis-gradient: linear-gradient(180deg, #070914 0%, #020308 100%);
+  --panel-bg:         #080b16;
+  --panel-bg-alt:     #04060c;
+  --panel-gradient:   linear-gradient(180deg, #0d1222 0%, #060912 100%);
+  --panel-border:     rgba(255, 0, 204, 0.35);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(255, 0, 204, 0.18);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.75);
+  --panel-shadow:     0 3px 14px -2px rgba(255, 0, 204, 0.18);
 
   --oled-bg:          #020008;
-  --oled-bg-grad:     #020008;
-  --oled-border:      #ff00cc;
-  --oled-glow:        rgba(255, 0, 204, 0.25);
+  --oled-bg-grad:     linear-gradient(180deg, #040110 0%, #020006 100%);
+  --oled-border:      rgba(255, 0, 204, 0.45);
+  --oled-glow:        rgba(255, 0, 204, 0.22);
   --oled-text:        #ff00cc;
-  --oled-scanline:    rgba(0, 0, 0, 0.45);
+  --oled-scanline:    rgba(0, 0, 0, 0.12);
 
   --knob-track:       #1a0028;
   --knob-ribbed:      #140020;
@@ -399,68 +399,98 @@
 ::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
 
 /* ══════════════════════════════════════════════════════════════════════
-   TYPOGRAPHY
+   TYPOGRAPHY — Space Mono Precision Telemetry & Audio Instrument Fonts
    ══════════════════════════════════════════════════════════════════════ */
-.font-mono-lcd { font-family: 'Share Tech Mono', 'JetBrains Mono', monospace; }
-.font-brand    { font-family: 'Orbitron', sans-serif; }
+.font-mono,
+.font-mono-lcd {
+  font-family: 'Space Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  -moz-font-feature-settings: "tnum" 1;
+  -webkit-font-feature-settings: "tnum" 1;
+  font-feature-settings: "tnum" 1;
+}
+
+.font-mono-lcd {
+  letter-spacing: 0.08em;
+}
+
+.font-brand {
+  font-family: 'Orbitron', sans-serif;
+}
+
+/* Ensure all mono telemetry / parameter values have tabular numbers & optimal tracking */
+[class*="font-mono"] {
+  font-variant-numeric: tabular-nums;
+  -moz-font-feature-settings: "tnum" 1;
+  -webkit-font-feature-settings: "tnum" 1;
+  font-feature-settings: "tnum" 1;
+}
 
 /* ══════════════════════════════════════════════════════════════════════
-   CHASSIS & PANELS — Cell-shade: flat fill, heavy border, hard shadow
+   CHASSIS & PANELS — Machined Console Architecture (Recessed CNC Bays)
    ══════════════════════════════════════════════════════════════════════ */
 .synth-chassis {
-  background: var(--chassis-bg);
-  box-shadow: 0 8px 0 rgba(0,0,0,0.8), 0 12px 40px rgba(0,0,0,0.95);
+  background: var(--chassis-gradient, var(--chassis-bg));
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 8px 32px rgba(0, 0, 0, 0.9);
   transition: var(--theme-transition);
 }
 
 .synth-panel {
-  background: var(--panel-bg);
-  border: 2px solid var(--panel-border);
-  border-bottom: 4px solid var(--panel-border);
-  border-right: 3px solid var(--panel-border);
+  background: var(--panel-gradient, var(--panel-bg));
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
   box-shadow:
-    4px 4px 0 rgba(0,0,0,0.9),
-    inset 0 1px 0 rgba(255,255,255,0.04);
+    inset 0 1px 0 var(--panel-inset-hi),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    inset 0 2px 5px var(--panel-inset-lo),
+    var(--panel-shadow);
   position: relative;
   transition: var(--theme-transition);
 }
 
 .panel-bevel {
-  box-shadow: inset 0 2px 0 rgba(255,255,255,0.04), 3px 3px 0 rgba(0,0,0,0.7);
+  box-shadow: 
+    inset 0 1px 0 var(--panel-inset-hi),
+    inset 0 2px 4px var(--panel-inset-lo),
+    0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   OLED SCREEN — flat black with sharp border + thick glow
+   OLED SCREEN — Precision Dark Glass with Vector Glow
    ══════════════════════════════════════════════════════════════════════ */
 .oled-screen {
-  background: var(--oled-bg);
-  border: 2px solid var(--oled-border);
+  background: var(--oled-bg-grad, var(--oled-bg));
+  border: 1px solid var(--oled-border);
+  border-radius: 3px;
   box-shadow:
-    inset 0 0 20px rgba(0, 0, 0, 0.95),
-    0 0 16px var(--oled-glow),
-    0 0 32px var(--oled-glow);
+    inset 0 2px 8px rgba(0, 0, 0, 0.95),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.8),
+    0 0 12px -2px var(--oled-glow);
   position: relative;
   overflow: hidden;
   transition: var(--theme-transition);
 }
 
-/* Glass Reflection Highlight Overlay */
+/* Soft Studio Reflection Highlight Overlay */
 .oled-screen::before {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.09) 0%,
-    rgba(255, 255, 255, 0.02) 28%,
-    transparent 45%,
+    rgba(255, 255, 255, 0.05) 0%,
+    rgba(255, 255, 255, 0.01) 20%,
+    transparent 35%,
     transparent 100%
   );
   pointer-events: none;
   z-index: 12;
 }
 
-/* Authentic CRT Phosphor Scanline Texture */
+/* Ultra-Fine Micro Scanline Grid (Crisp Retina Feel) */
 .oled-screen::after {
   content: " ";
   display: block;
@@ -469,54 +499,54 @@
   background: repeating-linear-gradient(
     0deg,
     transparent 0px,
-    transparent 3px,
-    rgba(0, 0, 0, 0.35) 3px,
-    rgba(0, 0, 0, 0.35) 4px
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 2px,
+    rgba(0, 0, 0, 0.12) 3px
   );
   pointer-events: none;
   z-index: 11;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   HEX SCREWS — diamond/cross bolt, cell-shade flat
+   CHASSIS MACHINE BOLTS — Countersunk Torx/Hex at Outer Perimeter
    ══════════════════════════════════════════════════════════════════════ */
-.synth-screw {
-  width: 10px;
-  height: 10px;
-  /* Clipped octagon via clip-path for a bolt head shape */
-  clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
-  background: var(--screw-grad);
-  border: 1px solid var(--screw-border);
+.synth-screw-chassis {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.22) 0%, var(--screw-grad) 45%, #0a0d14 100%);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 1.5px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.5);
   position: relative;
   transition: var(--theme-transition);
+  flex-shrink: 0;
 }
-.synth-screw::after {
+.synth-screw-chassis::after {
   content: "";
   position: absolute;
-  inset: 25%;
-  /* Cross-slot indicator */
+  inset: 22%;
   background: var(--screw-line);
   clip-path: polygon(
     40% 0%, 60% 0%, 60% 40%, 100% 40%, 100% 60%, 60% 60%, 60% 100%, 40% 100%, 40% 60%, 0% 60%, 0% 40%, 40% 40%
   );
-  opacity: 0.85;
+  opacity: 0.6;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   LED GLOW EFFECTS — punchy, cell-shade saturated
+   LED GLOW EFFECTS — refined precision audio indicators
    ══════════════════════════════════════════════════════════════════════ */
-.led-glow-cyan    { box-shadow: 0 0 0 2px rgba(16,185,129,0.5), 0 0 16px rgba(16,185,129,0.9), 0 0 32px rgba(16,185,129,0.35); }
-.led-glow-amber   { box-shadow: 0 0 0 2px rgba(255,170,0,0.5), 0 0 16px rgba(255,170,0,0.9), 0 0 32px rgba(255,170,0,0.35); }
-.led-glow-emerald { box-shadow: 0 0 0 2px rgba(0,255,102,0.5), 0 0 16px rgba(0,255,102,0.9), 0 0 32px rgba(0,255,102,0.35); }
-.led-glow-red     { box-shadow: 0 0 0 2px rgba(255,51,68,0.5),  0 0 16px rgba(255,51,68,0.9),  0 0 32px rgba(255,51,68,0.35); }
+.led-glow-cyan    { box-shadow: 0 0 0 1px rgba(16,185,129,0.5), 0 0 10px rgba(16,185,129,0.8), 0 0 20px rgba(16,185,129,0.25); }
+.led-glow-amber   { box-shadow: 0 0 0 1px rgba(255,170,0,0.5), 0 0 10px rgba(255,170,0,0.8), 0 0 20px rgba(255,170,0,0.25); }
+.led-glow-emerald { box-shadow: 0 0 0 1px rgba(0,255,102,0.5), 0 0 10px rgba(0,255,102,0.8), 0 0 20px rgba(0,255,102,0.25); }
+.led-glow-red     { box-shadow: 0 0 0 1px rgba(255,51,68,0.5),  0 0 10px rgba(255,51,68,0.8),  0 0 20px rgba(255,51,68,0.25); }
 
 /* ══════════════════════════════════════════════════════════════════════
-   CYBERPUNK CRT — hard border flash instead of pulse
+   CYBERPUNK CRT — smooth ambient pulse
    ══════════════════════════════════════════════════════════════════════ */
 @keyframes crt-border-flash {
-  0%, 92%, 100% { border-color: #ff00cc; box-shadow: 4px 4px 0 rgba(0,0,0,0.9), 0 0 18px rgba(255,0,204,0.5); }
-  94%           { border-color: #00ffee; box-shadow: 4px 4px 0 rgba(0,0,0,0.9), 0 0 28px rgba(0,255,238,0.8); }
-  96%           { border-color: #ff00cc; box-shadow: 4px 4px 0 rgba(0,0,0,0.9), 0 0 18px rgba(255,0,204,0.5); }
+  0%, 92%, 100% { border-color: rgba(255, 0, 204, 0.4); box-shadow: inset 0 1px 0 rgba(255, 0, 204, 0.2), inset 0 2px 6px rgba(0,0,0,0.8), 0 0 10px rgba(255, 0, 204, 0.2); }
+  94%           { border-color: rgba(0, 255, 238, 0.8); box-shadow: inset 0 1px 0 rgba(0, 255, 238, 0.4), inset 0 2px 6px rgba(0,0,0,0.8), 0 0 16px rgba(0, 255, 238, 0.4); }
+  96%           { border-color: rgba(255, 0, 204, 0.4); box-shadow: inset 0 1px 0 rgba(255, 0, 204, 0.2), inset 0 2px 6px rgba(0,0,0,0.8), 0 0 10px rgba(255, 0, 204, 0.2); }
 }
 [data-theme="cyberpunk-crt"] .synth-panel {
   animation: crt-border-flash 5s ease-in-out infinite;
@@ -629,10 +659,11 @@
   justify-content: center;
   min-height: 44px;
   flex: 1;
-  font-family: 'Share Tech Mono', 'JetBrains Mono', monospace;
+  font-family: 'Space Mono', monospace;
+  font-variant-numeric: tabular-nums;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   border-radius: 2px;
   border: 1px solid transparent;

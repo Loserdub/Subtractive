@@ -36,10 +36,6 @@ interface PerformWorkspaceProps {
   onOpenPresetBrowser: () => void;
 }
 
-const Screw = ({ className = "" }: { className?: string }) => (
-  <div className={`synth-screw absolute ${className}`} />
-);
-
 export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   synthParams,
   onSynthParamChange,
@@ -399,13 +395,8 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
         
         {/* Left: Interactive XY Vector Modulation Surface (6/12) */}
         <div 
-          className="synth-panel rounded-sm p-3 flex flex-col justify-between flex-1 lg:flex-[6] min-h-[220px] relative shadow-inner"
-          style={{ background: 'var(--panel-bg)', border: '1px solid var(--panel-border)' }}
+          className="synth-panel rounded p-2.5 flex flex-col justify-between flex-1 lg:flex-[6] min-h-[220px] relative"
         >
-          <Screw className="top-1.5 left-1.5" />
-          <Screw className="top-1.5 right-1.5" />
-          <Screw className="bottom-1.5 left-1.5" />
-          <Screw className="bottom-1.5 right-1.5" />
 
           {/* Title and Axis readout */}
           <div className="flex items-center justify-between px-2 pb-1 border-b border-[#202c3e] shrink-0">
@@ -512,13 +503,8 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
 
         {/* Right: 4 Master Performance Macros + Momentary FX (6/12) */}
         <div 
-          className="synth-panel rounded-sm p-3 flex flex-col justify-between flex-1 lg:flex-[6] min-h-[220px] relative shadow-inner"
-          style={{ background: 'var(--panel-bg)', border: '1px solid var(--panel-border)' }}
+          className="synth-panel rounded p-2.5 flex flex-col justify-between flex-1 lg:flex-[6] min-h-[220px] relative"
         >
-          <Screw className="top-1.5 left-1.5" />
-          <Screw className="top-1.5 right-1.5" />
-          <Screw className="bottom-1.5 left-1.5" />
-          <Screw className="bottom-1.5 right-1.5" />
 
           <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[#202c3e] shrink-0">
             <span className="text-[10px] font-mono font-black tracking-widest text-[#ffaa00] uppercase">

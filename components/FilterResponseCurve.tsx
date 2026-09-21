@@ -256,7 +256,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
                 y={490}
                 fill="rgba(255, 255, 255, 0.3)"
                 fontSize="24"
-                fontFamily="Share Tech Mono, monospace"
+                fontFamily="'Space Mono', monospace"
               >
                 {item.label}
               </text>
@@ -284,7 +284,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
                 y={y - 6}
                 fill={isZero ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.2)'}
                 fontSize="20"
-                fontFamily="Share Tech Mono, monospace"
+                fontFamily="'Space Mono', monospace"
               >
                 {item.label}
               </text>

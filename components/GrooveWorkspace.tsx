@@ -91,10 +91,6 @@ const TRACK_CONFIG: Record<DrumTrackName, {
   },
 };
 
-const Screw = ({ className = "" }: { className?: string }) => (
-  <div className={`synth-screw absolute ${className}`} />
-);
-
 export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
   isPlaying,
   onPlayToggle,
@@ -314,13 +310,8 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
 
       {/* ── Master Rhythm Sequencer Controls (Play, BPM, Swing, Banks, Global Actions) ── */}
       <div 
-        className="synth-panel rounded-sm px-3 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 relative"
-        style={{ background: 'var(--panel-bg)', border: '1px solid var(--panel-border)' }}
+        className="synth-panel rounded px-3 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 relative"
       >
-        <Screw className="top-1 left-1" />
-        <Screw className="top-1 right-1" />
-        <Screw className="bottom-1 left-1" />
-        <Screw className="bottom-1 right-1" />
 
         {/* Left: Master Transport & Clock */}
         <div className="flex items-center gap-3 pl-2">
@@ -394,11 +385,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
       </div>
 
       {/* ── Simultaneous 4-Track Roland TR-808/909 Multi-Lane Sequencer Grid ── */}
-      <div className="synth-panel rounded-sm p-3 flex flex-col gap-3 flex-1 min-h-0 relative shadow-inner" style={{ background: 'var(--panel-bg-alt)', border: '1px solid var(--panel-border)' }}>
-        <Screw className="top-1.5 left-1.5" />
-        <Screw className="top-1.5 right-1.5" />
-        <Screw className="bottom-1.5 left-1.5" />
-        <Screw className="bottom-1.5 right-1.5" />
+      <div className="synth-panel rounded p-2.5 flex flex-col gap-2 flex-1 min-h-0 relative">
 
         <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[#202b3d]">
           <div className="flex items-center gap-2">

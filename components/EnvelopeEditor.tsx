@@ -326,10 +326,10 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
         <line x1={X_START} y1={Y_TOP} x2={X_END} y2={Y_TOP} stroke="rgba(255, 255, 255, 0.06)" strokeDasharray="3 3" strokeWidth="1" />
 
         {/* Phase Region Text Labels */}
-        <text x={(points.x0 + points.xA) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="Share Tech Mono, monospace" textAnchor="middle">ATTACK</text>
-        <text x={(points.xA + points.xD) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="Share Tech Mono, monospace" textAnchor="middle">DECAY</text>
-        <text x={(points.xD + points.xS) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="Share Tech Mono, monospace" textAnchor="middle">SUSTAIN</text>
-        <text x={(points.xS + points.xR) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="Share Tech Mono, monospace" textAnchor="middle">RELEASE</text>
+        <text x={(points.x0 + points.xA) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="'Space Mono', monospace" letterSpacing="0.08em" textAnchor="middle">ATTACK</text>
+        <text x={(points.xA + points.xD) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="'Space Mono', monospace" letterSpacing="0.08em" textAnchor="middle">DECAY</text>
+        <text x={(points.xD + points.xS) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="'Space Mono', monospace" letterSpacing="0.08em" textAnchor="middle">SUSTAIN</text>
+        <text x={(points.xS + points.xR) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="'Space Mono', monospace" letterSpacing="0.08em" textAnchor="middle">RELEASE</text>
 
         {/* Envelope Area Fill */}
         <path d={curvePaths.fillPath} fill={`url(#env-grad-${color})`} />

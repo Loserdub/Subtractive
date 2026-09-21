@@ -29,10 +29,6 @@ interface PanelProps {
   className?: string;
 }
 
-const Screw = ({ className = "" }: { className?: string }) => (
-  <div className={`synth-screw absolute ${className}`} />
-);
-
 const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, className = "" }) => {
   const badgeGlows = {
     cyan:    'bg-[#10b981] shadow-[0_0_6px_#10b981]',
@@ -42,14 +38,9 @@ const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, cla
   };
 
   return (
-    <div className={`synth-panel rounded-sm p-2.5 pt-3 md:p-3 md:pt-3 flex flex-col items-center select-none touch-lock relative ${className}`}>
-      <Screw className="top-1.5 left-1.5" />
-      <Screw className="top-1.5 right-1.5" />
-      <Screw className="bottom-1.5 left-1.5" />
-      <Screw className="bottom-1.5 right-1.5" />
-      
-      {/* Module Title Header Bar — Contained INSIDE the panel, zero overlap! */}
-      <div className="w-full flex items-center justify-between px-3 py-1 mb-2 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+    <div className={`synth-panel rounded p-2 md:p-2.5 flex flex-col items-center select-none touch-lock relative ${className}`}>
+      {/* Module Title Header Bar — Contained INSIDE the panel */}
+      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
         <div className="flex items-center gap-1.5 overflow-hidden">
           <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${badgeGlows[badgeColor]}`} />
           <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>{title}</span>
@@ -856,14 +847,14 @@ export const Synth: React.FC = () => {
 
   if (!isStarted) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center p-4" style={{ background: 'var(--chassis-bg)' }}>
-        <div className="synth-panel max-w-lg w-full p-6 md:p-8 rounded-sm text-center flex flex-col items-center">
-          <Screw className="top-2 left-2" />
-          <Screw className="top-2 right-2" />
-          <Screw className="bottom-2 left-2" />
-          <Screw className="bottom-2 right-2" />
+      <div className="h-full w-full flex flex-col items-center justify-center p-4 relative" style={{ background: 'var(--chassis-bg)' }}>
+        <div className="synth-panel max-w-lg w-full p-6 md:p-8 rounded text-center flex flex-col items-center relative shadow-2xl">
+          <div className="synth-screw-chassis absolute top-2 left-2" />
+          <div className="synth-screw-chassis absolute top-2 right-2" />
+          <div className="synth-screw-chassis absolute bottom-2 left-2" />
+          <div className="synth-screw-chassis absolute bottom-2 right-2" />
           
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#10b981]/10 border border-[#10b981] flex items-center justify-center mb-3 led-glow-cyan">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#10b981]/10 border border-[#10b981]/40 flex items-center justify-center mb-3 led-glow-cyan">
             <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#10b981]" />
           </div>
 
@@ -892,10 +883,15 @@ export const Synth: React.FC = () => {
   }
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden p-1.5 md:p-2.5 gap-1.5 md:gap-2" style={{ background: 'var(--chassis-bg)' }}>
+    <div className="h-full w-full flex flex-col overflow-hidden p-1 md:p-2 gap-1 md:gap-1.5 relative" style={{ background: 'var(--chassis-bg)' }}>
+      {/* Precision Chassis Machine Bolts at Outer Corners */}
+      <div className="synth-screw-chassis absolute top-1 left-1 pointer-events-none z-30 hidden sm:block" />
+      <div className="synth-screw-chassis absolute top-1 right-1 pointer-events-none z-30 hidden sm:block" />
+      <div className="synth-screw-chassis absolute bottom-1 left-1 pointer-events-none z-30 hidden sm:block" />
+      <div className="synth-screw-chassis absolute bottom-1 right-1 pointer-events-none z-30 hidden sm:block" />
       
       {/* ── Top Header ── */}
-      <header className="synth-panel p-2 md:p-2.5 rounded-sm shrink-0">
+      <header className="synth-panel p-1.5 md:p-2 rounded shrink-0">
 
         {/* Mobile header: single row, essentials only */}
         <div className="flex md:hidden items-center justify-between gap-1.5">
@@ -1737,7 +1733,7 @@ export const Synth: React.FC = () => {
 
           {/* VCO Tab */}
           <div className={`mobile-section-panel ${activeTab === 'vco' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-3">
+            <div className="pt-1">
               <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="flex flex-col justify-between">
                 <div className="flex flex-wrap items-center justify-between gap-2 w-full p-2 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                   <div className="flex flex-col items-center gap-0.5">
@@ -1855,7 +1851,7 @@ export const Synth: React.FC = () => {
                   />
                 </div>
               </div>
-              <div className="pt-2">
+              <div className="pt-1">
                 <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="w-full flex flex-col justify-between">
                   <div className="flex flex-col gap-2.5 w-full justify-between">
                     <div className="grid grid-cols-4 gap-1 w-full">
@@ -1933,7 +1929,7 @@ export const Synth: React.FC = () => {
 
           {/* ENV Tab */}
           <div className={`mobile-section-panel ${activeTab === 'env' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="flex flex-col gap-3.5 pt-2">
+            <div className="flex flex-col gap-2 pt-1">
               <Panel title="LFO — MODULATION" badgeColor="emerald" className="flex flex-col justify-between">
                 <div className="flex flex-col gap-2 w-full justify-between">
                   <div className="flex items-center gap-2">
@@ -2086,7 +2082,7 @@ export const Synth: React.FC = () => {
 
           {/* FX Tab */}
           <div className={`mobile-section-panel ${activeTab === 'fx' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-3">
+            <div className="pt-1">
               <MasterFXPanel 
                 fx={params.fx} 
                 onChange={(fx) => setParams(p => ({ ...p, fx }))} 
@@ -2099,7 +2095,7 @@ export const Synth: React.FC = () => {
 
           {/* ARP Tab */}
           <div className={`mobile-section-panel ${activeTab === 'arp' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-3">
+            <div className="pt-1">
               <ArpeggiatorPanel 
                 arp={params.arpeggiator} 
                 onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} 
@@ -2112,7 +2108,7 @@ export const Synth: React.FC = () => {
 
           {/* SEQ Tab — drum machine with contained horizontal scroll */}
           <div className={`mobile-section-panel ${activeTab === 'seq' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-3">
+            <div className="pt-1">
               <DrumMachine
                 isPlaying={isDrumMachinePlaying}
                 onPlayToggle={handlePlayToggle}
@@ -2135,7 +2131,7 @@ export const Synth: React.FC = () => {
 
           {/* KEYS Tab */}
           <div className={`mobile-section-panel ${activeTab === 'keys' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-2">
+            <div className="pt-1">
               <Keyboard 
                 onNoteOn={handleNoteOn} 
                 onNoteOff={handleNoteOff} 

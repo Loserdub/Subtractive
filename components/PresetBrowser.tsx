@@ -315,14 +315,13 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-6 bg-black/80 backdrop-blur-sm animate-fade-in select-none">
       <div 
-        className="synth-panel w-full max-w-5xl h-[90vh] max-h-[850px] flex flex-col rounded-sm overflow-hidden border-2 shadow-2xl relative"
-        style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+        className="synth-panel w-full max-w-5xl h-[90vh] max-h-[850px] flex flex-col rounded-md overflow-hidden shadow-2xl relative"
       >
-        {/* Screw bolts */}
-        <div className="synth-screw absolute top-2 left-2" />
-        <div className="synth-screw absolute top-2 right-2" />
-        <div className="synth-screw absolute bottom-2 left-2" />
-        <div className="synth-screw absolute bottom-2 right-2" />
+        {/* Chassis machine bolts */}
+        <div className="synth-screw-chassis absolute top-2 left-2" />
+        <div className="synth-screw-chassis absolute top-2 right-2" />
+        <div className="synth-screw-chassis absolute bottom-2 left-2" />
+        <div className="synth-screw-chassis absolute bottom-2 right-2" />
 
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--section-border)', background: 'var(--section-bg)' }}>
