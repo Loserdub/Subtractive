@@ -1,4 +1,4 @@
-import { StepSequencePattern, DrumTrackName, DrumTrackSettings } from '../types';
+import { StepSequencePattern, DrumTrackName, DrumTrackSettings, MelodicSequencerPattern, MelodicStep } from '../types';
 import { DEFAULT_DRUM_TRACK_SETTINGS } from '../constants';
 
 interface TrackChannelStrip {
@@ -23,6 +23,8 @@ export class DrumMachineEngine {
   private trackSettings: Record<DrumTrackName, DrumTrackSettings> = JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS));
   private outputNode: AudioNode | null = null;
   private channelStrips: Record<DrumTrackName, TrackChannelStrip> | null = null;
+  private melodicPattern: MelodicSequencerPattern | null = null;
+  private onScheduleMelodicStep?: (time: number, stepIndex: number, step: MelodicStep, stepDuration: number) => void;
 
   constructor(audioContext: AudioContext, onStepChange?: (step: number) => void, outputNode?: AudioNode | null) {
     this.audioContext = audioContext;
@@ -315,6 +317,19 @@ export class DrumMachineEngine {
     if (hihatVal > 0) this.createHihat(playTime, hihatVal);
     if (crashVal > 0) this.createCrash(playTime, crashVal);
 
+    // Melodic Synth Sequencer scheduling
+    if (this.melodicPattern && this.melodicPattern.enabled && this.onScheduleMelodicStep) {
+      const stepCount = this.melodicPattern.length || this.melodicPattern.steps.length || 16;
+      const stepIdx = this.currentStep % stepCount;
+      const step = this.melodicPattern.steps[stepIdx];
+      if (step && step.enabled) {
+        const prob = step.probability ?? 100;
+        if (prob >= 100 || Math.random() * 100 <= prob) {
+          this.onScheduleMelodicStep(playTime, stepIdx, step, secondsPer16thNote);
+        }
+      }
+    }
+
     const timeUntilNote = Math.max(0, playTime - this.audioContext.currentTime);
     setTimeout(() => {
       if (this.isPlaying) {
@@ -376,5 +391,15 @@ export class DrumMachineEngine {
   
   public setPattern(pattern: StepSequencePattern) {
     this.pattern = pattern;
+  }
+
+  public setMelodicPattern(pattern: MelodicSequencerPattern | null) {
+    this.melodicPattern = pattern;
+  }
+
+  public setOnScheduleMelodicStep(
+    callback?: (time: number, stepIndex: number, step: MelodicStep, stepDuration: number) => void
+  ) {
+    this.onScheduleMelodicStep = callback;
   }
 }

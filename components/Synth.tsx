@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings, PresetPatch, WorkspaceMode } from '../types';
+import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings, PresetPatch, WorkspaceMode, MelodicSequencerPattern } from '../types';
 import { patchParams } from '../utils/patchParams';
 import { AudioEngine } from '../services/AudioEngine';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
@@ -11,7 +11,7 @@ import { ArpeggiatorPanel } from './ArpeggiatorPanel';
 import { GrooveWorkspace } from './GrooveWorkspace';
 import { PerformWorkspace } from './PerformWorkspace';
 import { LEDButton, ToggleSwitch } from './Switch';
-import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN, DEFAULT_DRUM_TRACK_SETTINGS, SYNTH_PRESETS, DAW_KEY_MAP, CLASSIC_KEY_MAP } from '../constants';
+import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN, DEFAULT_DRUM_TRACK_SETTINGS, SYNTH_PRESETS, DAW_KEY_MAP, CLASSIC_KEY_MAP, DEFAULT_MELODIC_PATTERN } from '../constants';
 import { SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from './Icon';
 import { WaveformDisplay } from './WaveformDisplay';
 import { VUMeter } from './VUMeter';
@@ -308,8 +308,39 @@ export const Synth: React.FC = () => {
     JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS))
   );
 
+  // Melodic Motion Sequencer State
+  const [melodicBanks, setMelodicBanks] = useState<MelodicSequencerPattern[]>(() => {
+    try {
+      const saved = localStorage.getItem('subtractive_melodic_banks');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return Array(4).fill(null).map(() => JSON.parse(JSON.stringify(DEFAULT_MELODIC_PATTERN)));
+  });
+  const melodicPattern = melodicBanks[currentBankIndex] || DEFAULT_MELODIC_PATTERN;
+
+  const handleMelodicPatternChange = useCallback((newPattern: MelodicSequencerPattern) => {
+    setMelodicBanks(prev => {
+      const next = [...prev];
+      next[currentBankIndex] = newPattern;
+      try {
+        localStorage.setItem('subtractive_melodic_banks', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, [currentBankIndex]);
+
   const audioEngine = useRef<AudioEngine | null>(null);
   const drumMachineEngine = useRef<DrumMachineEngine | null>(null);
+
+  // Keep Melodic Pattern synced to Drum Engine
+  useEffect(() => {
+    if (drumMachineEngine.current) {
+      drumMachineEngine.current.setMelodicPattern(melodicPattern);
+      drumMachineEngine.current.setOnScheduleMelodicStep((time, stepIndex, step, stepDuration) => {
+        audioEngine.current?.scheduleSequencerStep(time, step, stepDuration, melodicPattern.octave);
+      });
+    }
+  }, [melodicPattern]);
 
   const handleStart = useCallback(async () => {
     if (isStarted) return;
@@ -327,6 +358,10 @@ export const Synth: React.FC = () => {
     drumMachineEngine.current = new DrumMachineEngine(audioContext, undefined, engine.getMasterGainNode());
     drumMachineEngine.current.subscribeStep((step) => setRunningStep(step));
     drumMachineEngine.current.setPattern(drumPattern);
+    drumMachineEngine.current.setMelodicPattern(melodicPattern);
+    drumMachineEngine.current.setOnScheduleMelodicStep((time, stepIndex, step, stepDuration) => {
+      audioEngine.current?.scheduleSequencerStep(time, step, stepDuration, melodicPattern.octave);
+    });
     drumMachineEngine.current.setSwing(swing);
     drumMachineEngine.current.setBpm(bpm);
     Object.entries(drumSettings).forEach(([track, settings]) => {
@@ -335,6 +370,7 @@ export const Synth: React.FC = () => {
 
     setIsStarted(true);
     setMidiStatus('MIDI Initializing...');
+
 
     const midiMgr = new MidiManager({
       onStatusChange: (status) => {
@@ -1237,6 +1273,9 @@ export const Synth: React.FC = () => {
               onTrackSettingsChange={handleDrumTrackSettingsChange}
               engine={drumMachineEngine.current}
               onPatternChange={handlePatternChange}
+              melodicPattern={melodicPattern}
+              onMelodicPatternChange={handleMelodicPatternChange}
+              onAuditionNote={(note, vel) => audioEngine.current?.noteOn(note, vel || 100)}
               arpParams={params.arpeggiator}
               onArpChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
               synthParams={params}
@@ -1248,6 +1287,7 @@ export const Synth: React.FC = () => {
               learningParamId={learningParamId}
               mappedCCs={rawMappedCCs}
             />
+
           </div>
         ) : workspaceMode === 'perform' ? (
           <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
@@ -2106,28 +2146,41 @@ export const Synth: React.FC = () => {
             </div>
           </div>
 
-          {/* SEQ Tab — drum machine with contained horizontal scroll */}
+          {/* SEQ Tab — full groove & melodic motion workstation */}
           <div className={`mobile-section-panel ${activeTab === 'seq' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
-            <div className="pt-1">
-              <DrumMachine
+            <div className="pt-1 flex flex-col min-h-0">
+              <GrooveWorkspace
                 isPlaying={isDrumMachinePlaying}
                 onPlayToggle={handlePlayToggle}
                 bpm={bpm}
                 onBpmChange={setBpm}
-                pattern={drumPattern}
-                selectedTrack={selectedTrack}
-                onTrackSelect={setSelectedTrack}
-                onStepToggle={handleStepToggle}
-                engine={drumMachineEngine.current}
-                currentBank={currentBankIndex}
-                onBankSelect={setCurrentBankIndex}
                 swing={swing}
                 onSwingChange={setSwing}
-                trackSettings={drumSettings[selectedTrack]}
+                currentBank={currentBankIndex}
+                onBankSelect={setCurrentBankIndex}
+                pattern={drumPattern}
+                onStepToggle={handleStepToggle}
+                trackSettings={drumSettings}
                 onTrackSettingsChange={handleDrumTrackSettingsChange}
+                engine={drumMachineEngine.current}
+                onPatternChange={handlePatternChange}
+                melodicPattern={melodicPattern}
+                onMelodicPatternChange={handleMelodicPatternChange}
+                onAuditionNote={(note, vel) => audioEngine.current?.noteOn(note, vel || 100)}
+                arpParams={params.arpeggiator}
+                onArpChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
+                synthParams={params}
+                onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+                selectedPresetName={selectedPresetName}
+                onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+                onSwitchWorkspace={handleWorkspaceModeChange}
+                onMidiLearn={handleMidiLearn}
+                learningParamId={learningParamId}
+                mappedCCs={rawMappedCCs}
               />
             </div>
           </div>
+
 
           {/* KEYS Tab */}
           <div className={`mobile-section-panel ${activeTab === 'keys' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>

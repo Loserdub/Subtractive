@@ -2,13 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Knob } from './Knob';
 import { LEDButton } from './Switch';
 import { ArpeggiatorPanel } from './ArpeggiatorPanel';
+import { MelodicSequencer } from './MelodicSequencer';
 import { 
   StepSequencePattern, 
   DrumTrackName, 
   DrumTrackSettings, 
   ArpeggiatorParams, 
   SynthParameters,
-  WorkspaceMode 
+  WorkspaceMode,
+  MelodicSequencerPattern,
 } from '../types';
 import { DRUM_TRACKS } from '../constants';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
@@ -28,6 +30,10 @@ interface GrooveWorkspaceProps {
   onTrackSettingsChange: (track: DrumTrackName, settings: Partial<DrumTrackSettings>) => void;
   engine: DrumMachineEngine | null;
   onPatternChange: (newPattern: StepSequencePattern) => void;
+  // Melodic Motion Sequencer
+  melodicPattern: MelodicSequencerPattern;
+  onMelodicPatternChange: (newPattern: MelodicSequencerPattern) => void;
+  onAuditionNote?: (note: number, velocity?: number) => void;
   // Arpeggiator
   arpParams: ArpeggiatorParams;
   onArpChange: (arp: ArpeggiatorParams) => void;
@@ -91,6 +97,8 @@ const TRACK_CONFIG: Record<DrumTrackName, {
   },
 };
 
+type GrooveViewTab = 'all' | 'synth' | 'drums' | 'arp';
+
 export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
   isPlaying,
   onPlayToggle,
@@ -106,6 +114,9 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
   onTrackSettingsChange,
   engine,
   onPatternChange,
+  melodicPattern,
+  onMelodicPatternChange,
+  onAuditionNote,
   arpParams,
   onArpChange,
   synthParams,
@@ -120,6 +131,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
   const [activeStep, setActiveStep] = useState<number | null>(null);
   const [mutedTracks, setMutedTracks] = useState<Set<DrumTrackName>>(new Set());
   const [soloTracks, setSoloTracks] = useState<Set<DrumTrackName>>(new Set());
+  const [viewTab, setViewTab] = useState<GrooveViewTab>('all');
 
   // Subscribe to real-time step runner clock from engine
   useEffect(() => {
@@ -130,6 +142,29 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
       return unsubscribe;
     }
   }, [engine]);
+
+  // Handle live motion recording when quick-tweak knob changes
+  const handleQuickSynthParamChange = useCallback((patch: Partial<SynthParameters>) => {
+    onSynthParamChange(patch);
+
+    if (melodicPattern.motionRecording && isPlaying && activeStep !== null) {
+      const stepIdx = activeStep % (melodicPattern.length || melodicPattern.steps.length || 16);
+      const step = melodicPattern.steps[stepIdx];
+      if (step) {
+        const newPLocks = { ...(step.pLocks || {}) };
+        if (patch.filter?.cutoff !== undefined) newPLocks.cutoff = Math.round(patch.filter.cutoff);
+        if (patch.filter?.resonance !== undefined) newPLocks.resonance = +patch.filter.resonance.toFixed(1);
+        if (patch.fx?.drive?.amount !== undefined) newPLocks.drive = +patch.fx.drive.amount.toFixed(2);
+        if (patch.fx?.reverb?.mix !== undefined) newPLocks.reverbMix = +patch.fx.reverb.mix.toFixed(2);
+        if (patch.fx?.delay?.mix !== undefined) newPLocks.delayMix = +patch.fx.delay.mix.toFixed(2);
+        if (patch.subGain !== undefined) newPLocks.subGain = +patch.subGain.toFixed(2);
+
+        const newSteps = [...melodicPattern.steps];
+        newSteps[stepIdx] = { ...step, pLocks: newPLocks };
+        onMelodicPatternChange({ ...melodicPattern, steps: newSteps });
+      }
+    }
+  }, [onSynthParamChange, melodicPattern, isPlaying, activeStep, onMelodicPatternChange]);
 
   // Handle Mute toggle
   const toggleMute = useCallback((track: DrumTrackName) => {
@@ -231,7 +266,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
   }, [engine]);
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto pr-0.5">
+    <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto pr-0.5 select-none">
       
       {/* ── Top Synth Tone Monitor & Quick-Tweak Bar ── */}
       <div 
@@ -258,12 +293,12 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             onClick={() => onSwitchWorkspace('synth')}
             className="text-[8px] font-mono text-gray-400 hover:text-white px-2 py-0.5 rounded border border-[#26334a] bg-[#121824] flex items-center gap-1"
           >
-            <span>EDIT SYNTH IN FULL LAB</span>
+            <span>FULL LAB</span>
             <span>↗</span>
           </button>
         </div>
 
-        {/* Quick synth tone macro knobs */}
+        {/* Quick synth tone macro knobs (with live motion recording support) */}
         <div className="flex items-center gap-3">
           <Knob
             label="Cutoff"
@@ -272,7 +307,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             max={20000}
             logarithmic
             size={28}
-            onChange={(v) => onSynthParamChange({ filter: { ...synthParams.filter, cutoff: v } })}
+            onChange={(v) => handleQuickSynthParamChange({ filter: { ...synthParams.filter, cutoff: v } })}
             unit="Hz"
             color="amber"
           />
@@ -282,7 +317,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             min={0}
             max={40}
             size={28}
-            onChange={(v) => onSynthParamChange({ filter: { ...synthParams.filter, resonance: v } })}
+            onChange={(v) => handleQuickSynthParamChange({ filter: { ...synthParams.filter, resonance: v } })}
             color="cyan"
           />
           <Knob
@@ -291,7 +326,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             min={0}
             max={1}
             size={28}
-            onChange={(v) => onSynthParamChange({ fx: { ...synthParams.fx, drive: { ...synthParams.fx.drive, amount: v } } })}
+            onChange={(v) => handleQuickSynthParamChange({ fx: { ...synthParams.fx, drive: { ...synthParams.fx.drive, amount: v } } })}
             unit="%"
             color="red"
           />
@@ -301,20 +336,20 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             min={0}
             max={1}
             size={28}
-            onChange={(v) => onSynthParamChange({ fx: { ...synthParams.fx, reverb: { ...synthParams.fx.reverb, mix: v } } })}
+            onChange={(v) => handleQuickSynthParamChange({ fx: { ...synthParams.fx, reverb: { ...synthParams.fx.reverb, mix: v } } })}
             unit="%"
             color="emerald"
           />
         </div>
       </div>
 
-      {/* ── Master Rhythm Sequencer Controls (Play, BPM, Swing, Banks, Global Actions) ── */}
+      {/* ── Master Rhythm Sequencer Controls (Play, BPM, Swing, Banks, View Mode Filter) ── */}
       <div 
         className="synth-panel rounded px-3 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 relative"
       >
 
         {/* Left: Master Transport & Clock */}
-        <div className="flex items-center gap-3 pl-2">
+        <div className="flex items-center gap-3 pl-1 sm:pl-2">
           <LEDButton
             label={isPlaying ? 'STOP BEAT' : 'START BEAT'}
             active={isPlaying}
@@ -347,8 +382,8 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
           />
 
           {/* Bank Selectors */}
-          <div className="flex flex-col items-center gap-0.5 ml-2">
-            <span className="text-[7px] uppercase font-mono tracking-widest text-gray-400">Pattern Bank</span>
+          <div className="flex flex-col items-center gap-0.5 ml-1">
+            <span className="text-[7px] uppercase font-mono tracking-widest text-gray-400">Bank</span>
             <div className="flex gap-1 p-0.5 rounded-sm bg-[#0a0f18] border border-[#20293d]">
               {[0, 1, 2, 3].map((bankIndex) => (
                 <button
@@ -367,229 +402,299 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
           </div>
         </div>
 
-        {/* Right: Master Sequencer Engine Status */}
-        <div className="flex items-center gap-2 pr-2">
-          <div className="oled-screen px-2.5 py-1 rounded flex items-center gap-3">
+        {/* Right: View Mode Tab Selector (Mobile & Desktop Ergonomics) */}
+        <div className="flex items-center gap-2 pr-1 sm:pr-2">
+          
+          <div className="flex items-center p-0.5 rounded bg-[#0a0f18] border border-[#20293d]">
+            <button
+              type="button"
+              onClick={() => setViewTab('all')}
+              className={`px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase transition-all ${
+                viewTab === 'all'
+                  ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              ALL LANES
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewTab('synth')}
+              className={`px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase transition-all ${
+                viewTab === 'synth'
+                  ? 'bg-[#a855f7] text-black shadow-[0_0_6px_#a855f7]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              SYNTH MOTION
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewTab('drums')}
+              className={`px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase transition-all ${
+                viewTab === 'drums'
+                  ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              DRUMS (4-TRACK)
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewTab('arp')}
+              className={`px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase transition-all ${
+                viewTab === 'arp'
+                  ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              ARPEGGIATOR
+            </button>
+          </div>
+
+          <div className="oled-screen px-2.5 py-1 rounded hidden sm:flex items-center gap-3">
             <div className="flex flex-col">
-              <span className="text-[6px] font-mono text-gray-500 uppercase">TIMING ENGINE</span>
-              <span className="text-[9px] font-mono-lcd text-[#00ff66]">WEB WORKER 25ms</span>
+              <span className="text-[6px] font-mono text-gray-500 uppercase">TIMING</span>
+              <span className="text-[9px] font-mono-lcd text-[#00ff66]">WORKER</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[6px] font-mono text-gray-500 uppercase">RUNNING STEP</span>
+              <span className="text-[6px] font-mono text-gray-500 uppercase">STEP</span>
               <span className="text-[10px] font-mono-lcd text-[#10b981]">
-                {activeStep !== null ? `${String(activeStep + 1).padStart(2, '0')} / 16` : 'IDLE'}
+                {activeStep !== null ? `${String(activeStep + 1).padStart(2, '0')}/16` : 'IDLE'}
               </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ── Simultaneous 4-Track Roland TR-808/909 Multi-Lane Sequencer Grid ── */}
-      <div className="synth-panel rounded p-2.5 flex flex-col gap-2 flex-1 min-h-0 relative">
+      {/* ── Melodic Synthesizer Motion Sequencer Lane ── */}
+      {(viewTab === 'all' || viewTab === 'synth') && (
+        <div className="shrink-0">
+          <MelodicSequencer
+            pattern={melodicPattern}
+            onChange={onMelodicPatternChange}
+            activeStep={activeStep}
+            isPlaying={isPlaying}
+            bpm={bpm}
+            drumPattern={pattern}
+            onAuditionNote={onAuditionNote}
+            onMidiLearn={onMidiLearn}
+            learningParamId={learningParamId}
+            mappedCCs={mappedCCs}
+          />
+        </div>
+      )}
 
-        <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[#202b3d]">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]" />
-            <span className="text-[10px] font-mono font-black tracking-widest uppercase text-white">
-              16-STEP MULTI-TRACK MATRIX (SIMULTANEOUS 4-LANE VIEW)
+      {/* ── Simultaneous 4-Track Roland TR-808/909 Multi-Lane Sequencer Grid ── */}
+      {(viewTab === 'all' || viewTab === 'drums') && (
+        <div className="synth-panel rounded p-2.5 flex flex-col gap-2 flex-1 min-h-0 relative">
+
+          <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[#202b3d]">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]" />
+              <span className="text-[10px] font-mono font-black tracking-widest uppercase text-white">
+                16-STEP 4-TRACK DRUM MATRIX
+              </span>
+            </div>
+            <span className="text-[8px] font-mono text-gray-400">
+              Click Step: OFF → NORMAL → ACCENT (●)
             </span>
           </div>
-          <span className="text-[8px] font-mono text-gray-400">
-            Click Step: OFF → NORMAL → ACCENT (●)
-          </span>
-        </div>
 
-        <div className="flex-1 min-h-0 flex flex-col justify-around gap-2.5 overflow-x-auto">
-          {DRUM_TRACKS.map((track) => {
-            const config = TRACK_CONFIG[track];
-            const settings = trackSettings[track];
-            const isMuted = mutedTracks.has(track);
-            const isSolo = soloTracks.has(track);
+          <div className="flex-1 min-h-0 flex flex-col justify-around gap-2.5 overflow-x-auto">
+            {DRUM_TRACKS.map((track) => {
+              const config = TRACK_CONFIG[track];
+              const settings = trackSettings[track];
+              const isMuted = mutedTracks.has(track);
+              const isSolo = soloTracks.has(track);
 
-            return (
-              <div 
-                key={track}
-                className={`flex items-center gap-3 p-2 rounded-sm border transition-all ${
-                  isMuted ? 'opacity-40 border-[#222c3c] bg-[#0c1018]' : 'border-[#1e2a3c] bg-[#0d131f] hover:border-[#2a3c56]'
-                }`}
-              >
-                {/* Track Channel Strip (Header + Mute/Solo + Knobs) */}
-                <div className="w-64 shrink-0 flex items-center justify-between pr-2 border-r border-[#202b3d]">
-                  <div className="flex flex-col gap-1">
+              return (
+                <div 
+                  key={track}
+                  className={`flex items-center gap-3 p-2 rounded-sm border transition-all ${
+                    isMuted ? 'opacity-40 border-[#222c3c] bg-[#0c1018]' : 'border-[#1e2a3c] bg-[#0d131f] hover:border-[#2a3c56]'
+                  }`}
+                >
+                  {/* Track Channel Strip (Header + Mute/Solo + Knobs) */}
+                  <div className="w-64 shrink-0 flex items-center justify-between pr-2 border-r border-[#202b3d]">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleAudition(track)}
+                          title={`Audition ${config.label}`}
+                          className={`px-1.5 py-0.5 rounded font-mono text-[9px] font-black tracking-wider uppercase border border-current transition-all hover:scale-105 active:scale-95 ${config.textColor}`}
+                          style={{ textShadow: `0 0 8px ${config.glow}` }}
+                        >
+                          ▶ {config.label}
+                        </button>
+
+                        {/* Mute & Solo */}
+                        <button
+                          type="button"
+                          onClick={() => toggleMute(track)}
+                          className={`px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition-all ${
+                            isMuted
+                              ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_6px_#ff3344]'
+                              : 'bg-[#182030] text-gray-400 border-[#2b3952] hover:text-white'
+                          }`}
+                        >
+                          M
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleSolo(track)}
+                          className={`px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition-all ${
+                            isSolo
+                              ? 'bg-[#ffaa00] text-black border-[#ffaa00] shadow-[0_0_6px_#ffaa00]'
+                              : 'bg-[#182030] text-gray-400 border-[#2b3952] hover:text-white'
+                          }`}
+                        >
+                          S
+                        </button>
+                      </div>
+
+                      {/* Track Quick Actions: Fill, Randomize, Clear */}
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleFillTrack(track)}
+                          className="text-[7px] font-mono text-gray-400 hover:text-cyan-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
+                        >
+                          FILL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRandomizeTrack(track)}
+                          className="text-[7px] font-mono text-gray-400 hover:text-amber-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
+                        >
+                          RND
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleClearTrack(track)}
+                          className="text-[7px] font-mono text-gray-400 hover:text-red-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
+                        >
+                          CLR
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Channel Strip Knobs */}
                     <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleAudition(track)}
-                        title={`Audition ${config.label}`}
-                        className={`px-1.5 py-0.5 rounded font-mono text-[9px] font-black tracking-wider uppercase border border-current transition-all hover:scale-105 active:scale-95 ${config.textColor}`}
-                        style={{ textShadow: `0 0 8px ${config.glow}` }}
-                      >
-                        ▶ {config.label}
-                      </button>
-
-                      {/* Mute & Solo */}
-                      <button
-                        type="button"
-                        onClick={() => toggleMute(track)}
-                        className={`px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition-all ${
-                          isMuted
-                            ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_6px_#ff3344]'
-                            : 'bg-[#182030] text-gray-400 border-[#2b3952] hover:text-white'
-                        }`}
-                      >
-                        M
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleSolo(track)}
-                        className={`px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition-all ${
-                          isSolo
-                            ? 'bg-[#ffaa00] text-black border-[#ffaa00] shadow-[0_0_6px_#ffaa00]'
-                            : 'bg-[#182030] text-gray-400 border-[#2b3952] hover:text-white'
-                        }`}
-                      >
-                        S
-                      </button>
-                    </div>
-
-                    {/* Track Quick Actions: Fill, Randomize, Clear */}
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleFillTrack(track)}
-                        className="text-[7px] font-mono text-gray-400 hover:text-cyan-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
-                      >
-                        FILL
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleRandomizeTrack(track)}
-                        className="text-[7px] font-mono text-gray-400 hover:text-amber-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
-                      >
-                        RND
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleClearTrack(track)}
-                        className="text-[7px] font-mono text-gray-400 hover:text-red-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
-                      >
-                        CLR
-                      </button>
+                      <Knob
+                        label="Vol"
+                        value={settings.volume}
+                        min={0}
+                        max={1}
+                        size={26}
+                        onChange={(v) => onTrackSettingsChange(track, { volume: v })}
+                        unit="%"
+                        color="cyan"
+                      />
+                      <Knob
+                        label="Decay"
+                        value={settings.decay}
+                        min={0.2}
+                        max={3.0}
+                        size={26}
+                        onChange={(v) => onTrackSettingsChange(track, { decay: v })}
+                        color="amber"
+                      />
+                      <Knob
+                        label="Pitch"
+                        value={settings.pitch}
+                        min={-12}
+                        max={12}
+                        size={26}
+                        onChange={(v) => onTrackSettingsChange(track, { pitch: v })}
+                        unit="st"
+                        color="red"
+                      />
+                      <Knob
+                        label="Pan"
+                        value={settings.pan}
+                        min={-1}
+                        max={1}
+                        size={26}
+                        onChange={(v) => onTrackSettingsChange(track, { pan: v })}
+                        color="emerald"
+                      />
                     </div>
                   </div>
 
-                  {/* Channel Strip Knobs */}
-                  <div className="flex items-center gap-1.5">
-                    <Knob
-                      label="Vol"
-                      value={settings.volume}
-                      min={0}
-                      max={1}
-                      size={26}
-                      onChange={(v) => onTrackSettingsChange(track, { volume: v })}
-                      unit="%"
-                      color="cyan"
-                    />
-                    <Knob
-                      label="Decay"
-                      value={settings.decay}
-                      min={0.2}
-                      max={3.0}
-                      size={26}
-                      onChange={(v) => onTrackSettingsChange(track, { decay: v })}
-                      color="amber"
-                    />
-                    <Knob
-                      label="Pitch"
-                      value={settings.pitch}
-                      min={-12}
-                      max={12}
-                      size={26}
-                      onChange={(v) => onTrackSettingsChange(track, { pitch: v })}
-                      unit="st"
-                      color="red"
-                    />
-                    <Knob
-                      label="Pan"
-                      value={settings.pan}
-                      min={-1}
-                      max={1}
-                      size={26}
-                      onChange={(v) => onTrackSettingsChange(track, { pan: v })}
-                      color="emerald"
-                    />
+                  {/* 16 Step Buttons with 4-beat visual groupings */}
+                  <div className="flex-1 flex items-center justify-between gap-1 min-w-max px-2">
+                    {pattern[track].map((stepVal, index) => {
+                      const isNormal = stepVal === 1;
+                      const isAccent = stepVal === 2;
+                      const isCurrentStep = index === activeStep && isPlaying;
+                      const isDownbeat = index % 4 === 0;
+                      const stepGroup = Math.floor(index / 4);
+
+                      let btnStyle = 'bg-[#101520] border-[#1e273a] text-gray-500';
+                      if (isAccent) {
+                        btnStyle = isCurrentStep 
+                          ? 'bg-white text-black border-white shadow-[0_0_12px_white]' 
+                          : config.accentBg;
+                      } else if (isNormal) {
+                        btnStyle = isCurrentStep 
+                          ? 'bg-[#10b981] text-black border-white shadow-[0_0_10px_#10b981]' 
+                          : config.activeBg;
+                      } else if (isCurrentStep) {
+                        btnStyle = 'bg-[#3b475e] border-white shadow-[0_0_6px_rgba(255,255,255,0.4)]';
+                      } else if (stepGroup % 2 === 0) {
+                        btnStyle = 'bg-[#121927] border-[#222d42] hover:bg-[#182236]';
+                      }
+
+                      return (
+                        <button
+                          key={`${track}-${index}`}
+                          onClick={() => onStepToggle(track, index)}
+                          className={`h-11 sm:h-12 flex-1 min-w-[28px] max-w-[50px] rounded-sm transition-all duration-75 relative border flex flex-col items-center justify-between p-1 select-none ${btnStyle} ${
+                            isDownbeat ? 'border-l-2' : ''
+                          }`}
+                          title={`${config.label} - Step ${index + 1} (${isAccent ? 'Accent' : isNormal ? 'Normal' : 'Off'})`}
+                        >
+                          {/* Status LED Dot */}
+                          <div 
+                            className={`w-2.5 h-1 rounded-full transition-all ${
+                              isAccent
+                                ? 'bg-white shadow-[0_0_8px_white]'
+                                : isNormal 
+                                  ? 'bg-white/80 shadow-[0_0_5px_white]' 
+                                  : 'bg-black/50'
+                            }`} 
+                          />
+
+                          {/* Step Label */}
+                          <span className="text-[8px] font-mono font-bold tracking-tight">
+                            {isAccent ? 'ACC' : isDownbeat ? `${index + 1}` : '·'}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
+
                 </div>
-
-                {/* 16 Step Buttons with 4-beat visual groupings */}
-                <div className="flex-1 flex items-center justify-between gap-1 min-w-max px-2">
-                  {pattern[track].map((stepVal, index) => {
-                    const isNormal = stepVal === 1;
-                    const isAccent = stepVal === 2;
-                    const isCurrentStep = index === activeStep;
-                    const isDownbeat = index % 4 === 0;
-                    const stepGroup = Math.floor(index / 4);
-
-                    let btnStyle = 'bg-[#101520] border-[#1e273a] text-gray-500';
-                    if (isAccent) {
-                      btnStyle = isCurrentStep 
-                        ? 'bg-white text-black border-white shadow-[0_0_12px_white]' 
-                        : config.accentBg;
-                    } else if (isNormal) {
-                      btnStyle = isCurrentStep 
-                        ? 'bg-[#10b981] text-black border-white shadow-[0_0_10px_#10b981]' 
-                        : config.activeBg;
-                    } else if (isCurrentStep) {
-                      btnStyle = 'bg-[#3b475e] border-white shadow-[0_0_6px_rgba(255,255,255,0.4)]';
-                    } else if (stepGroup % 2 === 0) {
-                      btnStyle = 'bg-[#121927] border-[#222d42] hover:bg-[#182236]';
-                    }
-
-                    return (
-                      <button
-                        key={`${track}-${index}`}
-                        onClick={() => onStepToggle(track, index)}
-                        className={`h-11 sm:h-12 flex-1 min-w-[28px] max-w-[50px] rounded-sm transition-all duration-75 relative border flex flex-col items-center justify-between p-1 select-none ${btnStyle} ${
-                          isDownbeat ? 'border-l-2' : ''
-                        }`}
-                        title={`${config.label} - Step ${index + 1} (${isAccent ? 'Accent' : isNormal ? 'Normal' : 'Off'})`}
-                      >
-                        {/* Status LED Dot */}
-                        <div 
-                          className={`w-2.5 h-1 rounded-full transition-all ${
-                            isAccent
-                              ? 'bg-white shadow-[0_0_8px_white]'
-                              : isNormal 
-                                ? 'bg-white/80 shadow-[0_0_5px_white]' 
-                                : 'bg-black/50'
-                          }`} 
-                        />
-
-                        {/* Step Label */}
-                        <span className="text-[8px] font-mono font-bold tracking-tight">
-                          {isAccent ? 'ACC' : isDownbeat ? `${index + 1}` : '·'}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Lower Section: Integrated Arpeggiator Studio Bay ── */}
-      <div className="shrink-0">
-        <ArpeggiatorPanel
-          arp={arpParams}
-          onChange={onArpChange}
-          onMidiLearn={onMidiLearn}
-          learningParamId={learningParamId}
-          mappedCCs={mappedCCs}
-        />
-      </div>
+      {(viewTab === 'all' || viewTab === 'arp') && (
+        <div className="shrink-0">
+          <ArpeggiatorPanel
+            arp={arpParams}
+            onChange={onArpChange}
+            onMidiLearn={onMidiLearn}
+            learningParamId={learningParamId}
+            mappedCCs={mappedCCs}
+          />
+        </div>
+      )}
 
     </div>
   );

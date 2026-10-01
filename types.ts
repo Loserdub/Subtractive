@@ -175,7 +175,42 @@ export interface DrumTrackSettings {
   pitch: number; // semitones (-12 to 12)
 }
 
+// Melodic Step Sequencer with Parameter Locks (P-Locks)
+export interface StepParameterLocks {
+  cutoff?: number;      // 20 to 20000 Hz
+  resonance?: number;   // 0 to 40
+  drive?: number;       // 0 to 1
+  delayMix?: number;    // 0 to 1
+  reverbMix?: number;   // 0 to 1
+  subGain?: number;     // 0 to 1
+  decay?: number;       // 0.05 to 2.0 s (decay time override)
+  octaveOffset?: number;// -2 to +2
+  pan?: number;         // -1 to 1
+}
+
+export interface MelodicStep {
+  note: number;          // MIDI Note number (e.g. 48 = C3, 60 = C4)
+  enabled: boolean;      // Step trigger on/off
+  velocity: number;      // 1 to 127
+  gate: number;          // Gate length multiplier (0.1 to 1.5; > 1.0 = tie/glide)
+  slide: boolean;        // TB-303 style portamento to next note
+  ratchet?: number;      // 1, 2, 3, 4 burst repeats
+  probability?: number;  // 0 to 100% (default: 100)
+  pLocks?: StepParameterLocks; // Parameter Locks for this step
+}
+
+export interface MelodicSequencerPattern {
+  enabled: boolean;
+  steps: MelodicStep[];
+  length: number;        // 1 to 16 steps (or up to 32)
+  octave: number;        // Transpose (-2 to +2)
+  scale: string;         // 'chromatic' | 'minor' | 'major' | 'pentatonicMinor' | 'dorian' | 'phrygian' | 'blues' | 'acid'
+  rootNote: number;      // 0 = C, 1 = C#, 2 = D ... 11 = B
+  motionRecording: boolean; // Live knob motion capture active
+}
+
 export type WorkspaceMode = 'synth' | 'groove' | 'perform';
+
 
 
 

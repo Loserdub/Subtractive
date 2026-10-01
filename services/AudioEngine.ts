@@ -10,6 +10,8 @@ import {
   ModDestination,
   ModMatrixRoute,
   LFOParams,
+  MelodicStep,
+  StepParameterLocks,
 } from '../types';
 
 interface UnisonSubVoice {
@@ -1805,5 +1807,320 @@ export class AudioEngine {
         }
       } catch (e) {}
     }, 100);
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // MELODIC MOTION SEQUENCER & PARAMETER LOCK (P-LOCK) SCHEDULING
+  // ──────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Schedules a melodic step with parameter locks on the Web Audio timeline.
+   */
+  public scheduleSequencerStep(
+    scheduleTime: number,
+    step: MelodicStep,
+    stepDurationSeconds: number,
+    octaveTranspose: number = 0
+  ) {
+    if (!this.audioContext || !this.voiceSumNode) return;
+
+    const midiNote = step.note + (octaveTranspose * 12) + (step.pLocks?.octaveOffset ? step.pLocks.octaveOffset * 12 : 0);
+    const frequency = this.midiToFrequency(midiNote);
+    const velocityGain = (step.velocity || 100) / 127;
+    const gateMultiplier = Math.max(0.1, Math.min(2.0, step.gate || 0.8));
+    const duration = Math.max(0.04, stepDurationSeconds * gateMultiplier);
+    const isSlide = step.slide || false;
+
+    // Apply global / effect P-Locks at exact scheduleTime
+    if (step.pLocks) {
+      this.applyStepPLocks(scheduleTime, duration, step.pLocks);
+    }
+
+    const ratchet = Math.max(1, Math.min(4, step.ratchet || 1));
+    if (ratchet <= 1) {
+      this.triggerTimedVoice(midiNote, frequency, velocityGain, scheduleTime, duration, isSlide, step.pLocks);
+    } else {
+      const subInterval = stepDurationSeconds / ratchet;
+      const subGateDuration = subInterval * gateMultiplier;
+      for (let r = 0; r < ratchet; r++) {
+        const trigTime = scheduleTime + r * subInterval;
+        const subVel = Math.max(0.15, velocityGain * (1 - r * 0.08));
+        this.triggerTimedVoice(midiNote, frequency, subVel, trigTime, subGateDuration, false, step.pLocks);
+      }
+    }
+  }
+
+  /**
+   * Applies temporary AudioParam locks for delay, reverb, and active voices.
+   */
+  private applyStepPLocks(startTime: number, duration: number, pLocks: StepParameterLocks) {
+    if (!this.audioContext) return;
+    const endTime = startTime + duration;
+
+    // Delay Mix Lock
+    if (pLocks.delayMix !== undefined && this.delayDryGain && this.delayWetGain) {
+      const baseMix = this.params.fx.delay.enabled ? this.params.fx.delay.mix : 0;
+      this.delayDryGain.gain.setValueAtTime(1 - pLocks.delayMix, startTime);
+      this.delayDryGain.gain.setTargetAtTime(1 - baseMix, endTime, 0.01);
+      this.delayWetGain.gain.setValueAtTime(pLocks.delayMix, startTime);
+      this.delayWetGain.gain.setTargetAtTime(baseMix, endTime, 0.01);
+    }
+
+    // Reverb Mix Lock
+    if (pLocks.reverbMix !== undefined && this.reverbDryGain && this.reverbWetGain) {
+      const baseMix = this.params.fx.reverb.enabled ? this.params.fx.reverb.mix : 0;
+      this.reverbDryGain.gain.setValueAtTime(1 - pLocks.reverbMix, startTime);
+      this.reverbDryGain.gain.setTargetAtTime(1 - baseMix, endTime, 0.01);
+      this.reverbWetGain.gain.setValueAtTime(pLocks.reverbMix, startTime);
+      this.reverbWetGain.gain.setTargetAtTime(baseMix, endTime, 0.01);
+    }
+  }
+
+  /**
+   * Instantiates a fully synthesized voice scheduled at sample-accurate Web Audio time.
+   */
+  private triggerTimedVoice(
+    note: number,
+    frequency: number,
+    velocityGain: number,
+    startTime: number,
+    duration: number,
+    isSlide: boolean,
+    pLocks?: StepParameterLocks
+  ) {
+    const ctx = this.audioContext!;
+    const masterHeadroom = 0.25;
+
+    // 1. Voice Panning & Gain
+    let voicePanner: StereoPannerNode | null = null;
+    if (ctx.createStereoPanner) {
+      voicePanner = ctx.createStereoPanner();
+      const panVal = pLocks?.pan !== undefined ? pLocks.pan : 0;
+      voicePanner.pan.setValueAtTime(panVal, startTime);
+    }
+    const tremoloGain = ctx.createGain();
+    tremoloGain.gain.setValueAtTime(1, startTime);
+
+    if (voicePanner) {
+      tremoloGain.connect(voicePanner).connect(this.voiceSumNode!);
+    } else {
+      tremoloGain.connect(this.voiceSumNode!);
+    }
+
+    // 2. Amplifier Envelope
+    const amp = ctx.createGain();
+    amp.gain.setValueAtTime(0, startTime);
+    amp.connect(tremoloGain);
+
+    // 3. Filter Stage
+    const preFilterDrive = ctx.createWaveShaper();
+    const driveAmount = pLocks?.drive !== undefined ? pLocks.drive : (this.params.filter.drive ?? 0);
+    this.updateDriveCurveOnNode(preFilterDrive, driveAmount);
+
+    const filterStage1 = ctx.createBiquadFilter();
+    filterStage1.type = (this.params.filter.type || 'lowpass') as BiquadFilterType;
+    const filterCutoff = pLocks?.cutoff !== undefined ? pLocks.cutoff : this.params.filter.cutoff;
+    filterStage1.frequency.setValueAtTime(filterCutoff, startTime);
+
+    const filterModel = this.params.filter.model || 'clean';
+    let interFilterDrive: WaveShaperNode | null = null;
+    let filterStage2: BiquadFilterNode | null = null;
+
+    const baseRes = pLocks?.resonance !== undefined ? pLocks.resonance : this.params.filter.resonance;
+    if (filterModel === 'ladder24') {
+      interFilterDrive = ctx.createWaveShaper();
+      if (this.ladderCurve) interFilterDrive.curve = this.ladderCurve;
+
+      filterStage2 = ctx.createBiquadFilter();
+      filterStage2.type = (this.params.filter.type || 'lowpass') as BiquadFilterType;
+      filterStage2.frequency.setValueAtTime(filterCutoff, startTime);
+
+      const ladderQ = baseRes * 0.7;
+      filterStage1.Q.setValueAtTime(ladderQ, startTime);
+      filterStage2.Q.setValueAtTime(ladderQ, startTime);
+
+      preFilterDrive.connect(filterStage1);
+      filterStage1.connect(interFilterDrive);
+      interFilterDrive.connect(filterStage2);
+      filterStage2.connect(amp);
+    } else if (filterModel === 'diode12') {
+      interFilterDrive = ctx.createWaveShaper();
+      if (this.diodeCurve) interFilterDrive.curve = this.diodeCurve;
+      filterStage1.Q.setValueAtTime(baseRes, startTime);
+
+      preFilterDrive.connect(filterStage1);
+      filterStage1.connect(interFilterDrive);
+      interFilterDrive.connect(amp);
+    } else {
+      filterStage1.Q.setValueAtTime(baseRes, startTime);
+      preFilterDrive.connect(filterStage1);
+      filterStage1.connect(amp);
+    }
+
+    // Filter Envelope Constant Source
+    const filterEnvSource = ctx.createConstantSource();
+    filterEnvSource.offset.setValueAtTime(0, startTime);
+    filterEnvSource.start(startTime);
+
+    const filterEnvGain = ctx.createGain();
+    filterEnvGain.gain.setValueAtTime(this.params.filterEnvelope.amount * velocityGain, startTime);
+    filterEnvSource.connect(filterEnvGain);
+    filterEnvGain.connect(filterStage1.detune);
+    if (filterStage2) filterEnvGain.connect(filterStage2.detune);
+
+    // PWM Offset Constant Source
+    const pwmOffset = ctx.createConstantSource();
+    pwmOffset.offset.setValueAtTime(this.params.pwm * 10, startTime);
+    pwmOffset.start(startTime);
+
+    // 4. Oscillators
+    const osc1 = this.createOscVoiceGroup(this.params.osc1, frequency, startTime, masterHeadroom, preFilterDrive);
+    const osc2 = this.createOscVoiceGroup(this.params.osc2, frequency, startTime, masterHeadroom, preFilterDrive);
+    const osc3 = this.createOscVoiceGroup(this.params.osc3, frequency, startTime, masterHeadroom, preFilterDrive);
+    const osc4 = this.createOscVoiceGroup(this.params.osc4, frequency, startTime, masterHeadroom, preFilterDrive);
+
+    // Sub-Oscillator
+    const subOsc = ctx.createOscillator();
+    subOsc.type = 'square';
+    subOsc.frequency.setValueAtTime(frequency / 2, startTime);
+    subOsc.detune.setValueAtTime(this.pitchBendCents, startTime);
+    const subGainAmount = pLocks?.subGain !== undefined ? pLocks.subGain : this.params.subGain;
+    const subGain = ctx.createGain();
+    subGain.gain.setValueAtTime(subGainAmount * masterHeadroom, startTime);
+    subOsc.connect(subGain).connect(preFilterDrive);
+    subOsc.start(startTime);
+
+    // Noise Node
+    const noiseNode = ctx.createBufferSource();
+    if (this.noiseBuffer) {
+      noiseNode.buffer = this.noiseBuffer;
+      noiseNode.loop = true;
+    }
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(this.params.noiseGain * 0.15, startTime);
+    noiseNode.connect(noiseGain).connect(preFilterDrive);
+    noiseNode.start(startTime);
+
+    // LFO 1 & 2
+    const lfo1Osc = ctx.createOscillator();
+    lfo1Osc.type = this.params.lfo.waveform;
+    lfo1Osc.frequency.setValueAtTime(this.getLfoRateHz(this.params.lfo), startTime);
+    const lfo1Gain = ctx.createGain();
+    let maxLfo1 = 0;
+    if (this.params.lfo.target === 'pitch') maxLfo1 = this.params.lfo.depth * 1200;
+    else if (this.params.lfo.target === 'filter') maxLfo1 = this.params.lfo.depth * 4800;
+    else if (this.params.lfo.target === 'amp') maxLfo1 = this.params.lfo.depth * 0.5;
+    else if (this.params.lfo.target === 'pwm') maxLfo1 = this.params.lfo.depth * 10;
+    lfo1Gain.gain.setValueAtTime(maxLfo1, startTime);
+    lfo1Osc.connect(lfo1Gain);
+    lfo1Osc.start(startTime);
+
+    if (this.params.lfo.target === 'pitch') {
+      this.connectLfoToGroupPitch(lfo1Gain, osc1);
+      this.connectLfoToGroupPitch(lfo1Gain, osc2);
+      this.connectLfoToGroupPitch(lfo1Gain, osc3);
+      this.connectLfoToGroupPitch(lfo1Gain, osc4);
+    } else if (this.params.lfo.target === 'filter') {
+      lfo1Gain.connect(filterStage1.detune);
+      if (filterStage2) lfo1Gain.connect(filterStage2.detune);
+    } else if (this.params.lfo.target === 'amp') {
+      lfo1Gain.connect(tremoloGain.gain);
+    } else if (this.params.lfo.target === 'pwm') {
+      lfo1Gain.connect(pwmOffset.offset);
+    }
+
+    const lfo2Params = this.params.lfo2 || {
+      waveform: 'triangle',
+      rate: 2,
+      depth: 0,
+      delay: 0,
+      fade: 0,
+      target: 'filter',
+      sync: false,
+      division: '1/4',
+      retrigger: true,
+    };
+    const lfo2Osc = ctx.createOscillator();
+    lfo2Osc.type = lfo2Params.waveform;
+    lfo2Osc.frequency.setValueAtTime(this.getLfoRateHz(lfo2Params), startTime);
+    const lfo2Gain = ctx.createGain();
+    lfo2Gain.gain.setValueAtTime(lfo2Params.depth * 1200, startTime);
+    lfo2Osc.connect(lfo2Gain);
+    lfo2Osc.start(startTime);
+
+    // 5. Envelope Trajectory
+    const { attack: ampAttack, decay: baseAmpDecay, sustain: ampSustain, release: ampRelease } = this.params.ampEnvelope;
+    const ampDecay = pLocks?.decay !== undefined ? pLocks.decay : baseAmpDecay;
+    const peakAmp = velocityGain;
+    const sustainAmp = peakAmp * ampSustain;
+
+    amp.gain.setValueAtTime(0, startTime);
+    amp.gain.linearRampToValueAtTime(peakAmp, startTime + ampAttack);
+    amp.gain.linearRampToValueAtTime(sustainAmp, startTime + ampAttack + ampDecay);
+    
+    // Hold sustain until note duration expires, then release
+    const releaseStartTime = startTime + duration;
+    amp.gain.setValueAtTime(sustainAmp, releaseStartTime);
+    amp.gain.exponentialRampToValueAtTime(0.0001, releaseStartTime + ampRelease);
+
+    // Filter Envelope
+    const { attack: fAttack, decay: fDecay, sustain: fSustain, release: fRelease } = this.params.filterEnvelope;
+    filterEnvSource.offset.setValueAtTime(0, startTime);
+    filterEnvSource.offset.linearRampToValueAtTime(1, startTime + fAttack);
+    filterEnvSource.offset.linearRampToValueAtTime(fSustain, startTime + fAttack + fDecay);
+    filterEnvSource.offset.setValueAtTime(fSustain, releaseStartTime);
+    filterEnvSource.offset.exponentialRampToValueAtTime(0.0001, releaseStartTime + fRelease);
+
+    // Slide / Portamento handling
+    if (isSlide) {
+      const glideTime = Math.max(0.02, this.params.glide || 0.05);
+      this.glideGroupFrequency(osc1, frequency * 1.05, startTime, glideTime);
+      this.glideGroupFrequency(osc2, frequency * 1.05, startTime, glideTime);
+      this.glideGroupFrequency(osc3, frequency * 1.05, startTime, glideTime);
+      this.glideGroupFrequency(osc4, frequency * 1.05, startTime, glideTime);
+    }
+
+    // Stop time & Garbage Collection
+    const totalVoiceLifetime = duration + Math.max(ampRelease, fRelease) + 0.1;
+    const stopTime = startTime + totalVoiceLifetime;
+
+    this.stopGroup(osc1, stopTime);
+    this.stopGroup(osc2, stopTime);
+    this.stopGroup(osc3, stopTime);
+    this.stopGroup(osc4, stopTime);
+    subOsc.stop(stopTime);
+    noiseNode.stop(stopTime);
+    lfo1Osc.stop(stopTime);
+    lfo2Osc.stop(stopTime);
+    filterEnvSource.stop(stopTime);
+    pwmOffset.stop(stopTime);
+
+    const msUntilCleanup = Math.max(200, (stopTime - ctx.currentTime) * 1000 + 100);
+    setTimeout(() => {
+      this.disconnectGroup(osc1);
+      this.disconnectGroup(osc2);
+      this.disconnectGroup(osc3);
+      this.disconnectGroup(osc4);
+      try {
+        subOsc.disconnect();
+        subGain.disconnect();
+        noiseNode.disconnect();
+        noiseGain.disconnect();
+        lfo1Osc.disconnect();
+        lfo1Gain.disconnect();
+        lfo2Osc.disconnect();
+        lfo2Gain.disconnect();
+        preFilterDrive.disconnect();
+        filterStage1.disconnect();
+        interFilterDrive?.disconnect();
+        filterStage2?.disconnect();
+        filterEnvSource.disconnect();
+        filterEnvGain.disconnect();
+        amp.disconnect();
+        tremoloGain.disconnect();
+        voicePanner?.disconnect();
+        pwmOffset.disconnect();
+      } catch (e) {}
+    }, msUntilCleanup);
   }
 }

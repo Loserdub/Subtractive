@@ -1,4 +1,4 @@
-import { StepSequencePattern, DrumTrackName, DrumTrackSettings, PresetPatch } from './types';
+import { StepSequencePattern, DrumTrackName, DrumTrackSettings, PresetPatch, MelodicSequencerPattern } from './types';
 import { DEFAULT_SYNTH_PARAMS } from './defaultParams';
 import { RAW_FACTORY_PRESETS } from './presets/factoryPresets';
 
@@ -88,5 +88,32 @@ export const CLASSIC_KEY_MAP: Record<string, number> = {
 export const CLASSIC_KEY_LABELS: Record<number, string> = {
   60: 'Z', 61: 'S', 62: 'X', 63: 'D', 64: 'C', 65: 'V', 66: 'G', 67: 'B', 68: 'H', 69: 'N', 70: 'J', 71: 'M',
   72: 'Q', 73: '2', 74: 'W', 75: '3', 76: 'E', 77: 'R', 78: '5', 79: 'T', 80: '6', 81: 'Y', 82: '7', 83: 'U', 84: 'I',
+};
+
+export const DEFAULT_MELODIC_PATTERN: MelodicSequencerPattern = {
+  enabled: true,
+  length: 16,
+  octave: 0,
+  scale: 'minor',
+  rootNote: 0, // C
+  motionRecording: false,
+  steps: [
+    { note: 48, enabled: true, velocity: 115, gate: 0.85, slide: false, probability: 100, pLocks: { cutoff: 1600, drive: 0.2 } },
+    { note: 48, enabled: false, velocity: 90, gate: 0.8, slide: false, probability: 100 },
+    { note: 51, enabled: true, velocity: 100, gate: 0.8, slide: false, probability: 100 },
+    { note: 53, enabled: true, velocity: 110, gate: 0.95, slide: true, probability: 100, pLocks: { cutoff: 3200 } },
+    { note: 55, enabled: true, velocity: 120, gate: 0.7, slide: false, probability: 100, pLocks: { resonance: 14 } },
+    { note: 48, enabled: false, velocity: 90, gate: 0.8, slide: false, probability: 100 },
+    { note: 58, enabled: true, velocity: 95, gate: 0.8, slide: false, probability: 100 },
+    { note: 60, enabled: true, velocity: 125, gate: 0.8, slide: false, ratchet: 2, probability: 100, pLocks: { delayMix: 0.45 } },
+    { note: 48, enabled: true, velocity: 110, gate: 0.8, slide: false, probability: 100, pLocks: { cutoff: 1200 } },
+    { note: 51, enabled: false, velocity: 90, gate: 0.8, slide: false, probability: 100 },
+    { note: 53, enabled: true, velocity: 105, gate: 0.8, slide: false, probability: 100 },
+    { note: 55, enabled: true, velocity: 110, gate: 0.9, slide: true, probability: 100 },
+    { note: 58, enabled: true, velocity: 115, gate: 0.8, slide: false, probability: 100, pLocks: { cutoff: 4200, drive: 0.35 } },
+    { note: 56, enabled: true, velocity: 100, gate: 0.8, slide: false, probability: 100 },
+    { note: 55, enabled: true, velocity: 110, gate: 0.8, slide: false, probability: 100 },
+    { note: 53, enabled: true, velocity: 95, gate: 0.8, slide: false, ratchet: 2, probability: 100 },
+  ],
 };
 

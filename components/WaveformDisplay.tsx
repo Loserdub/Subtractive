@@ -18,8 +18,9 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   amplitudeScale = 1,
   analyser = null,
   stereoAnalysers = null,
-  mode = 'oscilloscope'
+  mode = 'oscilloscope',
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const phaseRef = useRef<number>(0);
@@ -28,7 +29,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   // Peak hold array for 64-band logarithmic spectrum
   const peakHoldRef = useRef<Float32Array>(new Float32Array(64));
 
-  // Mutable refs for continuous props to avoid rebuilding rAF loop on every knob change
+  // Mutable refs for continuous props to avoid breaking rAF loop on knob changes
   const amplitudeScaleRef = useRef(amplitudeScale);
   amplitudeScaleRef.current = amplitudeScale;
   const colorRef = useRef(color);
@@ -37,103 +38,126 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   waveformRef.current = waveform;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
     const ctx = canvas.getContext('2d', { alpha: false });
     if (!ctx) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
+    let isRunning = true;
 
-    const width = Math.floor(rect.width * dpr);
-    const height = Math.floor(rect.height * dpr);
+    // Responsive Canvas Resizer with Device Pixel Ratio
+    const updateDimensions = () => {
+      if (!canvas || !container) return;
+      const rect = container.getBoundingClientRect();
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const w = Math.max(32, Math.floor(rect.width * dpr));
+      const h = Math.max(20, Math.floor(rect.height * dpr));
 
-    if (canvas.width !== width || canvas.height !== height) {
-      canvas.width = width;
-      canvas.height = height;
-    }
-
-    // Pre-render static CRT Phosphor Reticle Grid
-    if (!gridCanvasRef.current || gridCanvasRef.current.width !== width || gridCanvasRef.current.height !== height) {
-      const gridCanvas = document.createElement('canvas');
-      gridCanvas.width = width;
-      gridCanvas.height = height;
-      const gctx = gridCanvas.getContext('2d');
-      if (gctx) {
-        gctx.fillStyle = '#05090e';
-        gctx.fillRect(0, 0, width, height);
-
-        gctx.beginPath();
-        gctx.strokeStyle = 'rgba(16, 185, 129, 0.09)';
-        gctx.lineWidth = 1 * dpr;
-
-        const centerY = height / 2;
-        const centerX = width / 2;
-
-        // Center Crosshair
-        gctx.moveTo(0, centerY);
-        gctx.lineTo(width, centerY);
-        gctx.moveTo(centerX, 0);
-        gctx.lineTo(centerX, height);
-
-        // Sub-divisions (horizontal and vertical graticules)
-        for (let i = 1; i < 4; i++) {
-          const y = (height / 4) * i;
-          gctx.moveTo(0, y);
-          gctx.lineTo(width, y);
-        }
-        for (let i = 1; i < 6; i++) {
-          const x = (width / 6) * i;
-          gctx.moveTo(x, 0);
-          gctx.lineTo(x, height);
-        }
-
-        // Circular reticle for Lissajous vector scope
-        gctx.moveTo(centerX + height * 0.38, centerY);
-        gctx.arc(centerX, centerY, height * 0.38, 0, Math.PI * 2);
-
-        gctx.stroke();
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        // Invalidate grid cache on size change
+        gridCanvasRef.current = null;
       }
-      gridCanvasRef.current = gridCanvas;
-    }
+    };
 
-    const offscreenGrid = gridCanvasRef.current;
+    updateDimensions();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateDimensions();
+    });
+    resizeObserver.observe(container);
+
     const dataArray = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
     const dataArrayL = stereoAnalysers?.left ? new Uint8Array(stereoAnalysers.left.frequencyBinCount) : null;
     const dataArrayR = stereoAnalysers?.right ? new Uint8Array(stereoAnalysers.right.frequencyBinCount) : null;
 
-    // Reset canvas when mode changes
-    ctx.fillStyle = '#05090e';
-    ctx.fillRect(0, 0, width, height);
-
     const draw = () => {
-      if (!ctx || !canvas) return;
+      if (!isRunning || !ctx || !canvas) return;
 
+      const width = canvas.width;
+      const height = canvas.height;
+      if (width === 0 || height === 0) {
+        animationRef.current = requestAnimationFrame(draw);
+        return;
+      }
+
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
       const centerY = height / 2;
       const centerX = width / 2;
+      const currentMode = modeRef.current;
+      const themeColor = colorRef.current || '#10b981';
+      const ampScale = Math.max(0.1, amplitudeScaleRef.current);
+      const activePlay = isPlayingRef.current;
 
-      // --- Phosphor Glow Persistence Blit ---
-      // Instead of clearing 100%, apply semi-transparent black wash
-      // This leaves an authentic analog CRT decaying beam trail!
-      ctx.fillStyle = 'rgba(5, 9, 14, 0.24)';
+      // ── Build / Update Static CRT Reticle Grid ──
+      if (
+        !gridCanvasRef.current ||
+        gridCanvasRef.current.width !== width ||
+        gridCanvasRef.current.height !== height
+      ) {
+        const gridCanvas = document.createElement('canvas');
+        gridCanvas.width = width;
+        gridCanvas.height = height;
+        const gctx = gridCanvas.getContext('2d');
+        if (gctx) {
+          gctx.fillStyle = '#05080e';
+          gctx.fillRect(0, 0, width, height);
+
+          gctx.beginPath();
+          gctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
+          gctx.lineWidth = 1 * dpr;
+
+          // Center Crosshair
+          gctx.moveTo(0, centerY);
+          gctx.lineTo(width, centerY);
+          gctx.moveTo(centerX, 0);
+          gctx.lineTo(centerX, height);
+
+          // Sub-divisions
+          for (let i = 1; i < 4; i++) {
+            const y = (height / 4) * i;
+            gctx.moveTo(0, y);
+            gctx.lineTo(width, y);
+          }
+          for (let i = 1; i < 6; i++) {
+            const x = (width / 6) * i;
+            gctx.moveTo(x, 0);
+            gctx.lineTo(x, height);
+          }
+
+          // Circular reticle for Lissajous
+          gctx.moveTo(centerX + height * 0.38, centerY);
+          gctx.arc(centerX, centerY, height * 0.38, 0, Math.PI * 2);
+
+          gctx.stroke();
+        }
+        gridCanvasRef.current = gridCanvas;
+      }
+
+      // ── Analog CRT Phosphor Persistence Wash ──
+      ctx.fillStyle = 'rgba(5, 8, 14, 0.28)';
       ctx.fillRect(0, 0, width, height);
 
-      // Faint graticule background re-blit
-      if (offscreenGrid) {
+      // Graticule grid overlay
+      if (gridCanvasRef.current) {
         ctx.save();
-        ctx.globalAlpha = 0.12;
-        ctx.drawImage(offscreenGrid, 0, 0);
+        ctx.globalAlpha = 0.15;
+        ctx.drawImage(gridCanvasRef.current, 0, 0);
         ctx.restore();
       }
 
-      // ==========================================================
-      // MODE 1: LISSAJOUS STEREO X/Y PHASE VECTOR SCOPE
-      // ==========================================================
-      if (mode === 'lissajous') {
-        const hasStereoData = stereoAnalysers?.left && stereoAnalysers?.right && dataArrayL && dataArrayR && isPlaying;
+      // ════════════════════════════════════════════════════════════════
+      // MODE 1: LISSAJOUS PHASE VECTOR SCOPE
+      // ════════════════════════════════════════════════════════════════
+      if (currentMode === 'lissajous') {
+        const hasStereoData = stereoAnalysers?.left && stereoAnalysers?.right && dataArrayL && dataArrayR && activePlay;
 
         if (hasStereoData) {
           stereoAnalysers.left!.getByteTimeDomainData(dataArrayL);
@@ -143,10 +167,9 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           const path = new Path2D();
           const scale = Math.min(width, height) * 0.44;
 
-          for (let i = 0; i < len; i++) {
+          for (let i = 0; i < len; i += 2) {
             const lx = (dataArrayL[i] - 128) / 128.0;
             const ry = (dataArrayR[i] - 128) / 128.0;
-
             const px = centerX + lx * scale;
             const py = centerY - ry * scale;
 
@@ -154,43 +177,42 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
             else path.lineTo(px, py);
           }
 
-          // Pass 1: Phosphor Bloom Glow
+          // Bloom glow pass
           ctx.save();
-          ctx.globalAlpha = 0.35;
-          ctx.strokeStyle = colorRef.current;
-          ctx.lineWidth = 4 * dpr;
+          ctx.globalAlpha = 0.4;
+          ctx.strokeStyle = themeColor;
+          ctx.lineWidth = 3.5 * dpr;
           ctx.lineJoin = 'round';
           ctx.stroke(path);
 
-          // Pass 2: Sharp Core Electron Beam
+          // Core beam pass
           ctx.globalAlpha = 0.95;
           ctx.lineWidth = 1.2 * dpr;
           ctx.strokeStyle = '#ffffff';
           ctx.stroke(path);
           ctx.restore();
-
         } else {
-          // Resting synthetic Lissajous orbit
+          // Organic resting Lissajous orbit
           const t = phaseRef.current;
           const path = new Path2D();
-          const scale = Math.min(width, height) * (isPlaying ? 0.38 : 0.25);
-          const steps = 180;
+          const scale = Math.min(width, height) * (activePlay ? 0.36 : 0.26);
+          const steps = 140;
 
           for (let i = 0; i <= steps; i++) {
             const angle = (i / steps) * Math.PI * 2;
             const px = centerX + Math.sin(angle * 2 + t) * scale;
-            const py = centerY + Math.cos(angle * 3 + t * 0.7) * scale;
+            const py = centerY + Math.cos(angle * 3 + t * 0.75) * scale;
             if (i === 0) path.moveTo(px, py);
             else path.lineTo(px, py);
           }
 
           ctx.save();
-          ctx.globalAlpha = isPlayingRef.current ? 0.4 : 0.2;
-          ctx.strokeStyle = colorRef.current;
+          ctx.globalAlpha = activePlay ? 0.35 : 0.2;
+          ctx.strokeStyle = themeColor;
           ctx.lineWidth = 3 * dpr;
           ctx.stroke(path);
 
-          ctx.globalAlpha = isPlayingRef.current ? 0.85 : 0.4;
+          ctx.globalAlpha = activePlay ? 0.85 : 0.45;
           ctx.lineWidth = 1.2 * dpr;
           ctx.stroke(path);
           ctx.restore();
@@ -199,29 +221,25 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
         }
       }
 
-      // ==========================================================
-      // MODE 2: HIGH-RESOLUTION 64-BAND LOGARITHMIC SPECTRUM ANALYZER
-      // ==========================================================
-      else if (mode === 'spectrum') {
+      // ════════════════════════════════════════════════════════════════
+      // MODE 2: 64-BAND LOGARITHMIC SPECTRUM ANALYZER (FFT)
+      // ════════════════════════════════════════════════════════════════
+      else if (currentMode === 'spectrum') {
         const numBands = 64;
         const peaks = peakHoldRef.current;
         const barWidth = width / numBands;
 
-        if (analyser && dataArray && isPlaying) {
+        if (analyser && dataArray && activePlay) {
           analyser.getByteFrequencyData(dataArray);
-
           const sampleRate = analyser.context.sampleRate || 44100;
           const binHz = (sampleRate / 2) / dataArray.length;
 
           for (let b = 0; b < numBands; b++) {
-            // Logarithmic frequency center from 20 Hz to 20,000 Hz
             const fCenter = 20 * Math.pow(20000 / 20, b / numBands);
             const fNext = 20 * Math.pow(20000 / 20, (b + 1) / numBands);
-
             const startBin = Math.max(0, Math.floor(fCenter / binHz));
             const endBin = Math.min(dataArray.length - 1, Math.max(startBin + 1, Math.floor(fNext / binHz)));
 
-            // Compute peak magnitude in this logarithmic band
             let maxVal = 0;
             for (let bin = startBin; bin <= endBin; bin++) {
               if (dataArray[bin] > maxVal) maxVal = dataArray[bin];
@@ -230,165 +248,200 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
             const normMag = maxVal / 255.0;
             const barH = normMag * (height - 4 * dpr);
 
-            // Update peak hold with gravity falloff
             if (barH > peaks[b]) {
               peaks[b] = barH;
             } else {
-              peaks[b] = Math.max(0, peaks[b] - 1.2 * dpr);
+              peaks[b] = Math.max(0, peaks[b] - 1.4 * dpr);
             }
 
             const bx = b * barWidth;
             const by = height - barH;
 
-            // Gradient bar
             const grad = ctx.createLinearGradient(0, height, 0, by);
-            grad.addColorStop(0, 'rgba(16, 185, 129, 0.1)');
-            grad.addColorStop(0.7, colorRef.current);
+            grad.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+            grad.addColorStop(0.65, themeColor);
             grad.addColorStop(1, '#ffffff');
 
             ctx.fillStyle = grad;
-            ctx.fillRect(bx + 1, by, Math.max(1, barWidth - 1.5 * dpr), barH);
+            ctx.fillRect(bx + 0.5, by, Math.max(1, barWidth - 1.2 * dpr), barH);
 
-            // Peak Hold Cap line
             if (peaks[b] > 2 * dpr) {
               const peakY = height - peaks[b];
               ctx.fillStyle = '#ffffff';
-              ctx.fillRect(bx + 1, peakY - 1 * dpr, Math.max(1, barWidth - 1.5 * dpr), 1.5 * dpr);
+              ctx.fillRect(bx + 0.5, peakY - 1 * dpr, Math.max(1, barWidth - 1.2 * dpr), 1.5 * dpr);
             }
           }
         } else {
           // Synthetic ambient spectrum floor
           const t = phaseRef.current;
           for (let b = 0; b < numBands; b++) {
-            const decay = Math.exp(-b / 14);
-            const ripple = (Math.sin(b * 0.4 + t) + 1) * 0.5;
-            const barH = (decay * 0.7 + ripple * 0.2) * height * 0.6 * Math.max(0.1, amplitudeScaleRef.current);
+            const decay = Math.exp(-b / 16);
+            const ripple = (Math.sin(b * 0.45 + t) + 1) * 0.5;
+            const barH = (decay * 0.65 + ripple * 0.25) * height * 0.5 * ampScale;
             const bx = b * barWidth;
             const by = height - barH;
 
-            ctx.fillStyle = colorRef.current;
-            ctx.globalAlpha = 0.35;
-            ctx.fillRect(bx + 1, by, Math.max(1, barWidth - 1.5 * dpr), barH);
+            ctx.fillStyle = themeColor;
+            ctx.globalAlpha = 0.3;
+            ctx.fillRect(bx + 0.5, by, Math.max(1, barWidth - 1.2 * dpr), barH);
             ctx.globalAlpha = 1.0;
           }
           phaseRef.current += 0.03;
         }
       }
 
-      // ==========================================================
-      // MODE 3: TIME-DOMAIN OSCILLOSCOPE WITH TRIGGER STABILIZATION
-      // ==========================================================
+      // ════════════════════════════════════════════════════════════════
+      // MODE 3: TIME-DOMAIN OSCILLOSCOPE & SYNTHETIC WAVEFORM PREVIEW
+      // ════════════════════════════════════════════════════════════════
       else {
-        if (analyser && dataArray && isPlaying) {
+        if (analyser && dataArray && activePlay) {
           analyser.getByteTimeDomainData(dataArray);
 
-          // Zero-crossing positive slope trigger search
+          // Auto-triggering zero-crossing search with hysteresis
           let triggerOffset = 0;
           const halfLen = Math.floor(dataArray.length / 2);
           for (let i = 0; i < halfLen; i++) {
-            if (dataArray[i] <= 128 && dataArray[i + 1] > 128) {
+            if (dataArray[i] <= 126 && dataArray[i + 1] > 129) {
               triggerOffset = i;
               break;
             }
           }
 
-          const displaySamples = dataArray.length - triggerOffset;
+          const displaySamples = Math.min(dataArray.length - triggerOffset, 512);
           const sliceWidth = width / displaySamples;
-
           const path = new Path2D();
+
           let x = 0;
-          for (let i = triggerOffset; i < dataArray.length; i++) {
-            const v = dataArray[i] / 128.0;
-            const y = (v * height) / 2;
-            if (i === triggerOffset) path.moveTo(x, y);
+          for (let i = 0; i < displaySamples; i++) {
+            const v = (dataArray[triggerOffset + i] - 128) / 128.0;
+            const y = centerY - v * (height * 0.42);
+
+            if (i === 0) path.moveTo(x, y);
             else path.lineTo(x, y);
+
             x += sliceWidth;
           }
 
-          // Pass 1: Phosphor Bloom Halo
+          // Glow Halo
           ctx.save();
           ctx.globalAlpha = 0.35;
-          ctx.strokeStyle = colorRef.current;
+          ctx.strokeStyle = themeColor;
           ctx.lineWidth = 4 * dpr;
           ctx.lineJoin = 'round';
           ctx.lineCap = 'round';
           ctx.stroke(path);
 
-          // Pass 2: Crisp Core Beam
+          // Core Beam
           ctx.globalAlpha = 1.0;
           ctx.lineWidth = 1.5 * dpr;
           ctx.strokeStyle = '#ffffff';
           ctx.stroke(path);
           ctx.restore();
 
-        } else {
-          // Synthetic Waveform Preview
-          const amplitude = height * 0.35 * Math.max(0.05, amplitudeScaleRef.current);
-          const cycles = 2.5;
+        } else if (analyser && !activePlay) {
+          // Idle analog CRT baseline with gentle organic harmonic drift
+          const t = phaseRef.current;
           const path = new Path2D();
-          const phase = phaseRef.current;
+          const amp = height * 0.04;
 
-          const sample = (normP: number): number => {
-            switch (waveformRef.current) {
-              case 'sine':
-                return Math.sin(normP * Math.PI * 2);
-              case 'square':
-                return normP < 0.5 ? 1 : -1;
-              case 'sawtooth':
-                return 1 - 2 * normP;
-              case 'triangle':
-                return normP < 0.5 ? 4 * normP - 1 : 3 - 4 * normP;
-            }
-          };
-
-          let prevNormP = -1;
-          for (let px = 0; px <= width; px++) {
-            const t = (px / width) * cycles + phase;
-            const normP = ((t % 1) + 1) % 1;
-
-            const isDiscontinuous = waveformRef.current === 'square' || waveformRef.current === 'sawtooth';
-            const wrapped = prevNormP > 0 && normP < prevNormP - 0.3;
-            
-            if (isDiscontinuous && wrapped) {
-              const jumpY = centerY - sample(0) * amplitude;
-              path.lineTo(px, centerY - sample(prevNormP) * amplitude);
-              path.moveTo(px, jumpY);
-            }
-
-            const y = centerY - sample(normP) * amplitude;
+          for (let px = 0; px <= width; px += 2) {
+            const normX = px / width;
+            const y = centerY + (Math.sin(normX * Math.PI * 4 + t) * 0.6 + Math.sin(normX * Math.PI * 8 - t * 1.5) * 0.4) * amp;
             if (px === 0) path.moveTo(px, y);
             else path.lineTo(px, y);
-
-            prevNormP = normP;
           }
 
           ctx.save();
-          ctx.strokeStyle = colorRef.current;
-          ctx.lineJoin = 'miter';
-          ctx.lineCap = 'butt';
+          ctx.globalAlpha = 0.25;
+          ctx.strokeStyle = themeColor;
+          ctx.lineWidth = 3 * dpr;
+          ctx.stroke(path);
 
-          if (isPlayingRef.current) {
-            ctx.globalAlpha = 0.3;
-            ctx.lineWidth = 4 * dpr;
-            ctx.stroke(path);
-
-            ctx.globalAlpha = 1.0;
-            ctx.lineWidth = 1.5 * dpr;
-            ctx.stroke(path);
-
-            phaseRef.current += 0.055;
-          } else {
-            ctx.globalAlpha = 0.3;
-            ctx.lineWidth = 1.5 * dpr;
-            ctx.stroke(path);
-          }
+          ctx.globalAlpha = 0.75;
+          ctx.lineWidth = 1 * dpr;
+          ctx.strokeStyle = themeColor;
+          ctx.stroke(path);
           ctx.restore();
-        }
-      }
 
-      // If synthetic preview and not playing, draw static resting frame
-      if (!analyser && !stereoAnalysers && !isPlayingRef.current) {
-        return;
+          phaseRef.current += 0.04;
+
+        } else {
+          // ── High-Fidelity Synthetic Analog Waveform Engine (OSC / LFO Previews) ──
+          const amplitude = height * 0.38 * ampScale;
+          const cycles = 2.2;
+          const currentWaveform = waveformRef.current || 'sawtooth';
+          const phase = phaseRef.current;
+
+          // Continuous anti-aliased mathematical waveform evaluators
+          const sample = (tNorm: number): number => {
+            const p = ((tNorm % 1) + 1) % 1; // 0 to 1
+            switch (currentWaveform) {
+              case 'sine':
+                return Math.sin(p * Math.PI * 2);
+
+              case 'triangle':
+                return p < 0.25 ? p * 4 : p < 0.75 ? 2 - p * 4 : p * 4 - 4;
+
+              case 'sawtooth': {
+                // Anti-aliased ramp with smooth flyback slope (true analog ramp)
+                if (p < 0.94) {
+                  return 1 - (p / 0.94) * 2;
+                } else {
+                  const flyback = (p - 0.94) / 0.06;
+                  return -1 + flyback * 2;
+                }
+              }
+
+              case 'square': {
+                // Anti-aliased pulse with smooth vertical transitions
+                const edgeWidth = 0.03;
+                if (p < 0.5 - edgeWidth) return 1;
+                if (p < 0.5 + edgeWidth) {
+                  const trans = (p - (0.5 - edgeWidth)) / (edgeWidth * 2);
+                  return 1 - trans * 2;
+                }
+                if (p < 1 - edgeWidth) return -1;
+                const trans = (p - (1 - edgeWidth)) / (edgeWidth * 2);
+                return -1 + trans * 2;
+              }
+
+              default:
+                return Math.sin(p * Math.PI * 2);
+            }
+          };
+
+          const path = new Path2D();
+          const stepSize = Math.max(1, Math.floor(dpr));
+
+          for (let px = 0; px <= width; px += stepSize) {
+            const tNorm = (px / width) * cycles + phase;
+            const y = centerY - sample(tNorm) * amplitude;
+
+            if (px === 0) path.moveTo(px, y);
+            else path.lineTo(px, y);
+          }
+
+          // Ambient Glow Pass
+          ctx.save();
+          ctx.globalAlpha = activePlay ? 0.35 : 0.15;
+          ctx.strokeStyle = themeColor;
+          ctx.lineWidth = 3.5 * dpr;
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+          ctx.stroke(path);
+
+          // Sharp Core Beam Pass
+          ctx.globalAlpha = activePlay ? 1.0 : 0.45;
+          ctx.lineWidth = 1.4 * dpr;
+          ctx.strokeStyle = activePlay ? '#ffffff' : themeColor;
+          ctx.stroke(path);
+          ctx.restore();
+
+          // Increment animated phase if playing
+          if (activePlay) {
+            phaseRef.current += 0.045;
+          }
+        }
       }
 
       animationRef.current = requestAnimationFrame(draw);
@@ -397,14 +450,18 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
     draw();
 
     return () => {
+      isRunning = false;
+      resizeObserver.disconnect();
       cancelAnimationFrame(animationRef.current);
     };
-  }, [analyser, stereoAnalysers, mode]);
+  }, [analyser, stereoAnalysers]);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      className="w-full h-full rounded-sm border border-[#1a2838] touch-lock" 
-    />
+    <div ref={containerRef} className="w-full h-full min-w-0 min-h-0 relative overflow-hidden">
+      <canvas 
+        ref={canvasRef} 
+        className="w-full h-full rounded-sm border border-[#1a2838] touch-lock block" 
+      />
+    </div>
   );
 });
