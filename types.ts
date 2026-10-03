@@ -123,6 +123,7 @@ export interface ArpeggiatorParams {
   mode: ArpMode;
   octaves: number; // 1 to 3
   division: string; // e.g. '1/16', '1/8', '1/4', '1/32'
+  rate?: number;
   gate: number; // 0.1 to 1
   swing?: number; // 50 to 75 (%)
   ratchet?: number; // 1, 2, 3, 4 (flam / roll burst)

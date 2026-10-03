@@ -15,6 +15,7 @@ import {
   generateMelodicPattern 
 } from '../utils/musicUtils';
 import { exportPatternToMidiBlob, downloadMidiFile } from '../utils/midiExport';
+import { DEFAULT_MELODIC_PATTERN } from '../constants';
 
 interface MelodicSequencerProps {
   pattern: MelodicSequencerPattern;

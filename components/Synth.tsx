@@ -8,6 +8,7 @@ import { Keyboard } from './Keyboard';
 import { DrumMachine } from './DrumMachine';
 import { MasterFXPanel } from './MasterFXPanel';
 import { ArpeggiatorPanel } from './ArpeggiatorPanel';
+import { MelodicSequencer } from './MelodicSequencer';
 import { GrooveWorkspace } from './GrooveWorkspace';
 import { PerformWorkspace } from './PerformWorkspace';
 import { LEDButton, ToggleSwitch } from './Switch';
@@ -66,7 +67,7 @@ export const Synth: React.FC = () => {
   const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(() => {
     try {
       const saved = localStorage.getItem('subtractive_workspace_mode') as WorkspaceMode;
-      return (saved === 'synth' || saved === 'groove' || saved === 'perform') ? saved : 'synth';
+      return (['synth', 'fx', 'arp', 'groove', 'perform'] as WorkspaceMode[]).includes(saved) ? saved : 'synth';
     } catch {
       return 'synth';
     }
@@ -74,6 +75,17 @@ export const Synth: React.FC = () => {
 
   const handleWorkspaceModeChange = useCallback((mode: WorkspaceMode) => {
     setWorkspaceMode(mode);
+    // Sync mobile activeTab when viewport is below md (768px)
+    if (window.innerWidth < 768) {
+      const mobileTabMap: Partial<Record<WorkspaceMode, MobileTab>> = {
+        synth: 'vco',
+        fx: 'fx',
+        arp: 'arp',
+        groove: 'seq',
+      };
+      const mappedTab = mobileTabMap[mode];
+      if (mappedTab) setActiveTab(mappedTab);
+    }
     try {
       localStorage.setItem('subtractive_workspace_mode', mode);
     } catch {}
@@ -240,7 +252,7 @@ export const Synth: React.FC = () => {
         break;
       }
       case 'fx.delay.feedback': {
-        setParams(p => ({ ...p, fx: { ...p.fx, delay: { ...p.fx.feedback, feedback: normalizedVal * 0.85 } } }));
+        setParams(p => ({ ...p, fx: { ...p.fx, delay: { ...p.fx.delay, feedback: normalizedVal * 0.85 } } }));
         break;
       }
       case 'fx.delay.mix': {
