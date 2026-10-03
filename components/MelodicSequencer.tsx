@@ -41,37 +41,63 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
   const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(true);
 
-  const currentScale = SCALE_DEFINITIONS[pattern.scale] || SCALE_DEFINITIONS.minor;
-  const selectedStep = pattern.steps[selectedStepIndex] || pattern.steps[0];
+  // Normalize and guard pattern against undefined or corrupted localStorage data
+  const safePattern: MelodicSequencerPattern = useMemo(() => {
+    if (!pattern || typeof pattern !== 'object') {
+      return JSON.parse(JSON.stringify(DEFAULT_MELODIC_PATTERN));
+    }
+    const steps = (Array.isArray(pattern.steps) && pattern.steps.length === 16)
+      ? pattern.steps
+      : JSON.parse(JSON.stringify(DEFAULT_MELODIC_PATTERN.steps));
+    return {
+      enabled: pattern.enabled ?? true,
+      length: pattern.length ?? 16,
+      octave: typeof pattern.octave === 'number' ? pattern.octave : 0,
+      scale: pattern.scale && SCALE_DEFINITIONS[pattern.scale] ? pattern.scale : 'minor',
+      rootNote: typeof pattern.rootNote === 'number' ? pattern.rootNote : 0,
+      motionRecording: pattern.motionRecording ?? false,
+      steps,
+    };
+  }, [pattern]);
+
+  const currentScale = SCALE_DEFINITIONS[safePattern.scale] || SCALE_DEFINITIONS.minor;
+  const selectedStep = safePattern.steps[selectedStepIndex] || safePattern.steps[0] || {
+    note: 48,
+    enabled: true,
+    velocity: 100,
+    gate: 0.8,
+    slide: false,
+    probability: 100,
+  };
 
   // Toggle step enable/disable
   const handleStepToggle = useCallback((index: number) => {
-    const newSteps = [...pattern.steps];
+    const newSteps = [...safePattern.steps];
     const target = { ...newSteps[index] };
     target.enabled = !target.enabled;
     newSteps[index] = target;
-    onChange({ ...pattern, steps: newSteps });
+    onChange({ ...safePattern, steps: newSteps });
     setSelectedStepIndex(index);
 
     if (target.enabled && onAuditionNote) {
-      onAuditionNote(target.note + (pattern.octave * 12));
+      onAuditionNote(target.note + (safePattern.octave * 12));
     }
-  }, [pattern, onChange, onAuditionNote]);
+  }, [safePattern, onChange, onAuditionNote]);
 
   // Update specific field on the selected step
   const handleUpdateSelectedStep = useCallback((patch: Partial<MelodicStep>) => {
-    const newSteps = [...pattern.steps];
+    const newSteps = [...safePattern.steps];
     newSteps[selectedStepIndex] = {
       ...newSteps[selectedStepIndex],
       ...patch,
     };
-    onChange({ ...pattern, steps: newSteps });
-  }, [pattern, selectedStepIndex, onChange]);
+    onChange({ ...safePattern, steps: newSteps });
+  }, [safePattern, selectedStepIndex, onChange]);
 
   // Update P-Locks on selected step
   const handleUpdatePLocks = useCallback((pLockPatch: Partial<StepParameterLocks>) => {
-    const newSteps = [...pattern.steps];
-    const currentStep = newSteps[selectedStepIndex];
+    const newSteps = [...safePattern.steps];
+    const currentStep = newSteps[selectedStepIndex] || safePattern.steps[0];
     const existingPLocks = currentStep.pLocks || {};
     
     // Clean out undefined/null values
@@ -88,49 +114,51 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
       ...currentStep,
       pLocks: hasAnyLock ? merged : undefined,
     };
-    onChange({ ...pattern, steps: newSteps });
-  }, [pattern, selectedStepIndex, onChange]);
+    onChange({ ...safePattern, steps: newSteps });
+  }, [safePattern, selectedStepIndex, onChange]);
 
   // Clear P-Locks for currently selected step
   const handleClearSelectedPLocks = useCallback(() => {
-    const newSteps = [...pattern.steps];
-    newSteps[selectedStepIndex] = {
-      ...newSteps[selectedStepIndex],
-      pLocks: undefined,
-    };
-    onChange({ ...pattern, steps: newSteps });
-  }, [pattern, selectedStepIndex, onChange]);
+    const newSteps = [...safePattern.steps];
+    if (newSteps[selectedStepIndex]) {
+      newSteps[selectedStepIndex] = {
+        ...newSteps[selectedStepIndex],
+        pLocks: undefined,
+      };
+    }
+    onChange({ ...safePattern, steps: newSteps });
+  }, [safePattern, selectedStepIndex, onChange]);
 
   // Clear P-Locks across all steps
   const handleClearAllPLocks = useCallback(() => {
-    const newSteps = pattern.steps.map((s) => ({ ...s, pLocks: undefined }));
-    onChange({ ...pattern, steps: newSteps });
-  }, [pattern, onChange]);
+    const newSteps = safePattern.steps.map((s) => ({ ...s, pLocks: undefined }));
+    onChange({ ...safePattern, steps: newSteps });
+  }, [safePattern, onChange]);
 
   // Generate pattern preset
   const handleGenerateStyle = useCallback((style: 'acid' | 'driving' | 'pluck' | 'random') => {
-    const generated = generateMelodicPattern(pattern.scale, pattern.rootNote, 3 + pattern.octave, style);
-    onChange({ ...pattern, steps: generated });
-  }, [pattern, onChange]);
+    const generated = generateMelodicPattern(safePattern.scale, safePattern.rootNote, 3 + safePattern.octave, style);
+    onChange({ ...safePattern, steps: generated });
+  }, [safePattern, onChange]);
 
   // Shift pattern left / right
   const handleShiftPattern = useCallback((dir: 'left' | 'right') => {
-    const newSteps = [...pattern.steps];
+    const newSteps = [...safePattern.steps];
     if (dir === 'left') {
-      const first = newSteps.shift()!;
-      newSteps.push(first);
+      const first = newSteps.shift();
+      if (first) newSteps.push(first);
     } else {
-      const last = newSteps.pop()!;
-      newSteps.unshift(last);
+      const last = newSteps.pop();
+      if (last) newSteps.unshift(last);
     }
-    onChange({ ...pattern, steps: newSteps });
-  }, [pattern, onChange]);
+    onChange({ ...safePattern, steps: newSteps });
+  }, [safePattern, onChange]);
 
   // Clear all melodic steps
   const handleClearSteps = useCallback(() => {
-    const cleared = pattern.steps.map((s) => ({ ...s, enabled: false, pLocks: undefined }));
-    onChange({ ...pattern, steps: cleared });
-  }, [pattern, onChange]);
+    const cleared = safePattern.steps.map((s) => ({ ...s, enabled: false, pLocks: undefined }));
+    onChange({ ...safePattern, steps: cleared });
+  }, [safePattern, onChange]);
 
   // Export MIDI file
   const handleExportMidi = useCallback(() => {
@@ -140,15 +168,15 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
       hihat: new Array(16).fill(0),
       crash: new Array(16).fill(0),
     };
-    const blob = exportPatternToMidiBlob(pattern, dummyDrums, bpm, 'Subtractive_Melody');
-    downloadMidiFile(blob, `Subtractive_${pattern.scale}_BPM${bpm}.mid`);
-  }, [pattern, drumPattern, bpm]);
+    const blob = exportPatternToMidiBlob(safePattern, dummyDrums, bpm, 'Subtractive_Melody');
+    downloadMidiFile(blob, `Subtractive_${safePattern.scale}_BPM${bpm}.mid`);
+  }, [safePattern, drumPattern, bpm]);
 
   // Notes available in current scale for quick selection
   const scaleNotes = useMemo(() => {
-    const root = pattern.rootNote;
+    const root = safePattern.rootNote;
     const notes: { midi: number; label: string }[] = [];
-    const baseOct = 3 + pattern.octave;
+    const baseOct = 3 + safePattern.octave;
     for (let oct = Math.max(1, baseOct - 1); oct <= Math.min(6, baseOct + 1); oct++) {
       for (const interval of currentScale.intervals) {
         const midi = (oct + 1) * 12 + ((root + interval) % 12);
@@ -156,7 +184,7 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
       }
     }
     return notes;
-  }, [pattern.rootNote, pattern.octave, currentScale]);
+  }, [safePattern.rootNote, safePattern.octave, currentScale]);
 
   return (
     <div className="synth-panel rounded-sm p-2 md:p-3 flex flex-col gap-2.5 w-full select-none relative" style={{ border: '1px solid var(--panel-border)', background: 'var(--panel-bg)' }}>
@@ -173,28 +201,28 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
           
           <button
             type="button"
-            onClick={() => onChange({ ...pattern, enabled: !pattern.enabled })}
+            onClick={() => onChange({ ...safePattern, enabled: !safePattern.enabled })}
             className={`px-2 py-0.5 rounded text-[8px] font-mono font-bold tracking-wider uppercase border transition-all ${
-              pattern.enabled
+              safePattern.enabled
                 ? 'bg-[#a855f7] text-black border-[#a855f7] shadow-[0_0_8px_#a855f7]'
                 : 'bg-[#181a24] text-gray-500 border-[#2a2f42]'
             }`}
           >
-            {pattern.enabled ? 'ACTIVE' : 'MUTED'}
+            {safePattern.enabled ? 'ACTIVE' : 'MUTED'}
           </button>
 
           {/* Live Motion Recording Toggle Button */}
           <button
             type="button"
-            onClick={() => onChange({ ...pattern, motionRecording: !pattern.motionRecording })}
+            onClick={() => onChange({ ...safePattern, motionRecording: !safePattern.motionRecording })}
             title="When active, tweaking UI knobs during playback records P-Locks into running steps"
             className={`px-2 py-0.5 rounded text-[8px] font-mono font-black tracking-wider uppercase border flex items-center gap-1 transition-all ${
-              pattern.motionRecording
+              safePattern.motionRecording
                 ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_10px_#ff3344] animate-pulse'
                 : 'bg-[#1a141e] text-gray-400 border-[#3d2435] hover:text-white'
             }`}
           >
-            <span className={`w-1.5 h-1.5 rounded-full ${pattern.motionRecording ? 'bg-white' : 'bg-red-500'}`} />
+            <span className={`w-1.5 h-1.5 rounded-full ${safePattern.motionRecording ? 'bg-white' : 'bg-red-500'}`} />
             <span>REC MOTION</span>
           </button>
         </div>
@@ -205,14 +233,14 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
           <div className="flex items-center gap-1 bg-[#0a0d16] px-1.5 py-0.5 rounded border border-[#20293d]">
             <span className="text-[7px] font-mono text-gray-400 uppercase">ROOT:</span>
             <select
-              value={pattern.rootNote}
+              value={safePattern.rootNote}
               onChange={(e) => {
                 const newRoot = parseInt(e.target.value, 10);
-                const updatedSteps = pattern.steps.map((s) => ({
+                const updatedSteps = safePattern.steps.map((s) => ({
                   ...s,
-                  note: quantizeToScale(s.note, pattern.scale, newRoot),
+                  note: quantizeToScale(s.note, safePattern.scale, newRoot),
                 }));
-                onChange({ ...pattern, rootNote: newRoot, steps: updatedSteps });
+                onChange({ ...safePattern, rootNote: newRoot, steps: updatedSteps });
               }}
               className="bg-transparent font-mono text-[9px] font-bold text-[#c084fc] outline-none cursor-pointer"
             >
@@ -228,14 +256,14 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
           <div className="flex items-center gap-1 bg-[#0a0d16] px-1.5 py-0.5 rounded border border-[#20293d]">
             <span className="text-[7px] font-mono text-gray-400 uppercase">SCALE:</span>
             <select
-              value={pattern.scale}
+              value={safePattern.scale}
               onChange={(e) => {
                 const newScale = e.target.value;
-                const updatedSteps = pattern.steps.map((s) => ({
+                const updatedSteps = safePattern.steps.map((s) => ({
                   ...s,
-                  note: quantizeToScale(s.note, newScale, pattern.rootNote),
+                  note: quantizeToScale(s.note, newScale, safePattern.rootNote),
                 }));
-                onChange({ ...pattern, scale: newScale, steps: updatedSteps });
+                onChange({ ...safePattern, scale: newScale, steps: updatedSteps });
               }}
               className="bg-transparent font-mono text-[9px] font-bold text-[#00ff66] outline-none cursor-pointer max-w-[120px]"
             >
@@ -251,18 +279,18 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
           <div className="flex items-center gap-0.5 bg-[#0a0d16] p-0.5 rounded border border-[#20293d]">
             <button
               type="button"
-              onClick={() => onChange({ ...pattern, octave: Math.max(-2, pattern.octave - 1) })}
+              onClick={() => onChange({ ...safePattern, octave: Math.max(-2, safePattern.octave - 1) })}
               className="w-5 h-4.5 rounded bg-[#141b27] text-gray-300 hover:text-white font-mono text-[9px] font-bold"
               title="Octave Down"
             >
               -
             </button>
             <span className="text-[8px] font-mono font-bold px-1 text-[#ffaa00]">
-              OCT {pattern.octave >= 0 ? `+${pattern.octave}` : pattern.octave}
+              OCT {safePattern.octave >= 0 ? `+${safePattern.octave}` : safePattern.octave}
             </span>
             <button
               type="button"
-              onClick={() => onChange({ ...pattern, octave: Math.min(2, pattern.octave + 1) })}
+              onClick={() => onChange({ ...safePattern, octave: Math.min(2, safePattern.octave + 1) })}
               className="w-5 h-4.5 rounded bg-[#141b27] text-gray-300 hover:text-white font-mono text-[9px] font-bold"
               title="Octave Up"
             >

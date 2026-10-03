@@ -18,24 +18,35 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
   learningParamId,
   mappedCCs
 }) => {
+  const safeArp: ArpeggiatorParams = {
+    enabled: arp?.enabled ?? false,
+    mode: arp?.mode ?? 'up',
+    octaves: arp?.octaves ?? 1,
+    division: arp?.division ?? '1/16',
+    rate: arp?.rate ?? 5,
+    gate: arp?.gate ?? 0.8,
+    swing: arp?.swing ?? 50,
+    ratchet: arp?.ratchet ?? 1,
+  };
+
   const toggleEnabled = () => {
-    onChange({ ...arp, enabled: !arp.enabled });
+    onChange({ ...safeArp, enabled: !safeArp.enabled });
   };
 
   const setMode = (mode: ArpMode) => {
-    onChange({ ...arp, mode });
+    onChange({ ...safeArp, mode });
   };
 
   const setOctaves = (octaves: number) => {
-    onChange({ ...arp, octaves });
+    onChange({ ...safeArp, octaves });
   };
 
   const setDivision = (division: string) => {
-    onChange({ ...arp, division });
+    onChange({ ...safeArp, division });
   };
 
   const setRatchet = (ratchet: number) => {
-    onChange({ ...arp, ratchet });
+    onChange({ ...safeArp, ratchet });
   };
 
   const getMappedCC = (paramId: string) => {
@@ -73,8 +84,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
         <div className="flex flex-col items-center gap-0.5 shrink-0">
           <span className="text-[7px] font-mono uppercase tracking-wider" style={{ color: 'var(--text-label)' }}>Status</span>
           <LEDButton
-            label={arp.enabled ? "ON" : "OFF"}
-            active={arp.enabled}
+            label={safeArp.enabled ? "ON" : "OFF"}
+            active={safeArp.enabled}
             onClick={toggleEnabled}
             color="cyan"
             size="sm"
@@ -91,7 +102,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                 key={oct}
                 onClick={() => setOctaves(oct)}
                 className={`w-4 h-4 md:w-5 md:h-5 rounded-sm text-[8px] md:text-[9px] font-mono font-bold transition-all ${
-                  arp.octaves === oct
+                  safeArp.octaves === oct
                     ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
                     : 'bg-[#141a26] text-gray-400 hover:text-white'
                 }`}
@@ -111,7 +122,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                 key={div}
                 onClick={() => setDivision(div)}
                 className={`px-1 h-4 md:h-5 rounded-sm text-[7px] md:text-[8px] font-mono font-bold transition-all ${
-                  arp.division === div
+                  safeArp.division === div
                     ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]'
                     : 'bg-[#141a26] text-gray-400 hover:text-white'
                 }`}
@@ -131,7 +142,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                 key={r}
                 onClick={() => setRatchet(r)}
                 className={`px-1 h-4 md:h-5 rounded-sm text-[7px] md:text-[8px] font-mono font-bold transition-all ${
-                  (arp.ratchet ?? 1) === r
+                  (safeArp.ratchet ?? 1) === r
                     ? 'bg-[#ff3344] text-white shadow-[0_0_6px_#ff3344]'
                     : 'bg-[#141a26] text-gray-400 hover:text-white'
                 }`}
@@ -151,7 +162,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
             <LEDButton
               key={mode}
               label={modeLabels[mode]}
-              active={arp.mode === mode}
+              active={safeArp.mode === mode}
               onClick={() => setMode(mode)}
               color="cyan"
               size="sm"
@@ -165,11 +176,11 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
       <div className="flex items-center justify-around w-full px-2 pb-0.5">
         <Knob
           label="Gate"
-          value={arp.gate}
+          value={safeArp.gate}
           min={0.1}
           max={1.0}
           size={30}
-          onChange={(v) => onChange({ ...arp, gate: v })}
+          onChange={(v) => onChange({ ...safeArp, gate: v })}
           unit="%"
           color="emerald"
           paramId="arpeggiator.gate"
@@ -180,11 +191,11 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
 
         <Knob
           label="Swing"
-          value={arp.swing ?? 50}
+          value={safeArp.swing ?? 50}
           min={50}
           max={75}
           size={30}
-          onChange={(v) => onChange({ ...arp, swing: v })}
+          onChange={(v) => onChange({ ...safeArp, swing: v })}
           unit="%"
           color="amber"
           paramId="arpeggiator.swing"

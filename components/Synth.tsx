@@ -21,6 +21,7 @@ import { PresetBrowser } from './PresetBrowser';
 import { AudioRecorder } from '../services/AudioRecorder';
 import { MidiManager } from '../services/MidiManager';
 import { useTheme, THEMES } from '../contexts/ThemeContext';
+import { ErrorBoundary } from './ErrorBoundary';
 
 interface PanelProps {
   title: string;
@@ -791,23 +792,30 @@ export const Synth: React.FC = () => {
   };
 
   const renderOscControl = (oscKey: 'osc1' | 'osc2' | 'osc3' | 'osc4', label: string) => {
-    const oscParams = params[oscKey];
+    const oscParams = params[oscKey] || DEFAULT_SYNTH_PARAMS[oscKey];
     return (
-      <div className="flex flex-col gap-1.5 p-2 rounded-sm w-full min-w-0 relative" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
-        <div className="flex items-center gap-1.5 mb-0.5 w-full justify-between px-0.5 pb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
-          <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider truncate" style={{ color: 'var(--text-label)' }}>{label}</span>
+      <div 
+        className="flex flex-col p-2 rounded-sm w-full min-w-0 relative shadow-sm border" 
+        style={{ borderColor: 'var(--osc-border)', background: 'var(--osc-bg)' }}
+      >
+        {/* Header Bar */}
+        <div className="flex items-center justify-between pb-1 mb-1.5 border-b" style={{ borderColor: 'var(--osc-border)' }}>
+          <span className="text-[10px] font-mono font-bold tracking-wider" style={{ color: 'var(--text-label)' }}>
+            {label}
+          </span>
           <ToggleSwitch 
             label="" 
             checked={oscParams.enabled} 
             onChange={() => toggleOsc(oscKey)} 
-            color="red"
+            color="cyan"
             size="sm"
           />
         </div>
         
-        <div className="flex flex-row items-stretch w-full gap-1.5 px-0.5">
-          {/* Waveform Selector */}
-          <div className="flex flex-col gap-0.5 p-0.5 rounded-sm h-full justify-between shrink-0" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
+        {/* Waveform Selector + Preview */}
+        <div className="flex items-stretch gap-1.5 w-full mb-2">
+          {/* Waveform 4 Buttons */}
+          <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-sm shrink-0" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
             {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
               const isActive = oscParams.waveform === w;
               const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
@@ -816,30 +824,30 @@ export const Synth: React.FC = () => {
                   key={w} 
                   type="button"
                   onClick={() => setOscWaveform(oscKey, w)} 
-                  className={`p-0.5 rounded-sm transition-all flex items-center justify-center h-5 w-5 md:h-5 md:w-5
-                    ${isActive 
-                      ? 'bg-[#10b981] text-black shadow-[0_0_8px_#10b981]' 
+                  className={`p-1 rounded-xs transition-all flex items-center justify-center h-5 w-5 ${
+                    isActive 
+                      ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]' 
                       : 'text-gray-500 hover:text-gray-200'
-                    }`}
+                  }`}
+                  title={w.toUpperCase()}
                 >
-                  <Icon className="w-3 h-3"/>
+                  <Icon className="w-3.5 h-3.5"/>
                 </button>
               );
             })}
           </div>
 
-          {/* LCD Waveform Preview */}
-          <div className="flex flex-col flex-1 justify-between gap-1 min-w-0">
-            <div className="oled-screen rounded-sm px-1 py-0.5 flex items-center justify-between h-4 w-full">
-              <span className="font-mono-lcd text-[7px] md:text-[8px] uppercase tracking-wider truncate" style={{ color: 'var(--oled-text)' }}>
+          {/* LCD Waveform Screen */}
+          <div className="oled-screen rounded-sm px-1.5 py-1 flex-1 flex flex-col justify-between min-h-[46px] min-w-0">
+            <div className="flex items-center justify-between w-full">
+              <span className="font-mono-lcd text-[8px] uppercase tracking-wider text-[#10b981] truncate">
                 {oscParams.waveform}
               </span>
-              <span className="font-mono-lcd text-[7px]" style={{ color: 'var(--text-secondary)' }}>
+              <span className="font-mono-lcd text-[8px] text-gray-400">
                 {Math.round(oscParams.gain * 100)}%
               </span>
             </div>
-
-            <div className="flex-1 w-full min-h-[24px] my-0.5">
+            <div className="h-6 w-full my-0.5">
               <WaveformDisplay 
                 waveform={oscParams.waveform} 
                 isPlaying={oscParams.enabled} 
@@ -847,47 +855,44 @@ export const Synth: React.FC = () => {
                 color="#10b981"
               />
             </div>
-
-            <div className="flex items-center justify-center">
-              <Knob 
-                label="Gain" 
-                value={oscParams.gain} 
-                min={0} 
-                max={1} 
-                size={28} 
-                onChange={v => setParams(p => patchParams(p, { [oscKey]: { gain: v } }))} 
-                unit="%"
-                color="cyan"
-                paramId={`${oscKey}.gain`}
-                isLearning={learningParamId === `${oscKey}.gain`}
-                mappedCC={mappedCCs[`${oscKey}.gain`] ?? null}
-                onMidiLearn={handleMidiLearn}
-              />
-            </div>
           </div>
+        </div>
 
-          {/* Detune Knob */}
-          <div className="flex flex-col items-center justify-center pl-1 shrink-0" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-            <Knob 
-              label="Detune" 
-              value={oscParams.detune} 
-              min={-2400} 
-              max={2400} 
-              size={28}
-              onChange={v => setParams(p => patchParams(p, { [oscKey]: { detune: v } }))} 
-              unit="cents"
-              color="amber"
-              modActive={params.lfo.target === 'pitch' && params.lfo.depth > 0}
-              modDepth={params.lfo.depth}
-              modColor="emerald"
-              lfoRate={params.lfo.rate}
-              lfoWaveform={params.lfo.waveform}
-              paramId={`${oscKey}.detune`}
-              isLearning={learningParamId === `${oscKey}.detune`}
-              mappedCC={mappedCCs[`${oscKey}.detune`] ?? null}
-              onMidiLearn={handleMidiLearn}
-            />
-          </div>
+        {/* Knobs Row: GAIN and DETUNE side by side with plenty of room */}
+        <div className="flex items-center justify-around w-full pt-1 border-t" style={{ borderColor: 'var(--osc-border)' }}>
+          <Knob 
+            label="Gain" 
+            value={oscParams.gain} 
+            min={0} 
+            max={1} 
+            size={30} 
+            onChange={v => setParams(p => patchParams(p, { [oscKey]: { gain: v } }))} 
+            unit="%"
+            color="cyan"
+            paramId={`${oscKey}.gain`}
+            isLearning={learningParamId === `${oscKey}.gain`}
+            mappedCC={mappedCCs[`${oscKey}.gain`] ?? null}
+            onMidiLearn={handleMidiLearn}
+          />
+          <Knob 
+            label="Detune" 
+            value={oscParams.detune} 
+            min={-2400} 
+            max={2400} 
+            size={30}
+            onChange={v => setParams(p => patchParams(p, { [oscKey]: { detune: v } }))} 
+            unit="cents"
+            color="amber"
+            modActive={params.lfo.target === 'pitch' && params.lfo.depth > 0}
+            modDepth={params.lfo.depth}
+            modColor="emerald"
+            lfoRate={params.lfo.rate}
+            lfoWaveform={params.lfo.waveform}
+            paramId={`${oscKey}.detune`}
+            isLearning={learningParamId === `${oscKey}.detune`}
+            mappedCC={mappedCCs[`${oscKey}.detune`] ?? null}
+            onMidiLearn={handleMidiLearn}
+          />
         </div>
       </div>
     );
@@ -1409,372 +1414,89 @@ export const Synth: React.FC = () => {
 
         {/* ════════════════════ DESKTOP LAYOUT (md+) ════════════════════ */}
         {workspaceMode === 'groove' ? (
-          <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
-            <GrooveWorkspace
-              isPlaying={isDrumMachinePlaying}
-              onPlayToggle={handlePlayToggle}
-              bpm={bpm}
-              onBpmChange={setBpm}
-              swing={swing}
-              onSwingChange={setSwing}
-              currentBank={currentBankIndex}
-              onBankSelect={setCurrentBankIndex}
-              pattern={drumPattern}
-              onStepToggle={handleStepToggle}
-              trackSettings={drumSettings}
-              onTrackSettingsChange={handleDrumTrackSettingsChange}
-              engine={drumMachineEngine.current}
-              onPatternChange={handlePatternChange}
-              melodicPattern={melodicPattern}
-              onMelodicPatternChange={handleMelodicPatternChange}
-              onAuditionNote={(note, vel) => audioEngine.current?.noteOn(note, vel || 100)}
-              arpParams={params.arpeggiator}
-              onArpChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
-              synthParams={params}
-              onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
-              selectedPresetName={selectedPresetName}
-              onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
-              onSwitchWorkspace={handleWorkspaceModeChange}
-              onMidiLearn={handleMidiLearn}
-              learningParamId={learningParamId}
-              mappedCCs={rawMappedCCs}
-            />
-
-          </div>
-        ) : workspaceMode === 'perform' ? (
-          <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
-            <PerformWorkspace
-              synthParams={params}
-              audioEngine={audioEngine.current}
-              onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
-              onNoteOn={handleNoteOn}
-              onNoteOff={handleNoteOff}
-              activeNotes={activeNotes}
-              onPitchBendChange={handlePitchBendChange}
-              onModulationChange={handleModulationChange}
-              octaveOffset={octaveOffset}
-              onOctaveChange={setOctaveOffset}
-              isKeyboardMode={isKeyboardMode}
-              onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
-              keyboardLayout={keyboardLayout}
-              onChangeKeyboardLayout={setKeyboardLayout}
-              isDrumPlaying={isDrumMachinePlaying}
-              onDrumPlayToggle={handlePlayToggle}
-              bpm={bpm}
-              onBpmChange={setBpm}
-              currentBank={currentBankIndex}
-              onBankSelect={setCurrentBankIndex}
-              drumEngine={drumMachineEngine.current}
-              onSwitchWorkspace={handleWorkspaceModeChange}
-              selectedPresetName={selectedPresetName}
-              onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
-            />
-          </div>
-        ) : workspaceMode === 'fx' ? (
-          <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1 overflow-y-auto pr-0.5">
-            {/* Master FX Signal Visualizer */}
-            <div className="oled-screen p-2 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
-              <div className="flex items-center justify-between px-1 mb-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344]" />
-                  <span className="font-mono-lcd text-[9px] uppercase tracking-widest text-[#ff3344] font-bold">
-                    MASTER FX SIGNAL CHAIN
-                  </span>
-                  <span className="font-mono-lcd text-[8px] text-gray-400">
-                    [DRIVE / SATURATION] ➔ [STEREO DELAY] ➔ [STUDIO REVERB] ➔ [MASTER BUS]
-                  </span>
-                </div>
-                <div className="flex gap-1">
-                  <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
-                  <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
-                  <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
-                </div>
-              </div>
-              <div className="flex-1 w-full min-h-0">
-                <WaveformDisplay 
-                  analyser={audioEngine.current?.getAnalyser() || null} 
-                  stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
-                  isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
-                  color="#ff3344" 
-                  mode={visualizerMode} 
-                />
-              </div>
-            </div>
-
-            {/* Studio Master FX Rack */}
-            <div className="flex-1 min-h-0 flex flex-col">
-              <MasterFXPanel 
-                fx={params.fx} 
-                onChange={(fx) => setParams(p => ({ ...p, fx }))} 
+          <ErrorBoundary fallbackTitle="Groove Workstation" onReset={() => handleWorkspaceModeChange('synth')}>
+            <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
+              <GrooveWorkspace
+                isPlaying={isDrumMachinePlaying}
+                onPlayToggle={handlePlayToggle}
+                bpm={bpm}
+                onBpmChange={setBpm}
+                swing={swing}
+                onSwingChange={setSwing}
+                currentBank={currentBankIndex}
+                onBankSelect={setCurrentBankIndex}
+                pattern={drumPattern}
+                onStepToggle={handleStepToggle}
+                trackSettings={drumSettings}
+                onTrackSettingsChange={handleDrumTrackSettingsChange}
+                engine={drumMachineEngine.current}
+                onPatternChange={handlePatternChange}
+                melodicPattern={melodicPattern}
+                onMelodicPatternChange={handleMelodicPatternChange}
+                onAuditionNote={(note, vel) => audioEngine.current?.noteOn(note, vel || 100)}
+                arpParams={params.arpeggiator}
+                onArpChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
+                synthParams={params}
+                onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+                selectedPresetName={selectedPresetName}
+                onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+                onSwitchWorkspace={handleWorkspaceModeChange}
                 onMidiLearn={handleMidiLearn}
                 learningParamId={learningParamId}
                 mappedCCs={rawMappedCCs}
               />
             </div>
-
-            {/* Beat Transport Bar */}
-            <div 
-              className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
-              style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-            >
-              <div className="flex items-center gap-3">
-                <LEDButton
-                  label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
-                  active={isDrumMachinePlaying}
-                  onClick={handlePlayToggle}
-                  color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
-                  size="sm"
-                  className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
-                />
-                <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
-                <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
-                <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-                  <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
-                  {[0, 1, 2, 3].map(b => (
-                    <button
-                      key={b}
-                      onClick={() => setCurrentBankIndex(b)}
-                      className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
-                        currentBankIndex === b
-                          ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                          : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
-                      }`}
-                    >
-                      {String.fromCharCode(65 + b)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 16-step running LED indicators */}
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 16 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`w-2 h-2.5 rounded-xs transition-all ${
-                      runningStep === idx
-                        ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                        : idx % 4 === 0
-                        ? 'bg-[#2b374c]'
-                        : 'bg-[#141b27]'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleWorkspaceModeChange('groove')}
-                className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
-              >
-                <span>OPEN 4-TRACK GROOVE MATRIX</span>
-                <span>↗</span>
-              </button>
+          </ErrorBoundary>
+        ) : workspaceMode === 'perform' ? (
+          <ErrorBoundary fallbackTitle="Perform Deck" onReset={() => handleWorkspaceModeChange('synth')}>
+            <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
+              <PerformWorkspace
+                synthParams={params}
+                audioEngine={audioEngine.current}
+                onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+                onNoteOn={handleNoteOn}
+                onNoteOff={handleNoteOff}
+                activeNotes={activeNotes}
+                onPitchBendChange={handlePitchBendChange}
+                onModulationChange={handleModulationChange}
+                octaveOffset={octaveOffset}
+                onOctaveChange={setOctaveOffset}
+                isKeyboardMode={isKeyboardMode}
+                onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
+                keyboardLayout={keyboardLayout}
+                onChangeKeyboardLayout={setKeyboardLayout}
+                isDrumPlaying={isDrumMachinePlaying}
+                onDrumPlayToggle={handlePlayToggle}
+                bpm={bpm}
+                onBpmChange={setBpm}
+                currentBank={currentBankIndex}
+                onBankSelect={setCurrentBankIndex}
+                drumEngine={drumMachineEngine.current}
+                onSwitchWorkspace={handleWorkspaceModeChange}
+                selectedPresetName={selectedPresetName}
+                onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+              />
             </div>
-          </div>
-        ) : workspaceMode === 'arp' ? (
-          <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1 overflow-y-auto pr-0.5">
-            {/* Arpeggiator & Melodic Motion Sequencer Stage */}
-            <div className="flex flex-col lg:flex-row gap-2 flex-1 min-h-0">
-              {/* Arpeggiator Module (4/12) */}
-              <div className="lg:w-4/12 flex flex-col min-h-0">
-                <ArpeggiatorPanel 
-                  arp={params.arpeggiator} 
-                  onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} 
-                  onMidiLearn={handleMidiLearn}
-                  learningParamId={learningParamId}
-                  mappedCCs={rawMappedCCs}
-                />
-              </div>
-
-              {/* Melodic Sequencer (8/12) */}
-              <div className="lg:w-8/12 flex flex-col min-h-0 synth-panel rounded p-2 md:p-2.5">
-                <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
-                  <div className="flex items-center gap-1.5 overflow-hidden">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#00ff66] shadow-[0_0_6px_#00ff66] shrink-0" />
-                    <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>
-                      16-STEP MELODIC MOTION SEQUENCER & P-LOCKS
+          </ErrorBoundary>
+        ) : workspaceMode === 'fx' ? (
+          <ErrorBoundary fallbackTitle="Studio FX Rack" onReset={() => handleWorkspaceModeChange('synth')}>
+            <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
+              {/* Master FX Signal Visualizer */}
+              <div className="oled-screen p-2 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
+                <div className="flex items-center justify-between px-1 mb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344]" />
+                    <span className="font-mono-lcd text-[9px] uppercase tracking-widest text-[#ff3344] font-bold">
+                      MASTER FX SIGNAL CHAIN
+                    </span>
+                    <span className="font-mono-lcd text-[8px] text-gray-400">
+                      [DRIVE / SATURATION] ➔ [STEREO DELAY] ➔ [STUDIO REVERB] ➔ [MASTER BUS]
                     </span>
                   </div>
-                </div>
-                <div className="flex-1 min-h-0 flex flex-col">
-                  <MelodicSequencer
-                    pattern={melodicPattern}
-                    onChange={handleMelodicPatternChange}
-                    activeStep={runningStep}
-                    isPlaying={isDrumMachinePlaying}
-                    bpm={bpm}
-                    drumPattern={drumPattern}
-                    onAuditionNote={(note, vel) => audioEngine.current?.noteOn(note, vel || 100)}
-                    onMidiLearn={handleMidiLearn}
-                    learningParamId={learningParamId}
-                    mappedCCs={rawMappedCCs}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Beat Transport Bar */}
-            <div 
-              className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
-              style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-            >
-              <div className="flex items-center gap-3">
-                <LEDButton
-                  label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
-                  active={isDrumMachinePlaying}
-                  onClick={handlePlayToggle}
-                  color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
-                  size="sm"
-                  className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
-                />
-                <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
-                <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
-                <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-                  <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
-                  {[0, 1, 2, 3].map(b => (
-                    <button
-                      key={b}
-                      onClick={() => setCurrentBankIndex(b)}
-                      className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
-                        currentBankIndex === b
-                          ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                          : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
-                      }`}
-                    >
-                      {String.fromCharCode(65 + b)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* 16-step running LED indicators */}
-              <div className="flex items-center gap-1">
-                {Array.from({ length: 16 }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className={`w-2 h-2.5 rounded-xs transition-all ${
-                      runningStep === idx
-                        ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                        : idx % 4 === 0
-                        ? 'bg-[#2b374c]'
-                        : 'bg-[#141b27]'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleWorkspaceModeChange('groove')}
-                className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
-              >
-                <span>OPEN 4-TRACK GROOVE MATRIX</span>
-                <span>↗</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1 overflow-y-auto pr-0.5">
-
-          {/* Upper row: VCO Panel — 4 Oscillators & Voice Controls */}
-          <div className="flex-1 min-h-0 flex flex-col">
-            <Panel title="VCO — 4-OSCILLATOR ARRAY & VOICE ENGINE" badgeColor="cyan" className="h-full flex flex-col justify-between">
-              {/* Voice Mode & Tone Controls */}
-              <div className="flex flex-wrap items-center justify-between gap-1.5 w-full p-1.5 rounded-sm shrink-0" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
-                <div className="flex flex-col items-center gap-0.5">
-                  <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
                   <div className="flex gap-1">
-                    {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
-                      <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => patchParams(p, { voiceMode: mode }))} color="cyan" size="sm" className="text-[7px] px-1.5 py-0.5" />
-                    ))}
-                  </div>
-                </div>
-                <Knob 
-                  label="Glide"   
-                  value={params.glide}     
-                  min={0}   
-                  max={0.5} 
-                  size={32} 
-                  onChange={(v) => setParams(p => patchParams(p, { glide: v }))}     
-                  unit="s"  
-                  color="cyan"
-                  paramId="glide"
-                  isLearning={learningParamId === 'glide'}
-                  mappedCC={mappedCCs['glide'] ?? null}
-                  onMidiLearn={handleMidiLearn}
-                />
-                <Knob 
-                  label="Sub Osc" 
-                  value={params.subGain}   
-                  min={0}   
-                  max={1}   
-                  size={32} 
-                  onChange={(v) => setParams(p => patchParams(p, { subGain: v }))}   
-                  unit="%"  
-                  color="amber"
-                  paramId="subGain"
-                  isLearning={learningParamId === 'subGain'}
-                  mappedCC={mappedCCs['subGain'] ?? null}
-                  onMidiLearn={handleMidiLearn}
-                />
-                <Knob 
-                  label="Noise" 
-                  value={params.noiseGain} 
-                  min={0} 
-                  max={1} 
-                  size={32} 
-                  onChange={(v) => setParams(p => patchParams(p, { noiseGain: v }))} 
-                  unit="%"  
-                  color="emerald"
-                  paramId="noiseGain"
-                  isLearning={learningParamId === 'noiseGain'}
-                  mappedCC={mappedCCs['noiseGain'] ?? null}
-                  onMidiLearn={handleMidiLearn}
-                />
-                <Knob 
-                  label="PWM"     
-                  value={params.pwm}       
-                  min={0.1} 
-                  max={0.9} 
-                  size={32} 
-                  onChange={(v) => setParams(p => patchParams(p, { pwm: v }))}         
-                  unit="%"  
-                  color="red"
-                  modActive={params.lfo.target === 'pwm' && params.lfo.depth > 0}
-                  modDepth={params.lfo.depth}
-                  modColor="emerald"
-                  lfoRate={params.lfo.rate}
-                  lfoWaveform={params.lfo.waveform}
-                  paramId="pwm"
-                  isLearning={learningParamId === 'pwm'}
-                  mappedCC={mappedCCs['pwm'] ?? null}
-                  onMidiLearn={handleMidiLearn}
-                />
-              </div>
-              {/* Oscillator Grid (desktop: clean responsive 4 column grid) */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full flex-1 min-h-0 pt-1.5">
-                {renderOscControl('osc1', 'OSC 1')}
-                {renderOscControl('osc2', 'OSC 2')}
-                {renderOscControl('osc3', 'OSC 3')}
-                {renderOscControl('osc4', 'OSC 4')}
-              </div>
-            </Panel>
-          </div>
-
-          {/* Lower row: VCF Filter & Modulation (LFO + ADSR) */}
-          <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2">
-
-            {/* VCF Panel + Visualizer — 6/12 width */}
-            <div style={{flex: '6', minWidth: 0}} className="flex flex-col gap-2 min-h-0">
-              {/* Oscilloscope Screen */}
-              <div className="oled-screen p-1.5 rounded-sm h-24 w-full flex flex-col justify-between shrink-0">
-                <div className="flex items-center justify-between px-1 mb-0.5">
-                  <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
-                  <div className="flex gap-1">
-                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
-                    <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
-                    <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
+                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
+                    <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
+                    <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
                   </div>
                 </div>
                 <div className="flex-1 w-full min-h-0">
@@ -1782,302 +1504,594 @@ export const Synth: React.FC = () => {
                     analyser={audioEngine.current?.getAnalyser() || null} 
                     stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
                     isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
-                    color="#10b981" 
+                    color="#ff3344" 
                     mode={visualizerMode} 
                   />
                 </div>
               </div>
 
-              {/* VCF Filter Module */}
+              {/* Studio Master FX Rack */}
               <div className="flex-1 min-h-0 flex flex-col">
-                <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="h-full flex flex-col justify-between">
-                  <div className="flex flex-col gap-1.5 w-full justify-between h-full">
-                    <div className="grid grid-cols-4 gap-1 w-full">
-                      {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
-                        <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[28px] text-[8px] md:text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
-                      ))}
-                    </div>
-
-                    {/* Real-time Interactive Filter Response Curve */}
-                    <div className="w-full flex-1 min-h-[75px]">
-                      <FilterResponseCurve
-                        cutoff={params.filter.cutoff}
-                        resonance={params.filter.resonance}
-                        filterType={params.filter.type || 'lowpass'}
-                        onCutoffChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
-                        onResonanceChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}
-                        color="amber"
-                        height={85}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-around gap-1.5 py-0.5">
-                      <Knob 
-                        label="Cutoff"    
-                        value={params.filter.cutoff}          
-                        min={20}  
-                        max={20000} 
-                        size={38} 
-                        logarithmic 
-                        onChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}                       
-                        unit="Hz" 
-                        color="amber"
-                        modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
-                        modDepth={params.lfo.depth}
-                        modColor="emerald"
-                        lfoRate={params.lfo.rate}
-                        lfoWaveform={params.lfo.waveform}
-                        paramId="filter.cutoff"
-                        isLearning={learningParamId === 'filter.cutoff'}
-                        mappedCC={mappedCCs['filter.cutoff'] ?? null}
-                        onMidiLearn={handleMidiLearn}
-                      />
-                      <Knob 
-                        label="Resonance" 
-                        value={params.filter.resonance}       
-                        min={0}   
-                        max={40}    
-                        size={34}             
-                        onChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}                    
-                        color="cyan"
-                        paramId="filter.resonance"
-                        isLearning={learningParamId === 'filter.resonance'}
-                        mappedCC={mappedCCs['filter.resonance'] ?? null}
-                        onMidiLearn={handleMidiLearn}
-                      />
-                      <Knob 
-                        label="EG Int"    
-                        value={params.filterEnvelope.amount}  
-                        min={0}   
-                        max={10000} 
-                        size={34}             
-                        onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} 
-                        color="emerald"
-                        paramId="filterEnvelope.amount"
-                        isLearning={learningParamId === 'filterEnvelope.amount'}
-                        mappedCC={mappedCCs['filterEnvelope.amount'] ?? null}
-                        onMidiLearn={handleMidiLearn}
-                      />
-                    </div>
-                  </div>
-                </Panel>
+                <MasterFXPanel 
+                  fx={params.fx} 
+                  onChange={(fx) => setParams(p => ({ ...p, fx }))} 
+                  onMidiLearn={handleMidiLearn}
+                  learningParamId={learningParamId}
+                  mappedCCs={rawMappedCCs}
+                />
               </div>
-            </div>
 
-            {/* Modulation Panel: LFO + ADSR — 6/12 width */}
-            <div style={{flex: '6', minWidth: 0}} className="flex flex-col gap-2 min-h-0">
-              <Panel title="LFO — MODULATION GENERATOR" badgeColor="emerald" className="flex flex-col justify-between">
-                <div className="flex flex-col gap-1.5 w-full justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex flex-row gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
-                      {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
-                        const isActive = params.lfo.waveform === w;
-                        const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
-                        return (
-                          <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[22px] min-w-[22px] ${ isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200' }`}><Icon className="w-3 h-3"/></button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex-1 h-7"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
-                  </div>
-                  <div className="flex items-center justify-around gap-2">
-                    <Knob 
-                      label={params.lfo.sync ? "Div" : "Rate"} 
-                      value={params.lfo.rate} 
-                      min={0.1} 
-                      max={20} 
-                      size={30} 
-                      onChange={v => setParams(p => patchParams(p, { lfo: { rate: v } }))} 
-                      unit={params.lfo.sync ? "" : "Hz"} 
-                      color="emerald" 
-                      paramId="lfo.rate"
-                      isLearning={learningParamId === 'lfo.rate'}
-                      mappedCC={mappedCCs['lfo.rate'] ?? null}
-                      onMidiLearn={handleMidiLearn}
-                    />
-                    <Knob 
-                      label="Depth" 
-                      value={params.lfo.depth} 
-                      min={0} 
-                      max={1} 
-                      size={30} 
-                      onChange={v => setParams(p => patchParams(p, { lfo: { depth: v } }))} 
-                      unit="%" 
-                      color="cyan" 
-                      paramId="lfo.depth"
-                      isLearning={learningParamId === 'lfo.depth'}
-                      mappedCC={mappedCCs['lfo.depth'] ?? null}
-                      onMidiLearn={handleMidiLearn}
-                    />
-                    <div className="flex flex-col items-center gap-0.5">
-                      <LEDButton label="SYNC" active={params.lfo.sync} onClick={() => setParams(p => patchParams(p, { lfo: { sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[7px] px-1.5 py-0.5" />
-                      {params.lfo.sync && (
-                        <select value={params.lfo.division} onChange={(e) => setParams(p => patchParams(p, { lfo: { division: e.target.value } }))} className="font-mono text-[8px] px-1 py-0.5 rounded" style={{ background: 'var(--osc-bg)', color: 'var(--accent-emerald)', border: '1px solid var(--osc-border)' }}>
-                          {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
-                        </select>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
-                    {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
-                      <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => patchParams(p, { lfo: { target } }))} color="emerald" size="sm" className="flex-1 text-[7px] px-0.5 py-0.5" />
+              {/* Beat Transport Bar */}
+              <div 
+                className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
+                style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <LEDButton
+                    label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
+                    active={isDrumMachinePlaying}
+                    onClick={handlePlayToggle}
+                    color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
+                    size="sm"
+                    className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
+                  />
+                  <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
+                  <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
+                  <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
+                    <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
+                    {[0, 1, 2, 3].map(b => (
+                      <button
+                        key={b}
+                        onClick={() => setCurrentBankIndex(b)}
+                        className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
+                          currentBankIndex === b
+                            ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                            : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                        }`}
+                      >
+                        {String.fromCharCode(65 + b)}
+                      </button>
                     ))}
                   </div>
                 </div>
-              </Panel>
 
-              {/* ADSR Envelope Editor */}
-              <div className="flex-1 min-h-0 flex flex-col">
-                <Panel 
-                  title={selectedEnvTab === 'amp' ? "AMP ENVELOPE (ADSR)" : "FILTER ENVELOPE (ADSR)"} 
-                  badgeColor={selectedEnvTab === 'amp' ? "cyan" : "amber"} 
-                  className="h-full flex flex-col justify-between"
+                {/* 16-step running LED indicators */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 16 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-2 h-2.5 rounded-xs transition-all ${
+                        runningStep === idx
+                          ? 'bg-white shadow-[0_0_8px_white] scale-110'
+                          : idx % 4 === 0
+                          ? 'bg-[#2b374c]'
+                          : 'bg-[#141b27]'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleWorkspaceModeChange('groove')}
+                  className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
                 >
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <div className="flex gap-1">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedEnvTab('amp')}
-                        className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-sm border transition-all ${
-                          selectedEnvTab === 'amp'
-                            ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981] shadow-[0_0_6px_rgba(16,185,129,0.4)]'
-                            : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
-                        }`}
-                      >
-                        AMP ENV
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSelectedEnvTab('filter')}
-                        className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-sm border transition-all ${
-                          selectedEnvTab === 'filter'
-                            ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_6px_rgba(255,170,0,0.4)]'
-                            : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
-                        }`}
-                      >
-                        FILTER ENV
-                      </button>
-                    </div>
-                    {selectedEnvTab === 'filter' && (
-                      <span className="text-[8px] font-mono text-[#ffaa00]">
-                        EG INT: {Math.round(params.filterEnvelope.amount)}
+                  <span>OPEN 4-TRACK GROOVE MATRIX</span>
+                  <span>↗</span>
+                </button>
+              </div>
+            </div>
+          </ErrorBoundary>
+        ) : workspaceMode === 'arp' ? (
+          <ErrorBoundary fallbackTitle="Arp & Melodic Sequencer" onReset={() => handleWorkspaceModeChange('synth')}>
+            <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
+              {/* Arpeggiator & Melodic Motion Sequencer Stage */}
+              <div className="flex flex-col xl:flex-row gap-2.5 flex-1 min-h-0">
+                {/* Arpeggiator Module (4/12) */}
+                <div className="xl:w-4/12 flex flex-col min-h-0">
+                  <ArpeggiatorPanel 
+                    arp={params.arpeggiator} 
+                    onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} 
+                    onMidiLearn={handleMidiLearn}
+                    learningParamId={learningParamId}
+                    mappedCCs={rawMappedCCs}
+                  />
+                </div>
+
+                {/* Melodic Sequencer (8/12) */}
+                <div className="xl:w-8/12 flex flex-col min-h-0 synth-panel rounded p-2 md:p-2.5">
+                  <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+                    <div className="flex items-center gap-1.5 overflow-hidden">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#00ff66] shadow-[0_0_6px_#00ff66] shrink-0" />
+                      <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>
+                        16-STEP MELODIC MOTION SEQUENCER & P-LOCKS
                       </span>
-                    )}
-                  </div>
-
-                  <div className="w-full flex-1 min-h-[75px]">
-                    {selectedEnvTab === 'amp' ? (
-                      <EnvelopeEditor
-                        title="AMP ADSR"
-                        envelope={params.ampEnvelope}
-                        onChange={env => setParams(p => patchParams(p, { ampEnvelope: env }))}
-                        maxAttack={2}
-                        maxDecay={2}
-                        maxRelease={5}
-                        activeNotesCount={activeNotes.size}
-                        color="cyan"
-                        height={80}
-                      />
-                    ) : (
-                      <EnvelopeEditor
-                        title="FILTER ADSR"
-                        envelope={params.filterEnvelope}
-                        onChange={env => setParams(p => patchParams(p, { filterEnvelope: env }))}
-                        maxAttack={1}
-                        maxDecay={1}
-                        maxRelease={10}
-                        activeNotesCount={activeNotes.size}
-                        color="amber"
-                        height={80}
-                        amount={params.filterEnvelope.amount}
-                        onAmountChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))}
-                      />
-                    )}
-                  </div>
-
-                  {selectedEnvTab === 'amp' ? (
-                    <div className="flex items-center justify-around w-full pt-1">
-                      <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { attack: v } }))}  unit="s" color="cyan" paramId="ampEnvelope.attack" isLearning={learningParamId === 'ampEnvelope.attack'} mappedCC={mappedCCs['ampEnvelope.attack'] ?? null} onMidiLearn={handleMidiLearn} />
-                      <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { decay: v } }))}   unit="s" color="cyan" paramId="ampEnvelope.decay" isLearning={learningParamId === 'ampEnvelope.decay'} mappedCC={mappedCCs['ampEnvelope.decay'] ?? null} onMidiLearn={handleMidiLearn} />
-                      <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { sustain: v } }))} unit="%" color="cyan" paramId="ampEnvelope.sustain" isLearning={learningParamId === 'ampEnvelope.sustain'} mappedCC={mappedCCs['ampEnvelope.sustain'] ?? null} onMidiLearn={handleMidiLearn} />
-                      <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { release: v } }))} unit="s" color="cyan" paramId="ampEnvelope.release" isLearning={learningParamId === 'ampEnvelope.release'} mappedCC={mappedCCs['ampEnvelope.release'] ?? null} onMidiLearn={handleMidiLearn} />
                     </div>
-                  ) : (
-                    <div className="flex items-center justify-around w-full pt-1">
-                      <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { attack: v } }))}  unit="s" color="amber" paramId="filterEnvelope.attack" isLearning={learningParamId === 'filterEnvelope.attack'} mappedCC={mappedCCs['filterEnvelope.attack'] ?? null} onMidiLearn={handleMidiLearn} />
-                      <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { decay: v } }))}   unit="s" color="amber" paramId="filterEnvelope.decay" isLearning={learningParamId === 'filterEnvelope.decay'} mappedCC={mappedCCs['filterEnvelope.decay'] ?? null} onMidiLearn={handleMidiLearn} />
-                      <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { sustain: v } }))} unit="%" color="amber" paramId="filterEnvelope.sustain" isLearning={learningParamId === 'filterEnvelope.sustain'} mappedCC={mappedCCs['filterEnvelope.sustain'] ?? null} onMidiLearn={handleMidiLearn} />
-                      <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { release: v } }))} unit="s" color="amber" paramId="filterEnvelope.release" isLearning={learningParamId === 'filterEnvelope.release'} mappedCC={mappedCCs['filterEnvelope.release'] ?? null} onMidiLearn={handleMidiLearn} />
-                      <Knob label="EG Int"  value={params.filterEnvelope.amount}  min={0}     max={10000} size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} color="emerald" paramId="filterEnvelope.amount" isLearning={learningParamId === 'filterEnvelope.amount'} mappedCC={mappedCCs['filterEnvelope.amount'] ?? null} onMidiLearn={handleMidiLearn} />
+                  </div>
+                  <div className="flex-1 min-h-0 flex flex-col">
+                    <MelodicSequencer
+                      pattern={melodicPattern}
+                      onChange={handleMelodicPatternChange}
+                      activeStep={runningStep}
+                      isPlaying={isDrumMachinePlaying}
+                      bpm={bpm}
+                      drumPattern={drumPattern}
+                      onAuditionNote={(note, vel) => audioEngine.current?.noteOn(note, vel || 100)}
+                      onMidiLearn={handleMidiLearn}
+                      learningParamId={learningParamId}
+                      mappedCCs={rawMappedCCs}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Beat Transport Bar */}
+              <div 
+                className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
+                style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <LEDButton
+                    label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
+                    active={isDrumMachinePlaying}
+                    onClick={handlePlayToggle}
+                    color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
+                    size="sm"
+                    className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
+                  />
+                  <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
+                  <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
+                  <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
+                    <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
+                    {[0, 1, 2, 3].map(b => (
+                      <button
+                        key={b}
+                        onClick={() => setCurrentBankIndex(b)}
+                        className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
+                          currentBankIndex === b
+                            ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                            : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                        }`}
+                      >
+                        {String.fromCharCode(65 + b)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 16-step running LED indicators */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 16 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-2 h-2.5 rounded-xs transition-all ${
+                        runningStep === idx
+                          ? 'bg-white shadow-[0_0_8px_white] scale-110'
+                          : idx % 4 === 0
+                          ? 'bg-[#2b374c]'
+                          : 'bg-[#141b27]'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleWorkspaceModeChange('groove')}
+                  className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
+                >
+                  <span>OPEN 4-TRACK GROOVE MATRIX</span>
+                  <span>↗</span>
+                </button>
+              </div>
+            </div>
+          </ErrorBoundary>
+        ) : (
+          <ErrorBoundary fallbackTitle="Synth Sound Design Lab" onReset={() => handleWorkspaceModeChange('synth')}>
+            <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
+
+              {/* Upper row: VCO Panel — 4 Oscillators & Voice Controls */}
+              <div className="flex flex-col">
+                <Panel title="VCO — 4-OSCILLATOR ARRAY & VOICE ENGINE" badgeColor="cyan" className="w-full">
+                  {/* Voice Mode & Tone Controls Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 w-full p-2 rounded-sm shrink-0 mb-2" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
+                      <div className="flex gap-1">
+                        {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
+                          <LEDButton key={mode} label={mode.toUpperCase()} active={params.voiceMode === mode} onClick={() => setParams(p => patchParams(p, { voiceMode: mode }))} color="cyan" size="sm" className="text-[7px] px-2 py-0.5" />
+                        ))}
+                      </div>
                     </div>
-                  )}
+                    <Knob 
+                      label="Glide"   
+                      value={params.glide}     
+                      min={0}   
+                      max={0.5} 
+                      size={30} 
+                      onChange={(v) => setParams(p => patchParams(p, { glide: v }))}     
+                      unit="s"  
+                      color="cyan"
+                      paramId="glide"
+                      isLearning={learningParamId === 'glide'}
+                      mappedCC={mappedCCs['glide'] ?? null}
+                      onMidiLearn={handleMidiLearn}
+                    />
+                    <Knob 
+                      label="Sub Osc" 
+                      value={params.subGain}   
+                      min={0}   
+                      max={1}   
+                      size={30} 
+                      onChange={(v) => setParams(p => patchParams(p, { subGain: v }))}   
+                      unit="%"  
+                      color="amber"
+                      paramId="subGain"
+                      isLearning={learningParamId === 'subGain'}
+                      mappedCC={mappedCCs['subGain'] ?? null}
+                      onMidiLearn={handleMidiLearn}
+                    />
+                    <Knob 
+                      label="Noise" 
+                      value={params.noiseGain} 
+                      min={0} 
+                      max={1} 
+                      size={30} 
+                      onChange={(v) => setParams(p => patchParams(p, { noiseGain: v }))} 
+                      unit="%"  
+                      color="emerald"
+                      paramId="noiseGain"
+                      isLearning={learningParamId === 'noiseGain'}
+                      mappedCC={mappedCCs['noiseGain'] ?? null}
+                      onMidiLearn={handleMidiLearn}
+                    />
+                    <Knob 
+                      label="PWM"     
+                      value={params.pwm}       
+                      min={0.1} 
+                      max={0.9} 
+                      size={30} 
+                      onChange={(v) => setParams(p => patchParams(p, { pwm: v }))}         
+                      unit="%"  
+                      color="red"
+                      modActive={params.lfo.target === 'pwm' && params.lfo.depth > 0}
+                      modDepth={params.lfo.depth}
+                      modColor="emerald"
+                      lfoRate={params.lfo.rate}
+                      lfoWaveform={params.lfo.waveform}
+                      paramId="pwm"
+                      isLearning={learningParamId === 'pwm'}
+                      mappedCC={mappedCCs['pwm'] ?? null}
+                      onMidiLearn={handleMidiLearn}
+                    />
+                  </div>
+                  {/* Oscillator Grid (desktop: clean responsive 4 column grid) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 w-full">
+                    {renderOscControl('osc1', 'OSC 1')}
+                    {renderOscControl('osc2', 'OSC 2')}
+                    {renderOscControl('osc3', 'OSC 3')}
+                    {renderOscControl('osc4', 'OSC 4')}
+                  </div>
                 </Panel>
               </div>
-            </div>
 
-          </div>{/* end lower row */}
+              {/* Lower Section: VCF Filter (Left) & Modulation Envelopes/LFO (Right) */}
+              <div className="flex flex-col lg:flex-row gap-2.5 w-full">
 
-          {/* Beat Transport Bar in Synth mode */}
-          <div 
-            className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
-            style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-          >
-            <div className="flex items-center gap-3">
-              <LEDButton
-                label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
-                active={isDrumMachinePlaying}
-                onClick={handlePlayToggle}
-                color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
-                size="sm"
-                className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
-              />
-              <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
-              <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
-              <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-                <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
-                {[0, 1, 2, 3].map(b => (
-                  <button
-                    key={b}
-                    onClick={() => setCurrentBankIndex(b)}
-                    className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
-                      currentBankIndex === b
-                        ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                        : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
-                    }`}
+                {/* Left Column: VCF Filter & Output Scope */}
+                <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+                  {/* Oscilloscope Screen */}
+                  <div className="oled-screen p-2 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
+                    <div className="flex items-center justify-between px-1 mb-1">
+                      <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
+                      <div className="flex gap-1">
+                        <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
+                        <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
+                        <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
+                      </div>
+                    </div>
+                    <div className="flex-1 w-full min-h-0">
+                      <WaveformDisplay 
+                        analyser={audioEngine.current?.getAnalyser() || null} 
+                        stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
+                        isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
+                        color="#10b981" 
+                        mode={visualizerMode} 
+                      />
+                    </div>
+                  </div>
+
+                  {/* VCF Filter Module */}
+                  <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="w-full">
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="grid grid-cols-4 gap-1 w-full">
+                        {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
+                          <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[28px] text-[8px] md:text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
+                        ))}
+                      </div>
+
+                      {/* Real-time Interactive Filter Response Curve */}
+                      <div className="w-full h-24">
+                        <FilterResponseCurve
+                          cutoff={params.filter.cutoff}
+                          resonance={params.filter.resonance}
+                          filterType={params.filter.type || 'lowpass'}
+                          onCutoffChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
+                          onResonanceChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}
+                          color="amber"
+                          height={95}
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-around gap-2 pt-1 border-t" style={{ borderColor: 'var(--panel-border)' }}>
+                        <Knob 
+                          label="Cutoff"    
+                          value={params.filter.cutoff}          
+                          min={20}  
+                          max={20000} 
+                          size={34} 
+                          logarithmic 
+                          onChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}                       
+                          unit="Hz" 
+                          color="amber"
+                          modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
+                          modDepth={params.lfo.depth}
+                          modColor="emerald"
+                          lfoRate={params.lfo.rate}
+                          lfoWaveform={params.lfo.waveform}
+                          paramId="filter.cutoff"
+                          isLearning={learningParamId === 'filter.cutoff'}
+                          mappedCC={mappedCCs['filter.cutoff'] ?? null}
+                          onMidiLearn={handleMidiLearn}
+                        />
+                        <Knob 
+                          label="Resonance" 
+                          value={params.filter.resonance}       
+                          min={0}   
+                          max={40}    
+                          size={34}             
+                          onChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}                    
+                          color="cyan"
+                          paramId="filter.resonance"
+                          isLearning={learningParamId === 'filter.resonance'}
+                          mappedCC={mappedCCs['filter.resonance'] ?? null}
+                          onMidiLearn={handleMidiLearn}
+                        />
+                        <Knob 
+                          label="EG Int"    
+                          value={params.filterEnvelope.amount}  
+                          min={0}   
+                          max={10000} 
+                          size={34}             
+                          onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} 
+                          color="emerald"
+                          paramId="filterEnvelope.amount"
+                          isLearning={learningParamId === 'filterEnvelope.amount'}
+                          mappedCC={mappedCCs['filterEnvelope.amount'] ?? null}
+                          onMidiLearn={handleMidiLearn}
+                        />
+                      </div>
+                    </div>
+                  </Panel>
+                </div>
+
+                {/* Right Column: Modulation Suite (LFO + ADSR Envelopes) */}
+                <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+                  {/* LFO Modulation Panel */}
+                  <Panel title="LFO — MODULATION GENERATOR" badgeColor="emerald" className="w-full">
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="flex items-center gap-2">
+                        <div className="flex flex-row gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
+                          {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
+                            const isActive = params.lfo.waveform === w;
+                            const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
+                            return (
+                              <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[22px] min-w-[22px] ${ isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200' }`}><Icon className="w-3.5 h-3.5"/></button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex-1 h-8"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
+                      </div>
+
+                      <div className="flex items-center justify-around gap-2">
+                        <Knob 
+                          label={params.lfo.sync ? "Div" : "Rate"} 
+                          value={params.lfo.rate} 
+                          min={0.1} 
+                          max={20} 
+                          size={32} 
+                          onChange={v => setParams(p => patchParams(p, { lfo: { rate: v } }))} 
+                          unit={params.lfo.sync ? "" : "Hz"} 
+                          color="emerald" 
+                          paramId="lfo.rate"
+                          isLearning={learningParamId === 'lfo.rate'}
+                          mappedCC={mappedCCs['lfo.rate'] ?? null}
+                          onMidiLearn={handleMidiLearn}
+                        />
+                        <Knob 
+                          label="Depth" 
+                          value={params.lfo.depth} 
+                          min={0} 
+                          max={1} 
+                          size={32} 
+                          onChange={v => setParams(p => patchParams(p, { lfo: { depth: v } }))} 
+                          unit="%" 
+                          color="cyan" 
+                          paramId="lfo.depth"
+                          isLearning={learningParamId === 'lfo.depth'}
+                          mappedCC={mappedCCs['lfo.depth'] ?? null}
+                          onMidiLearn={handleMidiLearn}
+                        />
+                        <div className="flex flex-col items-center gap-0.5">
+                          <LEDButton label="SYNC" active={params.lfo.sync} onClick={() => setParams(p => patchParams(p, { lfo: { sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[8px] px-2 py-0.5" />
+                          {params.lfo.sync && (
+                            <select value={params.lfo.division} onChange={(e) => setParams(p => patchParams(p, { lfo: { division: e.target.value } }))} className="font-mono text-[8px] px-1 py-0.5 rounded" style={{ background: 'var(--osc-bg)', color: 'var(--accent-emerald)', border: '1px solid var(--osc-border)' }}>
+                              {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
+                        {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
+                          <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => patchParams(p, { lfo: { target } }))} color="emerald" size="sm" className="flex-1 text-[7.5px] px-0.5 py-0.5" />
+                        ))}
+                      </div>
+                    </div>
+                  </Panel>
+
+                  {/* ADSR Envelope Editor Panel */}
+                  <Panel 
+                    title={selectedEnvTab === 'amp' ? "AMP ENVELOPE (ADSR)" : "FILTER ENVELOPE (ADSR)"} 
+                    badgeColor={selectedEnvTab === 'amp' ? "cyan" : "amber"} 
+                    className="w-full"
                   >
-                    {String.fromCharCode(65 + b)}
-                  </button>
-                ))}
+                    <div className="flex flex-col gap-2 w-full">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedEnvTab('amp')}
+                            className={`text-[8.5px] font-mono font-bold px-2.5 py-0.5 rounded-sm border transition-all ${
+                              selectedEnvTab === 'amp'
+                                ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981] shadow-[0_0_6px_rgba(16,185,129,0.4)]'
+                                : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
+                            }`}
+                          >
+                            AMP ENV
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedEnvTab('filter')}
+                            className={`text-[8.5px] font-mono font-bold px-2.5 py-0.5 rounded-sm border transition-all ${
+                              selectedEnvTab === 'filter'
+                                ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_6px_rgba(255,170,0,0.4)]'
+                                : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
+                            }`}
+                          >
+                            FILTER ENV
+                          </button>
+                        </div>
+                        {selectedEnvTab === 'filter' && (
+                          <span className="text-[8px] font-mono text-[#ffaa00]">
+                            EG INT: {Math.round(params.filterEnvelope.amount)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="w-full h-24">
+                        {selectedEnvTab === 'amp' ? (
+                          <EnvelopeEditor
+                            title="AMP ADSR"
+                            envelope={params.ampEnvelope}
+                            onChange={env => setParams(p => patchParams(p, { ampEnvelope: env }))}
+                            maxAttack={2}
+                            maxDecay={2}
+                            maxRelease={5}
+                            activeNotesCount={activeNotes.size}
+                            color="cyan"
+                            height={95}
+                          />
+                        ) : (
+                          <EnvelopeEditor
+                            title="FILTER ADSR"
+                            envelope={params.filterEnvelope}
+                            onChange={env => setParams(p => patchParams(p, { filterEnvelope: env }))}
+                            maxAttack={1}
+                            maxDecay={1}
+                            maxRelease={10}
+                            activeNotesCount={activeNotes.size}
+                            color="amber"
+                            height={95}
+                            amount={params.filterEnvelope.amount}
+                            onAmountChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))}
+                          />
+                        )}
+                      </div>
+
+                      {selectedEnvTab === 'amp' ? (
+                        <div className="flex items-center justify-around w-full pt-1 border-t" style={{ borderColor: 'var(--panel-border)' }}>
+                          <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={30} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { attack: v } }))}  unit="s" color="cyan" paramId="ampEnvelope.attack" isLearning={learningParamId === 'ampEnvelope.attack'} mappedCC={mappedCCs['ampEnvelope.attack'] ?? null} onMidiLearn={handleMidiLearn} />
+                          <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={30} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { decay: v } }))}   unit="s" color="cyan" paramId="ampEnvelope.decay" isLearning={learningParamId === 'ampEnvelope.decay'} mappedCC={mappedCCs['ampEnvelope.decay'] ?? null} onMidiLearn={handleMidiLearn} />
+                          <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={30} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { sustain: v } }))} unit="%" color="cyan" paramId="ampEnvelope.sustain" isLearning={learningParamId === 'ampEnvelope.sustain'} mappedCC={mappedCCs['ampEnvelope.sustain'] ?? null} onMidiLearn={handleMidiLearn} />
+                          <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={30} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { release: v } }))} unit="s" color="cyan" paramId="ampEnvelope.release" isLearning={learningParamId === 'ampEnvelope.release'} mappedCC={mappedCCs['ampEnvelope.release'] ?? null} onMidiLearn={handleMidiLearn} />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-around w-full pt-1 border-t" style={{ borderColor: 'var(--panel-border)' }}>
+                          <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={30} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { attack: v } }))}  unit="s" color="amber" paramId="filterEnvelope.attack" isLearning={learningParamId === 'filterEnvelope.attack'} mappedCC={mappedCCs['filterEnvelope.attack'] ?? null} onMidiLearn={handleMidiLearn} />
+                          <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={30} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { decay: v } }))}   unit="s" color="amber" paramId="filterEnvelope.decay" isLearning={learningParamId === 'filterEnvelope.decay'} mappedCC={mappedCCs['filterEnvelope.decay'] ?? null} onMidiLearn={handleMidiLearn} />
+                          <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={30} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { sustain: v } }))} unit="%" color="amber" paramId="filterEnvelope.sustain" isLearning={learningParamId === 'filterEnvelope.sustain'} mappedCC={mappedCCs['filterEnvelope.sustain'] ?? null} onMidiLearn={handleMidiLearn} />
+                          <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={30} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { release: v } }))} unit="s" color="amber" paramId="filterEnvelope.release" isLearning={learningParamId === 'filterEnvelope.release'} mappedCC={mappedCCs['filterEnvelope.release'] ?? null} onMidiLearn={handleMidiLearn} />
+                        </div>
+                      )}
+                    </div>
+                  </Panel>
+                </div>
+
+              </div>{/* end lower row */}
+
+              {/* Beat Transport Bar in Synth mode */}
+              <div 
+                className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-1"
+                style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+              >
+                <div className="flex items-center gap-3">
+                  <LEDButton
+                    label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
+                    active={isDrumMachinePlaying}
+                    onClick={handlePlayToggle}
+                    color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
+                    size="sm"
+                    className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
+                  />
+                  <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
+                  <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
+                  <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
+                    <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
+                    {[0, 1, 2, 3].map(b => (
+                      <button
+                        key={b}
+                        onClick={() => setCurrentBankIndex(b)}
+                        className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
+                          currentBankIndex === b
+                            ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                            : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                        }`}
+                      >
+                        {String.fromCharCode(65 + b)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 16-step running LED indicators */}
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 16 }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-2 h-2.5 rounded-xs transition-all ${
+                        runningStep === idx
+                          ? 'bg-white shadow-[0_0_8px_white] scale-110'
+                          : idx % 4 === 0
+                          ? 'bg-[#2b374c]'
+                          : 'bg-[#141b27]'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleWorkspaceModeChange('groove')}
+                  className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
+                >
+                  <span>OPEN 4-TRACK GROOVE MATRIX</span>
+                  <span>↗</span>
+                </button>
               </div>
+
             </div>
-
-            {/* 16-step running LED indicators */}
-            <div className="flex items-center gap-1">
-              {Array.from({ length: 16 }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`w-2 h-2.5 rounded-xs transition-all ${
-                    runningStep === idx
-                      ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                      : idx % 4 === 0
-                      ? 'bg-[#2b374c]'
-                      : 'bg-[#141b27]'
-                  }`}
-                />
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleWorkspaceModeChange('groove')}
-              className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
-            >
-              <span>OPEN 4-TRACK GROOVE MATRIX</span>
-              <span>↗</span>
-            </button>
-          </div>
-
-          </div>
+          </ErrorBoundary>
         )}
 
 
