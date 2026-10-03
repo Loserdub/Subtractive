@@ -94,18 +94,12 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
       setPanX(0);
       setPanY(0);
     } else {
-      setZoom(0.85);
+      setZoom(1.0);
       setPanX(0);
       setPanY(0);
     }
   }, []);
 
-  // Auto-fit on initial mount for desktop only
-  useEffect(() => {
-    if (window.innerWidth >= 1024) {
-      handleFit();
-    }
-  }, [handleFit]);
 
   // Zoom in / out handlers
   const handleZoomIn = useCallback(() => {
@@ -365,7 +359,7 @@ export const ViewportController: React.FC<ViewportControllerProps> = ({ children
       <div 
         ref={contentRef}
         className="h-full w-full origin-top md:transition-transform md:duration-75 md:ease-out"
-        style={isDesktop ? {
+        style={isDesktop && (zoom !== 1.0 || panX !== 0 || panY !== 0) ? {
           transform: `translate3d(${panX}px, ${panY}px, 0px) scale(${zoom})`,
           transformOrigin: 'top center',
         } : undefined}

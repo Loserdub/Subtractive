@@ -87,6 +87,14 @@ export const Synth: React.FC = () => {
   type VisualizerMode = 'oscilloscope' | 'spectrum' | 'lissajous';
   const [visualizerMode, setVisualizerMode] = useState<VisualizerMode>('oscilloscope');
   const [selectedEnvTab, setSelectedEnvTab] = useState<'amp' | 'filter'>('amp');
+  const [isKeybedVisible, setIsKeybedVisible] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem('subtractive_keybed_visible');
+      return saved !== null ? saved === 'true' : true;
+    } catch {
+      return true;
+    }
+  });
   const [isPresetBrowserOpen, setIsPresetBrowserOpen] = useState(false);
   const [userPresets, setUserPresets] = useState<PresetPatch[]>(() => {
     try {
@@ -653,19 +661,23 @@ export const Synth: React.FC = () => {
       // Ignore when Preset Browser modal is open
       if (isPresetBrowserOpen) return;
 
-      // Workspace Mode shortcuts (Alt+1/2/3 or 1/2/3 in DAW layout)
-      if (e.altKey && (e.key === '1' || e.key === '2' || e.key === '3')) {
+      // Workspace Mode shortcuts (Alt+1/2/3/4/5 or 1/2/3/4/5 in DAW layout)
+      if (e.altKey && (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '4' || e.key === '5')) {
         e.preventDefault();
         if (e.key === '1') handleWorkspaceModeChange('synth');
-        if (e.key === '2') handleWorkspaceModeChange('groove');
-        if (e.key === '3') handleWorkspaceModeChange('perform');
+        if (e.key === '2') handleWorkspaceModeChange('fx');
+        if (e.key === '3') handleWorkspaceModeChange('arp');
+        if (e.key === '4') handleWorkspaceModeChange('groove');
+        if (e.key === '5') handleWorkspaceModeChange('perform');
         return;
       }
-      if ((!isKeyboardMode || keyboardLayout === 'daw') && (e.key === '1' || e.key === '2' || e.key === '3')) {
+      if ((!isKeyboardMode || keyboardLayout === 'daw') && (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '4' || e.key === '5')) {
         e.preventDefault();
         if (e.key === '1') handleWorkspaceModeChange('synth');
-        if (e.key === '2') handleWorkspaceModeChange('groove');
-        if (e.key === '3') handleWorkspaceModeChange('perform');
+        if (e.key === '2') handleWorkspaceModeChange('fx');
+        if (e.key === '3') handleWorkspaceModeChange('arp');
+        if (e.key === '4') handleWorkspaceModeChange('groove');
+        if (e.key === '5') handleWorkspaceModeChange('perform');
         return;
       }
 
@@ -881,38 +893,136 @@ export const Synth: React.FC = () => {
     );
   };
 
+  // Allow Enter or Spacebar on start screen to initiate engine
+  useEffect(() => {
+    if (isStarted) return;
+    const handleStartKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleStart();
+      }
+    };
+    window.addEventListener('keydown', handleStartKeyDown);
+    return () => window.removeEventListener('keydown', handleStartKeyDown);
+  }, [isStarted, handleStart]);
+
   if (!isStarted) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center p-4 relative" style={{ background: 'var(--chassis-bg)' }}>
-        <div className="synth-panel max-w-lg w-full p-6 md:p-8 rounded text-center flex flex-col items-center relative shadow-2xl">
+      <div className="h-full w-full flex flex-col items-center justify-center p-3 sm:p-5 relative overflow-y-auto" style={{ background: 'var(--chassis-bg)' }}>
+        <div className="synth-panel max-w-2xl w-full p-4 sm:p-6 rounded text-center flex flex-col items-center relative shadow-2xl my-auto">
           <div className="synth-screw-chassis absolute top-2 left-2" />
           <div className="synth-screw-chassis absolute top-2 right-2" />
           <div className="synth-screw-chassis absolute bottom-2 left-2" />
           <div className="synth-screw-chassis absolute bottom-2 right-2" />
           
-          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#10b981]/10 border border-[#10b981]/40 flex items-center justify-center mb-3 led-glow-cyan">
-            <div className="w-3.5 h-3.5 md:w-4 md:h-4 rounded-full bg-[#10b981]" />
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-8 h-8 rounded-full bg-[#10b981]/15 border border-[#10b981]/50 flex items-center justify-center led-glow-cyan">
+              <div className="w-3 h-3 rounded-full bg-[#10b981]" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-brand font-black tracking-widest uppercase text-white">
+              SUBTRACTIVE SYNTH
+            </h2>
           </div>
-
-          <h2 className="text-xl md:text-2xl font-brand font-black tracking-widest uppercase mb-1 md:mb-2" style={{ color: 'var(--text-primary)' }}>
-            SUBTRACTIVE SYNTH
-          </h2>
-          <p className="font-mono text-[11px] md:text-xs mb-5 tracking-wide" style={{ color: 'var(--text-secondary)' }}>
-            Polyphonic Analog Modelling Engine • Master FX • Precision Sequencer
+          <p className="font-mono text-[9px] sm:text-xs mb-3 tracking-wide text-gray-400">
+            Polyphonic Analog Modelling Synthesis • Master Studio FX • Precision Motion Sequencer
           </p>
 
-          <LEDButton
-            label="INITIALIZE SYNTHESIZER ENGINE"
-            active={false}
-            onClick={handleStart}
-            color="cyan"
-            size="lg"
-            className="w-full py-2.5 md:py-3 text-xs md:text-sm tracking-widest"
-          />
+          {/* Central Initiate Square / Trigger Unit */}
+          <div className="w-full flex flex-col items-center justify-center p-3 sm:p-4 rounded border border-[#10b981]/30 bg-[#061410] shadow-[0_0_24px_rgba(16,185,129,0.12)] relative mb-3">
+            <button
+              type="button"
+              onClick={handleStart}
+              className="w-full flex flex-col items-center justify-center py-3 sm:py-3.5 px-4 rounded bg-gradient-to-b from-[#0e3528] to-[#051a13] border-2 border-[#10b981] hover:brightness-110 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_18px_rgba(16,185,129,0.35)]"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981] animate-pulse" />
+                <span className="font-brand font-black text-xs sm:text-sm tracking-[0.2em] text-white uppercase">
+                  INITIALIZE SYNTHESIZER ENGINE
+                </span>
+              </div>
+              <span className="font-mono text-[8px] sm:text-[9.5px] text-[#10b981] tracking-wider uppercase font-semibold">
+                [ CLICK TO START OR PRESS ENTER / SPACEBAR ]
+              </span>
+            </button>
+            <div className="mt-2 flex items-center justify-between w-full px-1 text-[8px] sm:text-[9px] font-mono text-gray-400">
+              <span className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+                <span>DSP ENGINE: STANDBY</span>
+              </span>
+              <span className="uppercase text-gray-400 truncate max-w-[240px]">
+                {midiStatus}
+              </span>
+            </div>
+          </div>
 
-          <span className="mt-3 text-[9px] md:text-[10px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>
-            {midiStatus}
-          </span>
+          {/* Setup Explainer & Key Shortcut Info Block */}
+          <div className="w-full pt-3 border-t border-[#1a2333] text-left flex flex-col gap-2.5">
+            <div className="flex items-center justify-between px-1">
+              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-[#10b981] flex items-center gap-1.5">
+                <span>⚡</span> SYSTEM SETUP & KEYBOARD SHORTCUTS
+              </span>
+              <span className="font-mono text-[8px] sm:text-[9px] text-gray-500 uppercase">
+                DAW KEYMAP
+              </span>
+            </div>
+
+            {/* Quick Setup Explainer Banner */}
+            <div className="p-2 sm:p-2.5 rounded-sm bg-[#090d16] border border-[#1e293b] text-[8px] sm:text-[9.5px] font-mono text-gray-300 leading-relaxed">
+              <span className="font-bold text-[#10b981] uppercase">How It Is Set Up:</span> Subtractive is partitioned into <span className="font-bold text-white">5 dedicated workspaces</span> (Synth Lab, FX Rack, Arp & Seq, Groove, Perform) so modules never overlap or crowd the screen. Switch tabs anytime with top buttons or hotkeys <span className="font-bold text-white">1–5</span> / <span className="font-bold text-white">Alt+1–5</span>.
+            </div>
+
+            {/* 3 Shortcut Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
+              {/* Card 1: Workspace Tabs */}
+              <div className="p-2 sm:p-2.5 rounded-sm bg-[#090d15] border border-[#1b2536] flex flex-col gap-1.5">
+                <span className="text-[8.5px] sm:text-[9px] font-mono font-bold text-[#10b981] uppercase tracking-wider flex items-center gap-1">
+                  <span>🎛️</span> WORKSPACES (1–5)
+                </span>
+                <div className="flex flex-col gap-1 text-[8px] sm:text-[8.5px] font-mono text-gray-300">
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">1</span> <span className="font-bold text-white">SYNTH LAB</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">2</span> <span className="font-bold text-[#ff3344]">FX RACK</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">3</span> <span className="font-bold text-[#00ff66]">ARP & SEQ</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">4</span> <span className="font-bold text-[#ffaa00]">GROOVE</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">5</span> <span className="font-bold text-[#38bdf8]">PERFORM</span></div>
+                </div>
+              </div>
+
+              {/* Card 2: Playing Notes */}
+              <div className="p-2 sm:p-2.5 rounded-sm bg-[#090d15] border border-[#1b2536] flex flex-col gap-1.5">
+                <span className="text-[8.5px] sm:text-[9px] font-mono font-bold text-[#ffaa00] uppercase tracking-wider flex items-center gap-1">
+                  <span>🎹</span> PLAYING NOTES
+                </span>
+                <div className="flex flex-col gap-1 text-[8px] sm:text-[8.5px] font-mono text-gray-300">
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">\</span> <span className="font-bold text-[#10b981]">KEYBED DOCK</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">A–L</span> <span className="font-bold text-white">White Keys</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">W E T Y U</span> <span className="font-bold text-white">Black Keys</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Z / X</span> <span className="font-bold text-white">Octave - / +</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">SPACE</span> <span className="font-bold text-[#ffaa00]">Play/Stop Beat</span></div>
+                </div>
+              </div>
+
+              {/* Card 3: Transport & Controls */}
+              <div className="p-2 sm:p-2.5 rounded-sm bg-[#090d15] border border-[#1b2536] flex flex-col gap-1.5">
+                <span className="text-[8.5px] sm:text-[9px] font-mono font-bold text-[#00ff66] uppercase tracking-wider flex items-center gap-1">
+                  <span>⚡</span> TACTILE & MIDI
+                </span>
+                <div className="flex flex-col gap-1 text-[8px] sm:text-[8.5px] font-mono text-gray-300">
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Drag ↕</span> <span className="font-bold text-white">Adjust Knob</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Shift+Drag</span> <span className="font-bold text-[#38bdf8]">Fine Tune</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Dbl-Click</span> <span className="font-bold text-white">Reset Default</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">R-Click</span> <span className="font-bold text-[#00ff66]">MIDI Learn</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Web MIDI</span> <span className="font-bold text-white">Plug & Play</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1062,7 +1172,7 @@ export const Synth: React.FC = () => {
             </div>
           </div>
 
-          {/* Workspace Focus Mode Selector */}
+          {/* Serum-Style Workspace Focus Mode Selector */}
           <div className="flex items-center gap-1 bg-[#090e18] p-1 rounded-sm border border-[#1e2a3c] shadow-inner shrink-0">
             <button
               type="button"
@@ -1079,8 +1189,34 @@ export const Synth: React.FC = () => {
             </button>
             <button
               type="button"
+              onClick={() => handleWorkspaceModeChange('fx')}
+              title="Master Studio FX Rack (Hotkey: 2)"
+              className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
+                workspaceMode === 'fx'
+                  ? 'bg-[#ff3344] text-white shadow-[0_0_10px_#ff3344]'
+                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
+              }`}
+            >
+              <span className="text-[10px]">⚡</span>
+              <span>FX</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => handleWorkspaceModeChange('arp')}
+              title="Poly Arpeggiator & Melodic Sequencer (Hotkey: 3)"
+              className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
+                workspaceMode === 'arp'
+                  ? 'bg-[#00ff66] text-black shadow-[0_0_10px_#00ff66]'
+                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
+              }`}
+            >
+              <span className="text-[10px]">🎼</span>
+              <span>ARP & SEQ</span>
+            </button>
+            <button
+              type="button"
               onClick={() => handleWorkspaceModeChange('groove')}
-              title="16-Step Rhythm Workstation (Hotkey: 2)"
+              title="16-Step Rhythm Workstation (Hotkey: 4)"
               className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
                 workspaceMode === 'groove'
                   ? 'bg-[#ffaa00] text-black shadow-[0_0_10px_#ffaa00]'
@@ -1093,14 +1229,14 @@ export const Synth: React.FC = () => {
             <button
               type="button"
               onClick={() => handleWorkspaceModeChange('perform')}
-              title="Live Jam & Expression Deck (Hotkey: 3)"
+              title="Live Jam & Expression Deck (Hotkey: 5)"
               className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
                 workspaceMode === 'perform'
-                  ? 'bg-[#00ff66] text-black shadow-[0_0_10px_#00ff66]'
+                  ? 'bg-[#38bdf8] text-black shadow-[0_0_10px_#38bdf8]'
                   : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
               }`}
             >
-              <span className="text-[10px]">⚡</span>
+              <span className="text-[10px]">🎚️</span>
               <span>PERFORM</span>
             </button>
           </div>
@@ -1164,6 +1300,22 @@ export const Synth: React.FC = () => {
                 <span className="text-[10px]">⌨️</span>
                 <span>{isKeyboardMode ? 'KEYS: ON' : 'KEYS: OFF'}</span>
                 <div className={`w-1.5 h-1.5 rounded-full ${isKeyboardMode ? 'bg-[#00ff66] shadow-[0_0_6px_#00ff66]' : 'bg-gray-600'}`} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsKeybedVisible(v => {
+                  const next = !v;
+                  try { localStorage.setItem('subtractive_keybed_visible', String(next)); } catch {}
+                  return next;
+                })}
+                title="Toggle Piano Keybed Dock (Show / Hide Keybed)"
+                className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold tracking-wider flex items-center gap-1.5 border transition-all ${
+                  isKeybedVisible
+                    ? 'bg-[#10b981]/15 text-[#10b981] border-[#10b981]/60 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
+                    : 'bg-[#101622] text-gray-500 border-[#222e42] hover:text-gray-300'
+                }`}
+              >
+                <span>🎹 {isKeybedVisible ? 'KEYBED' : 'KEYBED'}</span>
               </button>
               <button
                 type="button"
@@ -1318,18 +1470,219 @@ export const Synth: React.FC = () => {
               onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
             />
           </div>
+        ) : workspaceMode === 'fx' ? (
+          <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1 overflow-y-auto pr-0.5">
+            {/* Master FX Signal Visualizer */}
+            <div className="oled-screen p-2 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
+              <div className="flex items-center justify-between px-1 mb-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344]" />
+                  <span className="font-mono-lcd text-[9px] uppercase tracking-widest text-[#ff3344] font-bold">
+                    MASTER FX SIGNAL CHAIN
+                  </span>
+                  <span className="font-mono-lcd text-[8px] text-gray-400">
+                    [DRIVE / SATURATION] ➔ [STEREO DELAY] ➔ [STUDIO REVERB] ➔ [MASTER BUS]
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
+                  <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
+                  <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
+                </div>
+              </div>
+              <div className="flex-1 w-full min-h-0">
+                <WaveformDisplay 
+                  analyser={audioEngine.current?.getAnalyser() || null} 
+                  stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
+                  isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
+                  color="#ff3344" 
+                  mode={visualizerMode} 
+                />
+              </div>
+            </div>
+
+            {/* Studio Master FX Rack */}
+            <div className="flex-1 min-h-0 flex flex-col">
+              <MasterFXPanel 
+                fx={params.fx} 
+                onChange={(fx) => setParams(p => ({ ...p, fx }))} 
+                onMidiLearn={handleMidiLearn}
+                learningParamId={learningParamId}
+                mappedCCs={rawMappedCCs}
+              />
+            </div>
+
+            {/* Beat Transport Bar */}
+            <div 
+              className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
+              style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+            >
+              <div className="flex items-center gap-3">
+                <LEDButton
+                  label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
+                  active={isDrumMachinePlaying}
+                  onClick={handlePlayToggle}
+                  color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
+                  size="sm"
+                  className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
+                />
+                <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
+                <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
+                <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
+                  <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
+                  {[0, 1, 2, 3].map(b => (
+                    <button
+                      key={b}
+                      onClick={() => setCurrentBankIndex(b)}
+                      className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
+                        currentBankIndex === b
+                          ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                          : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                      }`}
+                    >
+                      {String.fromCharCode(65 + b)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 16-step running LED indicators */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 16 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`w-2 h-2.5 rounded-xs transition-all ${
+                      runningStep === idx
+                        ? 'bg-white shadow-[0_0_8px_white] scale-110'
+                        : idx % 4 === 0
+                        ? 'bg-[#2b374c]'
+                        : 'bg-[#141b27]'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleWorkspaceModeChange('groove')}
+                className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
+              >
+                <span>OPEN 4-TRACK GROOVE MATRIX</span>
+                <span>↗</span>
+              </button>
+            </div>
+          </div>
+        ) : workspaceMode === 'arp' ? (
+          <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1 overflow-y-auto pr-0.5">
+            {/* Arpeggiator & Melodic Motion Sequencer Stage */}
+            <div className="flex flex-col lg:flex-row gap-2 flex-1 min-h-0">
+              {/* Arpeggiator Module (4/12) */}
+              <div className="lg:w-4/12 flex flex-col min-h-0">
+                <ArpeggiatorPanel 
+                  arp={params.arpeggiator} 
+                  onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} 
+                  onMidiLearn={handleMidiLearn}
+                  learningParamId={learningParamId}
+                  mappedCCs={rawMappedCCs}
+                />
+              </div>
+
+              {/* Melodic Sequencer (8/12) */}
+              <div className="lg:w-8/12 flex flex-col min-h-0 synth-panel rounded p-2 md:p-2.5">
+                <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+                  <div className="flex items-center gap-1.5 overflow-hidden">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[#00ff66] shadow-[0_0_6px_#00ff66] shrink-0" />
+                    <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>
+                      16-STEP MELODIC MOTION SEQUENCER & P-LOCKS
+                    </span>
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0 flex flex-col">
+                  <MelodicSequencer
+                    pattern={melodicPattern}
+                    onChange={handleMelodicPatternChange}
+                    activeStep={runningStep}
+                    isPlaying={isDrumMachinePlaying}
+                    bpm={bpm}
+                    drumPattern={drumPattern}
+                    onAuditionNote={(note, vel) => audioEngine.current?.noteOn(note, vel || 100)}
+                    onMidiLearn={handleMidiLearn}
+                    learningParamId={learningParamId}
+                    mappedCCs={rawMappedCCs}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Beat Transport Bar */}
+            <div 
+              className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
+              style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+            >
+              <div className="flex items-center gap-3">
+                <LEDButton
+                  label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
+                  active={isDrumMachinePlaying}
+                  onClick={handlePlayToggle}
+                  color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
+                  size="sm"
+                  className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
+                />
+                <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
+                <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
+                <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
+                  <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
+                  {[0, 1, 2, 3].map(b => (
+                    <button
+                      key={b}
+                      onClick={() => setCurrentBankIndex(b)}
+                      className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
+                        currentBankIndex === b
+                          ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                          : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                      }`}
+                    >
+                      {String.fromCharCode(65 + b)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 16-step running LED indicators */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 16 }).map((_, idx) => (
+                  <div
+                    key={idx}
+                    className={`w-2 h-2.5 rounded-xs transition-all ${
+                      runningStep === idx
+                        ? 'bg-white shadow-[0_0_8px_white] scale-110'
+                        : idx % 4 === 0
+                        ? 'bg-[#2b374c]'
+                        : 'bg-[#141b27]'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleWorkspaceModeChange('groove')}
+                className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
+              >
+                <span>OPEN 4-TRACK GROOVE MATRIX</span>
+                <span>↗</span>
+              </button>
+            </div>
+          </div>
         ) : (
-          <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1">
+          <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2 pt-1 overflow-y-auto pr-0.5">
 
-          {/* Upper row: VCO | VCF | ENV — gets more vertical space */}
-          <div className="flex flex-1 min-h-0 gap-2.5">
-
-            {/* VCO Panel — 5/12 width */}
-            <div style={{flex: '5', minWidth: 0}} className="flex flex-col min-h-0">
-              <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="h-full flex flex-col justify-between">
-                {/* Voice Mode & Tone Controls */}
-                <div className="flex flex-wrap items-center justify-between gap-1.5 w-full p-1.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
-                  <div className="flex flex-col items-center gap-0.5">
+          {/* Upper row: VCO Panel — 4 Oscillators & Voice Controls */}
+          <div className="flex-1 min-h-0 flex flex-col">
+            <Panel title="VCO — 4-OSCILLATOR ARRAY & VOICE ENGINE" badgeColor="cyan" className="h-full flex flex-col justify-between">
+              {/* Voice Mode & Tone Controls */}
+              <div className="flex flex-wrap items-center justify-between gap-1.5 w-full p-1.5 rounded-sm shrink-0" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
+                <div className="flex flex-col items-center gap-0.5">
                   <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
                   <div className="flex gap-1">
                     {(['poly', 'mono', 'legato'] as VoiceMode[]).map((mode) => (
@@ -1399,8 +1752,8 @@ export const Synth: React.FC = () => {
                   onMidiLearn={handleMidiLearn}
                 />
               </div>
-              {/* Oscillator Grid (desktop: clean responsive 2 or 4 column grid) */}
-              <div className="grid grid-cols-2 xl:grid-cols-4 gap-1.5 w-full md:flex-1 md:min-h-0 pt-1">
+              {/* Oscillator Grid (desktop: clean responsive 4 column grid) */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 w-full flex-1 min-h-0 pt-1.5">
                 {renderOscControl('osc1', 'OSC 1')}
                 {renderOscControl('osc2', 'OSC 2')}
                 {renderOscControl('osc3', 'OSC 3')}
@@ -1409,364 +1762,324 @@ export const Synth: React.FC = () => {
             </Panel>
           </div>
 
-          {/* VCF Panel + Visualizer — 4/12 width */}
-          <div style={{flex: '4', minWidth: 0}} className="flex flex-col gap-2 min-h-0">
-            {/* Oscilloscope Screen */}
-            <div className="oled-screen p-1.5 rounded-sm h-24 w-full flex flex-col justify-between shrink-0">
-              <div className="flex items-center justify-between px-1 mb-0.5">
-                <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
-                <div className="flex gap-1">
-                  <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
-                  <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
-                  <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
+          {/* Lower row: VCF Filter & Modulation (LFO + ADSR) */}
+          <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-2">
+
+            {/* VCF Panel + Visualizer — 6/12 width */}
+            <div style={{flex: '6', minWidth: 0}} className="flex flex-col gap-2 min-h-0">
+              {/* Oscilloscope Screen */}
+              <div className="oled-screen p-1.5 rounded-sm h-24 w-full flex flex-col justify-between shrink-0">
+                <div className="flex items-center justify-between px-1 mb-0.5">
+                  <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
+                  <div className="flex gap-1">
+                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
+                    <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
+                    <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
+                  </div>
+                </div>
+                <div className="flex-1 w-full min-h-0">
+                  <WaveformDisplay 
+                    analyser={audioEngine.current?.getAnalyser() || null} 
+                    stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
+                    isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
+                    color="#10b981" 
+                    mode={visualizerMode} 
+                  />
                 </div>
               </div>
-              <div className="flex-1 w-full min-h-0">
-                <WaveformDisplay 
-                  analyser={audioEngine.current?.getAnalyser() || null} 
-                  stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
-                  isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
-                  color="#10b981" 
-                  mode={visualizerMode} 
-                />
+
+              {/* VCF Filter Module */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="h-full flex flex-col justify-between">
+                  <div className="flex flex-col gap-1.5 w-full justify-between h-full">
+                    <div className="grid grid-cols-4 gap-1 w-full">
+                      {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
+                        <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[28px] text-[8px] md:text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
+                      ))}
+                    </div>
+
+                    {/* Real-time Interactive Filter Response Curve */}
+                    <div className="w-full flex-1 min-h-[75px]">
+                      <FilterResponseCurve
+                        cutoff={params.filter.cutoff}
+                        resonance={params.filter.resonance}
+                        filterType={params.filter.type || 'lowpass'}
+                        onCutoffChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
+                        onResonanceChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}
+                        color="amber"
+                        height={85}
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-around gap-1.5 py-0.5">
+                      <Knob 
+                        label="Cutoff"    
+                        value={params.filter.cutoff}          
+                        min={20}  
+                        max={20000} 
+                        size={38} 
+                        logarithmic 
+                        onChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}                       
+                        unit="Hz" 
+                        color="amber"
+                        modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
+                        modDepth={params.lfo.depth}
+                        modColor="emerald"
+                        lfoRate={params.lfo.rate}
+                        lfoWaveform={params.lfo.waveform}
+                        paramId="filter.cutoff"
+                        isLearning={learningParamId === 'filter.cutoff'}
+                        mappedCC={mappedCCs['filter.cutoff'] ?? null}
+                        onMidiLearn={handleMidiLearn}
+                      />
+                      <Knob 
+                        label="Resonance" 
+                        value={params.filter.resonance}       
+                        min={0}   
+                        max={40}    
+                        size={34}             
+                        onChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}                    
+                        color="cyan"
+                        paramId="filter.resonance"
+                        isLearning={learningParamId === 'filter.resonance'}
+                        mappedCC={mappedCCs['filter.resonance'] ?? null}
+                        onMidiLearn={handleMidiLearn}
+                      />
+                      <Knob 
+                        label="EG Int"    
+                        value={params.filterEnvelope.amount}  
+                        min={0}   
+                        max={10000} 
+                        size={34}             
+                        onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} 
+                        color="emerald"
+                        paramId="filterEnvelope.amount"
+                        isLearning={learningParamId === 'filterEnvelope.amount'}
+                        mappedCC={mappedCCs['filterEnvelope.amount'] ?? null}
+                        onMidiLearn={handleMidiLearn}
+                      />
+                    </div>
+                  </div>
+                </Panel>
               </div>
             </div>
 
-            {/* VCF Filter Module */}
-            <div className="flex-1 min-h-0 flex flex-col">
-              <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="h-full flex flex-col justify-between">
-                <div className="flex flex-col gap-1.5 w-full justify-between h-full">
-                  <div className="grid grid-cols-4 gap-1 w-full">
-                    {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
-                      <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[28px] text-[8px] md:text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
+            {/* Modulation Panel: LFO + ADSR — 6/12 width */}
+            <div style={{flex: '6', minWidth: 0}} className="flex flex-col gap-2 min-h-0">
+              <Panel title="LFO — MODULATION GENERATOR" badgeColor="emerald" className="flex flex-col justify-between">
+                <div className="flex flex-col gap-1.5 w-full justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-row gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
+                      {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
+                        const isActive = params.lfo.waveform === w;
+                        const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
+                        return (
+                          <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[22px] min-w-[22px] ${ isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200' }`}><Icon className="w-3 h-3"/></button>
+                        );
+                      })}
+                    </div>
+                    <div className="flex-1 h-7"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
+                  </div>
+                  <div className="flex items-center justify-around gap-2">
+                    <Knob 
+                      label={params.lfo.sync ? "Div" : "Rate"} 
+                      value={params.lfo.rate} 
+                      min={0.1} 
+                      max={20} 
+                      size={30} 
+                      onChange={v => setParams(p => patchParams(p, { lfo: { rate: v } }))} 
+                      unit={params.lfo.sync ? "" : "Hz"} 
+                      color="emerald" 
+                      paramId="lfo.rate"
+                      isLearning={learningParamId === 'lfo.rate'}
+                      mappedCC={mappedCCs['lfo.rate'] ?? null}
+                      onMidiLearn={handleMidiLearn}
+                    />
+                    <Knob 
+                      label="Depth" 
+                      value={params.lfo.depth} 
+                      min={0} 
+                      max={1} 
+                      size={30} 
+                      onChange={v => setParams(p => patchParams(p, { lfo: { depth: v } }))} 
+                      unit="%" 
+                      color="cyan" 
+                      paramId="lfo.depth"
+                      isLearning={learningParamId === 'lfo.depth'}
+                      mappedCC={mappedCCs['lfo.depth'] ?? null}
+                      onMidiLearn={handleMidiLearn}
+                    />
+                    <div className="flex flex-col items-center gap-0.5">
+                      <LEDButton label="SYNC" active={params.lfo.sync} onClick={() => setParams(p => patchParams(p, { lfo: { sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[7px] px-1.5 py-0.5" />
+                      {params.lfo.sync && (
+                        <select value={params.lfo.division} onChange={(e) => setParams(p => patchParams(p, { lfo: { division: e.target.value } }))} className="font-mono text-[8px] px-1 py-0.5 rounded" style={{ background: 'var(--osc-bg)', color: 'var(--accent-emerald)', border: '1px solid var(--osc-border)' }}>
+                          {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
+                    {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
+                      <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => patchParams(p, { lfo: { target } }))} color="emerald" size="sm" className="flex-1 text-[7px] px-0.5 py-0.5" />
                     ))}
                   </div>
-
-                  {/* Real-time Interactive Filter Response Curve */}
-                  <div className="w-full flex-1 min-h-[75px]">
-                    <FilterResponseCurve
-                      cutoff={params.filter.cutoff}
-                      resonance={params.filter.resonance}
-                      filterType={params.filter.type || 'lowpass'}
-                      onCutoffChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
-                      onResonanceChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}
-                      color="amber"
-                      height={90}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-around gap-1.5 py-0.5">
-                    <Knob 
-                      label="Cutoff"    
-                      value={params.filter.cutoff}          
-                      min={20}  
-                      max={20000} 
-                      size={40} 
-                      logarithmic 
-                      onChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}                       
-                      unit="Hz" 
-                      color="amber"
-                      modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
-                      modDepth={params.lfo.depth}
-                      modColor="emerald"
-                      lfoRate={params.lfo.rate}
-                      lfoWaveform={params.lfo.waveform}
-                      paramId="filter.cutoff"
-                      isLearning={learningParamId === 'filter.cutoff'}
-                      mappedCC={mappedCCs['filter.cutoff'] ?? null}
-                      onMidiLearn={handleMidiLearn}
-                    />
-                    <Knob 
-                      label="Resonance" 
-                      value={params.filter.resonance}       
-                      min={0}   
-                      max={40}    
-                      size={36}             
-                      onChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}                    
-                      color="cyan"
-                      paramId="filter.resonance"
-                      isLearning={learningParamId === 'filter.resonance'}
-                      mappedCC={mappedCCs['filter.resonance'] ?? null}
-                      onMidiLearn={handleMidiLearn}
-                    />
-                    <Knob 
-                      label="EG Int"    
-                      value={params.filterEnvelope.amount}  
-                      min={0}   
-                      max={10000} 
-                      size={34}             
-                      onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} 
-                      color="emerald"
-                      paramId="filterEnvelope.amount"
-                      isLearning={learningParamId === 'filterEnvelope.amount'}
-                      mappedCC={mappedCCs['filterEnvelope.amount'] ?? null}
-                      onMidiLearn={handleMidiLearn}
-                    />
-                  </div>
                 </div>
               </Panel>
-            </div>
-          </div>
 
-          {/* ENV Panel: LFO + ADSR — 3/12 width */}
-          <div style={{flex: '3', minWidth: 0}} className="flex flex-col gap-2 min-h-0">
-            <Panel title="LFO — MODULATION" badgeColor="emerald" className="flex flex-col justify-between">
-              <div className="flex flex-col gap-1.5 w-full justify-between">
-                <div className="flex items-center gap-1.5">
-                  <div className="flex flex-col gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
-                    {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
-                      const isActive = params.lfo.waveform === w;
-                      const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
-                      return (
-                        <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-0.5 rounded-sm transition-all flex items-center justify-center min-h-[22px] min-w-[22px] ${ isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200' }`}><Icon className="w-3 h-3"/></button>
-                      );
-                    })}
-                  </div>
-                  <div className="flex-1 h-9"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
-                </div>
-                <div className="flex items-center justify-around gap-1">
-                  <Knob 
-                    label={params.lfo.sync ? "Div" : "Rate"} 
-                    value={params.lfo.rate} 
-                    min={0.1} 
-                    max={20} 
-                    size={30} 
-                    onChange={v => setParams(p => patchParams(p, { lfo: { rate: v } }))} 
-                    unit={params.lfo.sync ? "" : "Hz"} 
-                    color="emerald" 
-                    paramId="lfo.rate"
-                    isLearning={learningParamId === 'lfo.rate'}
-                    mappedCC={mappedCCs['lfo.rate'] ?? null}
-                    onMidiLearn={handleMidiLearn}
-                  />
-                  <Knob 
-                    label="Depth" 
-                    value={params.lfo.depth} 
-                    min={0} 
-                    max={1} 
-                    size={30} 
-                    onChange={v => setParams(p => patchParams(p, { lfo: { depth: v } }))} 
-                    unit="%" 
-                    color="cyan" 
-                    paramId="lfo.depth"
-                    isLearning={learningParamId === 'lfo.depth'}
-                    mappedCC={mappedCCs['lfo.depth'] ?? null}
-                    onMidiLearn={handleMidiLearn}
-                  />
-                </div>
-                <div className="flex items-center justify-between gap-1 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
-                  <LEDButton label="SYNC" active={params.lfo.sync} onClick={() => setParams(p => patchParams(p, { lfo: { sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[7px] px-1.5 py-0.5" />
-                  {params.lfo.sync && (
-                    <select value={params.lfo.division} onChange={(e) => setParams(p => patchParams(p, { lfo: { division: e.target.value } }))} className="font-mono text-[8px] px-1 py-0.5 rounded" style={{ background: 'var(--osc-bg)', color: 'var(--accent-emerald)', border: '1px solid var(--osc-border)' }}>
-                      {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
-                  )}
-                </div>
-                <div className="flex items-center gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
-                  {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
-                    <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => patchParams(p, { lfo: { target } }))} color="emerald" size="sm" className="flex-1 text-[7px] px-0.5 py-0.5" />
-                  ))}
-                </div>
-              </div>
-            </Panel>
-
-            {/* ADSR Envelope Editor */}
-            <div className="flex-1 min-h-0 flex flex-col">
-              <Panel 
-                title={selectedEnvTab === 'amp' ? "AMP ENVELOPE (ADSR)" : "FILTER ENVELOPE (ADSR)"} 
-                badgeColor={selectedEnvTab === 'amp' ? "cyan" : "amber"} 
-                className="h-full flex flex-col justify-between"
-              >
-                <div className="flex items-center justify-between w-full mb-1">
-                  <div className="flex gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setSelectedEnvTab('amp')}
-                      className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-sm border transition-all ${
-                        selectedEnvTab === 'amp'
-                          ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981] shadow-[0_0_6px_rgba(16,185,129,0.4)]'
-                          : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
-                      }`}
-                    >
-                      AMP ENV
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedEnvTab('filter')}
-                      className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-sm border transition-all ${
-                        selectedEnvTab === 'filter'
-                          ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_6px_rgba(255,170,0,0.4)]'
-                          : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
-                      }`}
-                    >
-                      FILTER ENV
-                    </button>
-                  </div>
-                  {selectedEnvTab === 'filter' && (
-                    <span className="text-[8px] font-mono text-[#ffaa00]">
-                      EG INT: {Math.round(params.filterEnvelope.amount)}
-                    </span>
-                  )}
-                </div>
-
-                <div className="w-full flex-1 min-h-[75px]">
-                  {selectedEnvTab === 'amp' ? (
-                    <EnvelopeEditor
-                      title="AMP ADSR"
-                      envelope={params.ampEnvelope}
-                      onChange={env => setParams(p => patchParams(p, { ampEnvelope: env }))}
-                      maxAttack={2}
-                      maxDecay={2}
-                      maxRelease={5}
-                      activeNotesCount={activeNotes.size}
-                      color="cyan"
-                      height={85}
-                    />
-                  ) : (
-                    <EnvelopeEditor
-                      title="FILTER ADSR"
-                      envelope={params.filterEnvelope}
-                      onChange={env => setParams(p => patchParams(p, { filterEnvelope: env }))}
-                      maxAttack={1}
-                      maxDecay={1}
-                      maxRelease={10}
-                      activeNotesCount={activeNotes.size}
-                      color="amber"
-                      height={85}
-                      amount={params.filterEnvelope.amount}
-                      onAmountChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))}
-                    />
-                  )}
-                </div>
-
-                {selectedEnvTab === 'amp' ? (
-                  <div className="flex items-center justify-around w-full pt-1">
-                    <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { attack: v } }))}  unit="s" color="cyan" paramId="ampEnvelope.attack" isLearning={learningParamId === 'ampEnvelope.attack'} mappedCC={mappedCCs['ampEnvelope.attack'] ?? null} onMidiLearn={handleMidiLearn} />
-                    <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { decay: v } }))}   unit="s" color="cyan" paramId="ampEnvelope.decay" isLearning={learningParamId === 'ampEnvelope.decay'} mappedCC={mappedCCs['ampEnvelope.decay'] ?? null} onMidiLearn={handleMidiLearn} />
-                    <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { sustain: v } }))} unit="%" color="cyan" paramId="ampEnvelope.sustain" isLearning={learningParamId === 'ampEnvelope.sustain'} mappedCC={mappedCCs['ampEnvelope.sustain'] ?? null} onMidiLearn={handleMidiLearn} />
-                    <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { release: v } }))} unit="s" color="cyan" paramId="ampEnvelope.release" isLearning={learningParamId === 'ampEnvelope.release'} mappedCC={mappedCCs['ampEnvelope.release'] ?? null} onMidiLearn={handleMidiLearn} />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-around w-full pt-1">
-                    <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { attack: v } }))}  unit="s" color="amber" paramId="filterEnvelope.attack" isLearning={learningParamId === 'filterEnvelope.attack'} mappedCC={mappedCCs['filterEnvelope.attack'] ?? null} onMidiLearn={handleMidiLearn} />
-                    <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { decay: v } }))}   unit="s" color="amber" paramId="filterEnvelope.decay" isLearning={learningParamId === 'filterEnvelope.decay'} mappedCC={mappedCCs['filterEnvelope.decay'] ?? null} onMidiLearn={handleMidiLearn} />
-                    <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { sustain: v } }))} unit="%" color="amber" paramId="filterEnvelope.sustain" isLearning={learningParamId === 'filterEnvelope.sustain'} mappedCC={mappedCCs['filterEnvelope.sustain'] ?? null} onMidiLearn={handleMidiLearn} />
-                    <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { release: v } }))} unit="s" color="amber" paramId="filterEnvelope.release" isLearning={learningParamId === 'filterEnvelope.release'} mappedCC={mappedCCs['filterEnvelope.release'] ?? null} onMidiLearn={handleMidiLearn} />
-                    <Knob label="EG Int"  value={params.filterEnvelope.amount}  min={0}     max={10000} size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} color="emerald" paramId="filterEnvelope.amount" isLearning={learningParamId === 'filterEnvelope.amount'} mappedCC={mappedCCs['filterEnvelope.amount'] ?? null} onMidiLearn={handleMidiLearn} />
-                  </div>
-                )}
-              </Panel>
-            </div>
-          </div>
-
-        </div>{/* end upper row */}
-
-        {/* Lower row: FX | ARP | SEQ */}
-        <div className="flex shrink-0 gap-2.5">
-          {/* Master FX — 4/12 */}
-          <div style={{flex: '4', minWidth: 0}}>
-            <MasterFXPanel 
-              fx={params.fx} 
-              onChange={(fx) => setParams(p => ({ ...p, fx }))} 
-              onMidiLearn={handleMidiLearn}
-              learningParamId={learningParamId}
-              mappedCCs={rawMappedCCs}
-            />
-          </div>
-          {/* Arpeggiator — 3/12 */}
-          <div style={{flex: '3', minWidth: 0}}>
-            <ArpeggiatorPanel 
-              arp={params.arpeggiator} 
-              onChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))} 
-              onMidiLearn={handleMidiLearn}
-              learningParamId={learningParamId}
-              mappedCCs={rawMappedCCs}
-            />
-          </div>
-          {/* Drum Sequencer — 5/12 */}
-          <div style={{flex: '5', minWidth: 0}}>
-            <DrumMachine
-              isPlaying={isDrumMachinePlaying}
-              onPlayToggle={handlePlayToggle}
-              bpm={bpm}
-              onBpmChange={setBpm}
-              pattern={drumPattern}
-              selectedTrack={selectedTrack}
-              onTrackSelect={setSelectedTrack}
-              onStepToggle={handleStepToggle}
-              engine={drumMachineEngine.current}
-              currentBank={currentBankIndex}
-              onBankSelect={setCurrentBankIndex}
-              swing={swing}
-              onSwingChange={setSwing}
-              trackSettings={drumSettings[selectedTrack]}
-              onTrackSettingsChange={handleDrumTrackSettingsChange}
-            />
-          </div>
-        </div>{/* end lower row */}
-
-        {/* Beat Transport Bar in Synth mode */}
-        <div 
-          className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
-          style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-        >
-          <div className="flex items-center gap-3">
-            <LEDButton
-              label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
-              active={isDrumMachinePlaying}
-              onClick={handlePlayToggle}
-              color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
-              size="sm"
-              className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
-            />
-            <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
-            <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
-            <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-              <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
-              {[0, 1, 2, 3].map(b => (
-                <button
-                  key={b}
-                  onClick={() => setCurrentBankIndex(b)}
-                  className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
-                    currentBankIndex === b
-                      ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                      : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
-                  }`}
+              {/* ADSR Envelope Editor */}
+              <div className="flex-1 min-h-0 flex flex-col">
+                <Panel 
+                  title={selectedEnvTab === 'amp' ? "AMP ENVELOPE (ADSR)" : "FILTER ENVELOPE (ADSR)"} 
+                  badgeColor={selectedEnvTab === 'amp' ? "cyan" : "amber"} 
+                  className="h-full flex flex-col justify-between"
                 >
-                  {String.fromCharCode(65 + b)}
-                </button>
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEnvTab('amp')}
+                        className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-sm border transition-all ${
+                          selectedEnvTab === 'amp'
+                            ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981] shadow-[0_0_6px_rgba(16,185,129,0.4)]'
+                            : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
+                        }`}
+                      >
+                        AMP ENV
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedEnvTab('filter')}
+                        className={`text-[8px] font-mono font-bold px-2 py-0.5 rounded-sm border transition-all ${
+                          selectedEnvTab === 'filter'
+                            ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_6px_rgba(255,170,0,0.4)]'
+                            : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
+                        }`}
+                      >
+                        FILTER ENV
+                      </button>
+                    </div>
+                    {selectedEnvTab === 'filter' && (
+                      <span className="text-[8px] font-mono text-[#ffaa00]">
+                        EG INT: {Math.round(params.filterEnvelope.amount)}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="w-full flex-1 min-h-[75px]">
+                    {selectedEnvTab === 'amp' ? (
+                      <EnvelopeEditor
+                        title="AMP ADSR"
+                        envelope={params.ampEnvelope}
+                        onChange={env => setParams(p => patchParams(p, { ampEnvelope: env }))}
+                        maxAttack={2}
+                        maxDecay={2}
+                        maxRelease={5}
+                        activeNotesCount={activeNotes.size}
+                        color="cyan"
+                        height={80}
+                      />
+                    ) : (
+                      <EnvelopeEditor
+                        title="FILTER ADSR"
+                        envelope={params.filterEnvelope}
+                        onChange={env => setParams(p => patchParams(p, { filterEnvelope: env }))}
+                        maxAttack={1}
+                        maxDecay={1}
+                        maxRelease={10}
+                        activeNotesCount={activeNotes.size}
+                        color="amber"
+                        height={80}
+                        amount={params.filterEnvelope.amount}
+                        onAmountChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))}
+                      />
+                    )}
+                  </div>
+
+                  {selectedEnvTab === 'amp' ? (
+                    <div className="flex items-center justify-around w-full pt-1">
+                      <Knob label="Attack"  value={params.ampEnvelope.attack}  min={0.001} max={2}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { attack: v } }))}  unit="s" color="cyan" paramId="ampEnvelope.attack" isLearning={learningParamId === 'ampEnvelope.attack'} mappedCC={mappedCCs['ampEnvelope.attack'] ?? null} onMidiLearn={handleMidiLearn} />
+                      <Knob label="Decay"   value={params.ampEnvelope.decay}   min={0.001} max={2}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { decay: v } }))}   unit="s" color="cyan" paramId="ampEnvelope.decay" isLearning={learningParamId === 'ampEnvelope.decay'} mappedCC={mappedCCs['ampEnvelope.decay'] ?? null} onMidiLearn={handleMidiLearn} />
+                      <Knob label="Sustain" value={params.ampEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { sustain: v } }))} unit="%" color="cyan" paramId="ampEnvelope.sustain" isLearning={learningParamId === 'ampEnvelope.sustain'} mappedCC={mappedCCs['ampEnvelope.sustain'] ?? null} onMidiLearn={handleMidiLearn} />
+                      <Knob label="Release" value={params.ampEnvelope.release} min={0.001} max={5}  size={28} onChange={v => setParams(p => patchParams(p, { ampEnvelope: { release: v } }))} unit="s" color="cyan" paramId="ampEnvelope.release" isLearning={learningParamId === 'ampEnvelope.release'} mappedCC={mappedCCs['ampEnvelope.release'] ?? null} onMidiLearn={handleMidiLearn} />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-around w-full pt-1">
+                      <Knob label="Attack"  value={params.filterEnvelope.attack}  min={0.001} max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { attack: v } }))}  unit="s" color="amber" paramId="filterEnvelope.attack" isLearning={learningParamId === 'filterEnvelope.attack'} mappedCC={mappedCCs['filterEnvelope.attack'] ?? null} onMidiLearn={handleMidiLearn} />
+                      <Knob label="Decay"   value={params.filterEnvelope.decay}   min={0.001} max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { decay: v } }))}   unit="s" color="amber" paramId="filterEnvelope.decay" isLearning={learningParamId === 'filterEnvelope.decay'} mappedCC={mappedCCs['filterEnvelope.decay'] ?? null} onMidiLearn={handleMidiLearn} />
+                      <Knob label="Sustain" value={params.filterEnvelope.sustain} min={0}     max={1}  size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { sustain: v } }))} unit="%" color="amber" paramId="filterEnvelope.sustain" isLearning={learningParamId === 'filterEnvelope.sustain'} mappedCC={mappedCCs['filterEnvelope.sustain'] ?? null} onMidiLearn={handleMidiLearn} />
+                      <Knob label="Release" value={params.filterEnvelope.release} min={0.001} max={10} size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { release: v } }))} unit="s" color="amber" paramId="filterEnvelope.release" isLearning={learningParamId === 'filterEnvelope.release'} mappedCC={mappedCCs['filterEnvelope.release'] ?? null} onMidiLearn={handleMidiLearn} />
+                      <Knob label="EG Int"  value={params.filterEnvelope.amount}  min={0}     max={10000} size={28} onChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))} color="emerald" paramId="filterEnvelope.amount" isLearning={learningParamId === 'filterEnvelope.amount'} mappedCC={mappedCCs['filterEnvelope.amount'] ?? null} onMidiLearn={handleMidiLearn} />
+                    </div>
+                  )}
+                </Panel>
+              </div>
+            </div>
+
+          </div>{/* end lower row */}
+
+          {/* Beat Transport Bar in Synth mode */}
+          <div 
+            className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
+            style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+          >
+            <div className="flex items-center gap-3">
+              <LEDButton
+                label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
+                active={isDrumMachinePlaying}
+                onClick={handlePlayToggle}
+                color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
+                size="sm"
+                className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
+              />
+              <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
+              <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
+              <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
+                <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
+                {[0, 1, 2, 3].map(b => (
+                  <button
+                    key={b}
+                    onClick={() => setCurrentBankIndex(b)}
+                    className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
+                      currentBankIndex === b
+                        ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                        : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                    }`}
+                  >
+                    {String.fromCharCode(65 + b)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 16-step running LED indicators */}
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 16 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-2 h-2.5 rounded-xs transition-all ${
+                    runningStep === idx
+                      ? 'bg-white shadow-[0_0_8px_white] scale-110'
+                      : idx % 4 === 0
+                      ? 'bg-[#2b374c]'
+                      : 'bg-[#141b27]'
+                  }`}
+                />
               ))}
             </div>
+
+            <button
+              type="button"
+              onClick={() => handleWorkspaceModeChange('groove')}
+              className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
+            >
+              <span>OPEN 4-TRACK GROOVE MATRIX</span>
+              <span>↗</span>
+            </button>
           </div>
 
-          {/* 16-step running LED indicators */}
-          <div className="flex items-center gap-1">
-            {Array.from({ length: 16 }).map((_, idx) => (
-              <div
-                key={idx}
-                className={`w-2 h-2.5 rounded-xs transition-all ${
-                  runningStep === idx
-                    ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                    : idx % 4 === 0
-                    ? 'bg-[#2b374c]'
-                    : 'bg-[#141b27]'
-                }`}
-              />
-            ))}
           </div>
+        )}
 
-          <button
-            type="button"
-            onClick={() => handleWorkspaceModeChange('groove')}
-            className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
-          >
-            <span>OPEN 4-TRACK GROOVE MATRIX</span>
-            <span>↗</span>
-          </button>
-        </div>
-
-        </div>
-      )}
 
         {/* ════════════════════ MOBILE LAYOUT (<md) ════════════════════ */}
         <div className="md:hidden relative flex-1 min-h-0 overflow-hidden">
@@ -2205,8 +2518,8 @@ export const Synth: React.FC = () => {
 
       </main>
 
-      {/* Desktop Virtual Keyboard Footer (shown in Synth and Groove modes) */}
-      {workspaceMode !== 'perform' && (
+      {/* Desktop Virtual Keyboard Footer (dockable / toggleable) */}
+      {workspaceMode !== 'perform' && isKeybedVisible && (
         <footer className="shrink-0 hidden md:block">
           <Keyboard 
             onNoteOn={handleNoteOn} 

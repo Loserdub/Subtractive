@@ -209,7 +209,7 @@ export interface MelodicSequencerPattern {
   motionRecording: boolean; // Live knob motion capture active
 }
 
-export type WorkspaceMode = 'synth' | 'groove' | 'perform';
+export type WorkspaceMode = 'synth' | 'fx' | 'arp' | 'groove' | 'perform';
 
 
 
