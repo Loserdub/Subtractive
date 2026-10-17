@@ -1,6 +1,5 @@
 import React from 'react';
 import { Synth } from './components/Synth';
-import { ViewportController } from './components/ViewportController';
 import { ThemeProvider } from './contexts/ThemeContext';
 
 const App: React.FC = () => {
@@ -15,9 +14,7 @@ const App: React.FC = () => {
           }} 
         />
         <div className="relative z-10 h-full w-full overflow-hidden flex flex-col">
-          <ViewportController>
-            <Synth />
-          </ViewportController>
+          <Synth />
         </div>
       </div>
     </ThemeProvider>

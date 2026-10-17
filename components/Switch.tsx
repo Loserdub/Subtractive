@@ -23,7 +23,7 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = React.memo(({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1.5 select-none touch-lock">
+    <div className="flex flex-col items-center gap-1.5 select-none">
       <div className="flex items-center gap-2">
         {/* LED Light Bulb */}
         <div className={`w-2 h-2 rounded-full border border-black/80 transition-all duration-200 ${ledColors[color]}`} />
@@ -96,7 +96,7 @@ export const LEDButton: React.FC<LEDButtonProps> = React.memo(({
     <button
       type="button"
       onClick={onClick}
-      className={`relative font-mono font-bold uppercase tracking-wider rounded-sm border transition-all duration-150 flex items-center justify-center active:scale-95 touch-lock select-none ${sizeClasses[size]} ${
+      className={`relative font-mono font-bold uppercase tracking-wider rounded-sm border transition-all duration-150 flex items-center justify-center active:scale-95 select-none ${sizeClasses[size]} ${
         active ? activeStyles[color] : ''
       } ${className}`}
       style={!active ? {

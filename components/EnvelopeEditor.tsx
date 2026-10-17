@@ -278,7 +278,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
 
   return (
     <div 
-      className={`relative w-full rounded-sm overflow-hidden select-none touch-lock oled-screen ${className}`}
+      className={`relative w-full rounded-sm overflow-hidden select-none oled-screen ${className}`}
       style={{ height }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setHoveredHandle(null); }}
@@ -287,7 +287,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
         ref={svgRef}
         viewBox="0 0 1000 500"
         preserveAspectRatio="none"
-        className="w-full h-full cursor-pointer"
+        className="w-full h-full cursor-pointer touch-none"
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}

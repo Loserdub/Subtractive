@@ -128,7 +128,7 @@ export const VUMeter: React.FC<VUMeterProps> = React.memo(({ getPeakLevels, clas
   }, [getPeakLevels]);
 
   return (
-    <div className={`flex flex-col gap-1 select-none touch-lock bg-[#0e121a] p-1.5 rounded-sm border border-[#202738] ${className}`}>
+    <div className={`flex flex-col gap-1 select-none bg-[#0e121a] p-1.5 rounded-sm border border-[#202738] ${className}`}>
       {/* Left Channel */}
       <div className="flex items-center gap-1.5">
         <span className="text-[7px] font-mono font-bold text-gray-400 w-2.5 text-right">L</span>

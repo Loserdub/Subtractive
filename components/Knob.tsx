@@ -254,7 +254,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
 
   return (
     <div 
-      className="flex flex-col items-center justify-center select-none group touch-lock min-w-0 relative" 
+      className="flex flex-col items-center justify-center select-none group min-w-0 relative" 
       style={{ width: size + 14 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -263,7 +263,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
     >
       <div
         ref={knobRef}
-        className={`relative flex items-center justify-center rounded-full cursor-ns-resize touch-lock shrink-0 ${
+        className={`relative flex items-center justify-center rounded-full cursor-ns-resize touch-none select-none shrink-0 ${
           isLearning ? 'ring-2 ring-[#ffaa00] shadow-[0_0_12px_#ffaa00] animate-pulse' : ''
         }`}
         onPointerDown={handlePointerDown}

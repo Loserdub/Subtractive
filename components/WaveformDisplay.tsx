@@ -460,7 +460,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
     <div ref={containerRef} className="w-full h-full min-w-0 min-h-0 relative overflow-hidden">
       <canvas 
         ref={canvasRef} 
-        className="w-full h-full rounded-sm border border-[#1a2838] touch-lock block" 
+        className="w-full h-full rounded-sm border border-[#1a2838] block" 
       />
     </div>
   );

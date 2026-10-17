@@ -205,7 +205,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
 
   return (
     <div 
-      className={`relative w-full rounded-sm overflow-hidden select-none touch-lock oled-screen ${className}`}
+      className={`relative w-full rounded-sm overflow-hidden select-none oled-screen ${className}`}
       style={{ height }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setCursorPos(null); }}
@@ -215,7 +215,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
         ref={svgRef}
         viewBox="0 0 1000 500"
         preserveAspectRatio="none"
-        className="w-full h-full cursor-crosshair"
+        className="w-full h-full cursor-crosshair touch-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}

@@ -159,7 +159,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
   };
 
   return (
-    <div className="w-full flex flex-col synth-panel rounded p-1.5 gap-1.5 touch-lock select-none">
+    <div className="w-full flex flex-col synth-panel rounded p-1.5 gap-1.5 select-none">
       
       {/* ── Collapsed Micro-Bar (Ultra-Thin ~20px) ────────────────────── */}
       {isBarCollapsed ? (
@@ -340,7 +340,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               <div className="flex items-center gap-1">
                 <span className="text-[7px] font-mono text-gray-400 uppercase">PITCH</span>
                 <div 
-                  className="relative w-3.5 h-5 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
+                  className="relative w-3.5 h-5 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-none select-none shadow-inner overflow-hidden"
                   onPointerDown={handlePitchWheelPointerDown}
                   title="Pitch Bend (Click & drag vertically)"
                 >
@@ -353,7 +353,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               <div className="flex items-center gap-1">
                 <span className="text-[7px] font-mono text-gray-400 uppercase">MOD</span>
                 <div 
-                  className="relative w-3.5 h-5 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-lock shadow-inner overflow-hidden"
+                  className="relative w-3.5 h-5 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-none select-none shadow-inner overflow-hidden"
                   onPointerDown={handleModWheelPointerDown}
                   title="Modulation Wheel (Click & drag vertically)"
                 >
@@ -428,7 +428,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                 key={key.midi}
                 onPointerDown={(e) => handlePointerDownKey(e, key.midi)}
                 onPointerUp={handlePointerUpKey}
-                className={`flex-1 h-full rounded-b-sm relative flex flex-col justify-end items-center pb-2 transition-all duration-75 touch-lock ${
+                className={`flex-1 h-full rounded-b-sm relative flex flex-col justify-end items-center pb-2 transition-all duration-75 touch-none select-none ${
                   isActive 
                     ? 'bg-gradient-to-b from-[#cbd5e1] to-[#94a3b8] transform translate-y-[3px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]' 
                     : 'bg-gradient-to-b from-[#f8fafc] via-[#e2e8f0] to-[#cbd5e1] hover:from-white hover:to-[#e2e8f0] shadow-[0_4px_6px_rgba(0,0,0,0.5)]'
@@ -486,7 +486,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                       handlePointerDownKey(e, blackKey.midi);
                     }}
                     onPointerUp={handlePointerUpKey}
-                    className={`h-full w-full rounded-b-sm border-x border-b border-black/80 relative flex flex-col justify-end items-center pb-1.5 transition-all duration-75 touch-lock ${
+                    className={`h-full w-full rounded-b-sm border-x border-b border-black/80 relative flex flex-col justify-end items-center pb-1.5 transition-all duration-75 touch-none select-none ${
                       isActive 
                         ? 'bg-gradient-to-b from-[#090b0f] to-[#1a202c] transform translate-y-[2px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]' 
                         : 'bg-gradient-to-b from-[#222733] via-[#11141c] to-[#090b0f] hover:from-[#333a4d] shadow-[2px_4px_8px_rgba(0,0,0,0.7)]'

@@ -40,7 +40,7 @@ const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, cla
   };
 
   return (
-    <div className={`synth-panel rounded p-2 md:p-2.5 flex flex-col items-center select-none touch-lock relative ${className}`}>
+    <div className={`synth-panel rounded p-2 md:p-2.5 flex flex-col items-center select-none relative ${className}`}>
       {/* Module Title Header Bar — Contained INSIDE the panel */}
       <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
         <div className="flex items-center gap-1.5 overflow-hidden">

@@ -202,7 +202,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
               <button
                 key={`${selectedTrack}-${index}`}
                 onClick={() => onStepToggle(selectedTrack, index)}
-                className={`w-5 h-9 sm:w-6 sm:h-10 md:w-8 md:h-12 rounded-sm transition-all duration-75 relative border flex flex-col items-center justify-between p-0.5 md:p-1 touch-lock ${stepBg}`}
+                className={`w-5 h-9 sm:w-6 sm:h-10 md:w-8 md:h-12 rounded-sm transition-all duration-75 relative border flex flex-col items-center justify-between p-0.5 md:p-1 select-none ${stepBg}`}
                 aria-label={`Step ${index + 1} for ${selectedTrack}`}
               >
                 <div 

@@ -347,7 +347,7 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
-    touch-action: none;
+    touch-action: manipulation;
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
@@ -375,7 +375,8 @@
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
-    padding: 0.375rem;
+    touch-action: pan-y;
+    padding: 0.375rem 0.375rem 2.5rem 0.375rem;
     transition: opacity 0.12s ease;
   }
   .mobile-section-active {
@@ -567,7 +568,6 @@
    TOUCH UTILITIES
    ══════════════════════════════════════════════════════════════════════ */
 .touch-lock {
-  touch-action: none !important;
   user-select: none !important;
   -webkit-user-select: none !important;
 }
