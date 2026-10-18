@@ -255,7 +255,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   return (
     <div 
       className="flex flex-col items-center justify-center select-none group min-w-0 relative" 
-      style={{ width: size + 14 }}
+      style={{ minWidth: Math.max(size + 12, 54), maxWidth: Math.max(size + 24, 72) }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onContextMenu={handleContextMenu}
@@ -380,24 +380,29 @@ export const Knob: React.FC<KnobProps> = React.memo(({
           </svg>
         )}
 
-        {/* Outer Ribbed Ring */}
+        {/* CNC Knurled Aluminum Outer Perimeter Rim */}
         <div 
-          className="absolute rounded-full"
+          className="absolute rounded-full pointer-events-none transition-all duration-150"
           style={{ 
-            inset: hasMod ? '7px' : '6px',
-            background: 'var(--knob-ribbed)',
-            border: `2px solid var(--knob-face-border)`,
-            boxShadow: `2px 2px 0 rgba(0,0,0,0.9), -1px -1px 0 rgba(0,0,0,0.5)`
+            inset: hasMod ? '7px' : '5px',
+            background: isDragging || isHovered
+              ? 'repeating-conic-gradient(from 0deg, #161e2a 0deg 3.75deg, #38465c 3.75deg 7.5deg)'
+              : 'repeating-conic-gradient(from 0deg, #10151f 0deg 3.75deg, #263244 3.75deg 7.5deg)',
+            border: `1.5px solid ${isDragging || isHovered ? activeTheme.stroke : 'rgba(255,255,255,0.18)'}`,
+            boxShadow: isDragging || isHovered
+              ? `0 0 10px ${activeTheme.glow}, inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -2px 4px rgba(0,0,0,0.9), 0 3px 6px rgba(0,0,0,0.8)`
+              : `inset 0 1px 2px rgba(255,255,255,0.20), inset 0 -2px 4px rgba(0,0,0,0.9), 0 3px 6px rgba(0,0,0,0.8)`
           }}
         />
 
-        {/* Inner Flat Knob Face */}
+        {/* Anisotropic Turned Aluminum Knob Face */}
         <div 
-          className="absolute rounded-full"
+          className="absolute rounded-full pointer-events-none"
           style={{ 
-            inset: hasMod ? '23%' : '22%',
-            background: 'var(--knob-face-grad)',
-            border: `1px solid var(--knob-face-border)`,
+            inset: hasMod ? '21%' : '20%',
+            background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.15) 0%, transparent 40%), conic-gradient(from 45deg, #151c27 0deg, #2c384a 90deg, #121822 180deg, #2c384a 270deg, #151c27 360deg)',
+            border: `1px solid rgba(255,255,255,0.14)`,
+            boxShadow: `inset 0 1px 3px rgba(0,0,0,0.7), 0 1px 1px rgba(255,255,255,0.08)`
           }}
         />
 
@@ -409,16 +414,31 @@ export const Knob: React.FC<KnobProps> = React.memo(({
             transition: isDragging ? 'none' : 'transform 0.05s ease-out'
           }}
         >
-          {/* Glowing Pointer Line */}
+          {/* CNC Milled Pointer Line with Illuminated Micro-LED Pip */}
           <div 
-            className="absolute top-[18%] left-1/2 -translate-x-1/2"
+            className="absolute top-[17%] left-1/2 -translate-x-1/2 flex flex-col items-center"
             style={{ 
               width: size > 48 ? '3px' : '2px', 
               height: `${size * (hasMod ? 0.22 : 0.24)}px`,
-              background: isDragging || isHovered ? activeTheme.stroke : 'rgba(255,255,255,0.85)',
-              boxShadow: isDragging || isHovered ? `0 0 8px ${activeTheme.stroke}, 0 0 2px ${activeTheme.stroke}` : '1px 1px 0 rgba(0,0,0,0.8)'
             }}
-          />
+          >
+            {/* Illuminated Micro-Pip at top tip */}
+            <div 
+              className="w-1.5 h-1.5 -mb-0.5 rounded-full"
+              style={{
+                background: isDragging || isHovered ? '#ffffff' : activeTheme.stroke,
+                boxShadow: isDragging || isHovered ? `0 0 6px #ffffff, 0 0 3px ${activeTheme.stroke}` : `0 0 3px ${activeTheme.stroke}`,
+              }}
+            />
+            {/* Needle Line */}
+            <div 
+              className="w-full flex-1 rounded-b-xs"
+              style={{
+                background: isDragging || isHovered ? activeTheme.stroke : 'rgba(255,255,255,0.85)',
+                boxShadow: isDragging || isHovered ? `0 0 6px ${activeTheme.stroke}` : '0 1px 1px rgba(0,0,0,0.9)'
+              }}
+            />
+          </div>
         </div>
 
         {/* OLED Value Readout Tooltip on Hover / Drag */}
@@ -443,7 +463,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
       {/* Label Underneath with MIDI Learn indicator and CC tag */}
       <div className="flex flex-col items-center mt-1.5 max-w-full">
         <span 
-          className="text-[8px] md:text-[9px] font-bold tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
+          className="text-[7.5px] md:text-[8.5px] font-bold tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full whitespace-nowrap px-0.5"
           style={{ color: isLearning ? '#ffaa00' : hasMod ? activeModTheme.stroke : 'var(--text-label)' }}
         >
           {isLearning ? 'LEARN...' : label}

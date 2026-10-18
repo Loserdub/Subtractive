@@ -46,6 +46,7 @@ export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
     cutoff: 3500,
     resonance: 4,
     type: 'lowpass',
+    filterFM: 0,
   },
   ampEnvelope: {
     attack: 0.01,
@@ -65,6 +66,13 @@ export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
       enabled: false,
       amount: 0.3,
     },
+    chorus: {
+      enabled: false,
+      rate: 0.4,
+      depth: 0.65,
+      mix: 0.5,
+      mode: 'off',
+    },
     delay: {
       enabled: false,
       time: 0.25,
@@ -78,8 +86,18 @@ export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
       enabled: false,
       decay: 2.0,
       mix: 0.3,
+      damping: 0.35,
+    },
+    compressor: {
+      enabled: false,
+      threshold: -18,
+      ratio: 4,
+      attack: 0.01,
+      release: 0.15,
+      makeup: 2.0,
     },
   },
+  analogDrift: 0.25,
   arpeggiator: {
     enabled: false,
     mode: 'up',

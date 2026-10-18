@@ -1,5 +1,6 @@
 import {
   SynthParameters,
+  Waveform,
   OscillatorParams,
   FilterType,
   FilterModel,
@@ -19,6 +20,7 @@ interface UnisonSubVoice {
   gain: GainNode;
   panner: StereoPannerNode | null;
   detuneOffset: number;
+  currentWaveform?: Waveform;
 }
 
 interface OscVoiceGroup {
@@ -49,6 +51,7 @@ interface ActiveNote {
   filterStage2: BiquadFilterNode | null;
   filterEnvSource: ConstantSourceNode;
   filterEnvGain: GainNode;
+  filterFmGain?: GainNode;
 
   // Amp & Output
   amp: GainNode;
@@ -63,7 +66,7 @@ interface ActiveNote {
   pwmOffset: ConstantSourceNode;
 
   // Dynamic Mod Matrix AudioNodes
-  modMatrixNodes: GainNode[];
+  modMatrixNodes: AudioNode[];
   lfoTarget: string;
 }
 
@@ -148,6 +151,7 @@ export class AudioEngine {
   private arpStepCount = 0;
   private arpRatchetTimers: number[] = [];
   private arpStepCallback: ((step: number, note: number | null) => void) | null = null;
+  private periodicWaveCache: Map<string, PeriodicWave> = new Map();
 
   public setArpStepCallback(cb: ((step: number, note: number | null) => void) | null) {
     this.arpStepCallback = cb;
@@ -220,6 +224,7 @@ export class AudioEngine {
 
     for (const note of this.activeNotes.values()) {
       this.applyPrimaryLfoDepth(note, this.params.lfo.target, now);
+      this.refreshVoiceModMatrix(note, now);
     }
   }
 
@@ -238,6 +243,7 @@ export class AudioEngine {
       return;
     }
     this.audioContext = new AudioContext();
+    this.periodicWaveCache.clear();
     if (this.audioContext.state === 'suspended') {
       await this.audioContext.resume();
     }
@@ -300,8 +306,32 @@ export class AudioEngine {
     this.chorusLfoGainLeft = ctx.createGain();
     this.chorusLfoGainRight = ctx.createGain();
 
-    const chorusParams = this.params.fx.chorus || { enabled: false, rate: 0.8, depth: 0.5, mix: 0.4 };
-    const chorusMix = chorusParams.enabled ? chorusParams.mix : 0;
+    const chorusParams = this.params.fx.chorus || { enabled: false, rate: 0.8, depth: 0.5, mix: 0.4, mode: 'off' };
+    let chorusRate = chorusParams.rate;
+    let chorusDepth = chorusParams.depth;
+    let chorusEnabled = chorusParams.enabled;
+    let chorusMixVal = chorusParams.mix;
+
+    if (chorusParams.mode === 'off') {
+      chorusEnabled = false;
+    } else if (chorusParams.mode === 'I') {
+      chorusEnabled = true;
+      chorusRate = 0.5;
+      chorusDepth = 0.6;
+      chorusMixVal = 0.5;
+    } else if (chorusParams.mode === 'II') {
+      chorusEnabled = true;
+      chorusRate = 0.85;
+      chorusDepth = 0.85;
+      chorusMixVal = 0.55;
+    } else if (chorusParams.mode === 'I+II') {
+      chorusEnabled = true;
+      chorusRate = 1.15;
+      chorusDepth = 1.0;
+      chorusMixVal = 0.65;
+    }
+
+    const chorusMix = chorusEnabled ? chorusMixVal : 0;
     this.chorusDryGain.gain.setValueAtTime(1 - chorusMix, now);
     this.chorusWetGain.gain.setValueAtTime(chorusMix, now);
 
@@ -310,12 +340,12 @@ export class AudioEngine {
     this.chorusDelayLeft.delayTime.setValueAtTime(nominalDelayL, now);
     this.chorusDelayRight.delayTime.setValueAtTime(nominalDelayR, now);
 
-    const modDepthSec = chorusParams.depth * 0.0035;
+    const modDepthSec = chorusDepth * 0.0035;
     this.chorusLfoGainLeft.gain.setValueAtTime(modDepthSec, now);
     this.chorusLfoGainRight.gain.setValueAtTime(-modDepthSec, now); // Invert phase for stereo width
 
-    this.chorusLfoLeft.frequency.setValueAtTime(chorusParams.rate, now);
-    this.chorusLfoRight.frequency.setValueAtTime(chorusParams.rate, now);
+    this.chorusLfoLeft.frequency.setValueAtTime(chorusRate, now);
+    this.chorusLfoRight.frequency.setValueAtTime(chorusRate, now);
 
     this.chorusLfoLeft.connect(this.chorusLfoGainLeft).connect(this.chorusDelayLeft.delayTime);
     this.chorusLfoRight.connect(this.chorusLfoGainRight).connect(this.chorusDelayRight.delayTime);
@@ -691,18 +721,42 @@ export class AudioEngine {
       this.driveWetGain.gain.setTargetAtTime(driveMix, now, 0.01);
     }
 
-    // 2. Update Chorus
+    // 2. Update Chorus (Roland Juno-60 BBD multi-tap emulation)
     if (this.chorusDryGain && this.chorusWetGain && this.chorusLfoLeft && this.chorusLfoRight &&
         (!prev || prev.fx.chorus !== newParams.fx.chorus)) {
-      const chorusParams = this.params.fx.chorus || { enabled: false, rate: 0.8, depth: 0.5, mix: 0.4 };
-      const chorusMix = chorusParams.enabled ? chorusParams.mix : 0;
+      const chorusParams = this.params.fx.chorus || { enabled: false, rate: 0.8, depth: 0.5, mix: 0.4, mode: 'off' };
+      let chorusRate = chorusParams.rate;
+      let chorusDepth = chorusParams.depth;
+      let chorusEnabled = chorusParams.enabled;
+      let chorusMixVal = chorusParams.mix;
+
+      if (chorusParams.mode === 'off') {
+        chorusEnabled = false;
+      } else if (chorusParams.mode === 'I') {
+        chorusEnabled = true;
+        chorusRate = 0.5;
+        chorusDepth = 0.6;
+        chorusMixVal = 0.5;
+      } else if (chorusParams.mode === 'II') {
+        chorusEnabled = true;
+        chorusRate = 0.85;
+        chorusDepth = 0.85;
+        chorusMixVal = 0.55;
+      } else if (chorusParams.mode === 'I+II') {
+        chorusEnabled = true;
+        chorusRate = 1.15;
+        chorusDepth = 1.0;
+        chorusMixVal = 0.65;
+      }
+
+      const chorusMix = chorusEnabled ? chorusMixVal : 0;
       this.chorusDryGain.gain.setTargetAtTime(1 - chorusMix, now, 0.01);
       this.chorusWetGain.gain.setTargetAtTime(chorusMix, now, 0.01);
 
-      this.chorusLfoLeft.frequency.setTargetAtTime(chorusParams.rate, now, 0.01);
-      this.chorusLfoRight.frequency.setTargetAtTime(chorusParams.rate, now, 0.01);
+      this.chorusLfoLeft.frequency.setTargetAtTime(chorusRate, now, 0.01);
+      this.chorusLfoRight.frequency.setTargetAtTime(chorusRate, now, 0.01);
 
-      const modDepth = chorusParams.depth * 0.0035;
+      const modDepth = chorusDepth * 0.0035;
       this.chorusLfoGainLeft?.gain.setTargetAtTime(modDepth, now, 0.01);
       this.chorusLfoGainRight?.gain.setTargetAtTime(-modDepth, now, 0.01);
     }
@@ -740,6 +794,12 @@ export class AudioEngine {
       this.compressorWetGain.gain.setTargetAtTime(compMix, now, 0.01);
       this.compressorNode.threshold.setTargetAtTime(compParams.threshold, now, 0.01);
       this.compressorNode.ratio.setTargetAtTime(compParams.ratio, now, 0.01);
+      if (typeof compParams.attack === 'number') {
+        this.compressorNode.attack.setTargetAtTime(compParams.attack, now, 0.01);
+      }
+      if (typeof compParams.release === 'number') {
+        this.compressorNode.release.setTargetAtTime(compParams.release, now, 0.01);
+      }
       const makeupLinear = Math.pow(10, compParams.makeup / 20);
       this.compressorMakeupGain?.gain.setTargetAtTime(makeupLinear, now, 0.01);
     }
@@ -768,10 +828,10 @@ export class AudioEngine {
 
     for (const note of this.activeNotes.values()) {
       // Oscillators 1-4 Unison Groups
-      if (osc1Changed) this.updateOscGroupParams(note.osc1, this.params.osc1, now);
-      if (osc2Changed) this.updateOscGroupParams(note.osc2, this.params.osc2, now);
-      if (osc3Changed) this.updateOscGroupParams(note.osc3, this.params.osc3, now);
-      if (osc4Changed) this.updateOscGroupParams(note.osc4, this.params.osc4, now);
+      if (osc1Changed) this.updateOscGroupParams(note.osc1, this.params.osc1, now, 'osc1');
+      if (osc2Changed) this.updateOscGroupParams(note.osc2, this.params.osc2, now, 'osc2');
+      if (osc3Changed) this.updateOscGroupParams(note.osc3, this.params.osc3, now, 'osc3');
+      if (osc4Changed) this.updateOscGroupParams(note.osc4, this.params.osc4, now, 'osc4');
 
       // Sub-Oscillator & Noise
       if (subNoiseChanged) {
@@ -795,6 +855,10 @@ export class AudioEngine {
           }
           note.filterStage2.frequency.setTargetAtTime(this.params.filter.cutoff, now, 0.01);
           note.filterStage2.Q.setTargetAtTime(this.params.filter.resonance * qScale, now, 0.01);
+        }
+
+        if (note.filterFmGain) {
+          note.filterFmGain.gain.setTargetAtTime((this.params.filter.filterFM ?? 0) * 4000, now, 0.01);
         }
       }
 
@@ -867,6 +931,18 @@ export class AudioEngine {
     }
   }
 
+  public setFilterFM(filterFM: number) {
+    if (!this.audioContext) return;
+    this.params = { ...this.params, filter: { ...this.params.filter, filterFM } };
+    const now = this.audioContext.currentTime;
+    const fmAmt = filterFM * 4000;
+    for (const note of this.activeNotes.values()) {
+      if (note.filterFmGain) {
+        note.filterFmGain.gain.setTargetAtTime(fmAmt, now, 0.005);
+      }
+    }
+  }
+
   public setMasterGain(gain: number) {
     if (!this.audioContext || !this.masterGainNode) return;
     this.params = { ...this.params, masterGain: gain };
@@ -913,14 +989,21 @@ export class AudioEngine {
     }
   }
 
-  private updateOscGroupParams(group: OscVoiceGroup, params: OscillatorParams, time: number) {
+  private updateOscGroupParams(
+    group: OscVoiceGroup, 
+    params: OscillatorParams, 
+    time: number, 
+    oscChannel: 'osc1' | 'osc2' | 'osc3' | 'osc4' = 'osc1'
+  ) {
     const masterHeadroom = 0.25;
     const unisonCount = Math.max(1, group.subVoices.length);
     const subGainTarget = params.enabled ? (params.gain * masterHeadroom) / Math.sqrt(unisonCount) : 0;
 
     for (const sub of group.subVoices) {
-      if (sub.osc.type !== params.waveform) {
-        sub.osc.type = params.waveform;
+      if (sub.currentWaveform !== params.waveform) {
+        const wave = this.getAnalogPeriodicWave(params.waveform, oscChannel);
+        sub.osc.setPeriodicWave(wave);
+        sub.currentWaveform = params.waveform;
       }
       sub.osc.detune.setTargetAtTime(params.detune + sub.detuneOffset + this.pitchBendCents, time, 0.01);
       sub.gain.gain.setTargetAtTime(subGainTarget, time, 0.01);
@@ -1118,14 +1201,14 @@ export class AudioEngine {
     // 4. MULTI-VOICE STEREO UNISON OSCILLATORS
     // ──────────────────────────────────────────────────────────────────────────
     const masterHeadroom = 0.25;
-    const osc1 = this.createOscVoiceGroup(this.params.osc1, frequency, now, masterHeadroom, preFilterDrive);
-    const osc2 = this.createOscVoiceGroup(this.params.osc2, frequency, now, masterHeadroom, preFilterDrive);
-    const osc3 = this.createOscVoiceGroup(this.params.osc3, frequency, now, masterHeadroom, preFilterDrive);
-    const osc4 = this.createOscVoiceGroup(this.params.osc4, frequency, now, masterHeadroom, preFilterDrive);
+    const osc1 = this.createOscVoiceGroup(this.params.osc1, frequency, now, masterHeadroom, preFilterDrive, 'osc1');
+    const osc2 = this.createOscVoiceGroup(this.params.osc2, frequency, now, masterHeadroom, preFilterDrive, 'osc2');
+    const osc3 = this.createOscVoiceGroup(this.params.osc3, frequency, now, masterHeadroom, preFilterDrive, 'osc3');
+    const osc4 = this.createOscVoiceGroup(this.params.osc4, frequency, now, masterHeadroom, preFilterDrive, 'osc4');
 
-    // Sub-Oscillator (Square wave 1 octave down)
+    // Sub-Oscillator (Square wave 1 octave down with analog pulse body)
     const subOsc = ctx.createOscillator();
-    subOsc.type = 'square';
+    subOsc.setPeriodicWave(this.getAnalogPeriodicWave('square', 'osc1'));
     subOsc.frequency.setValueAtTime(frequency / 2, now);
     subOsc.detune.setValueAtTime(this.pitchBendCents, now);
     const subGain = ctx.createGain();
@@ -1209,10 +1292,20 @@ export class AudioEngine {
       lfo1Gain.connect(pwmOffset.offset);
     }
 
+    // Audio-rate Filter FM (Oscillator 1 cross-modulation of VCF cutoff)
+    const filterFmGain = ctx.createGain();
+    const fmAmt = (this.params.filter.filterFM ?? 0) * 4000;
+    filterFmGain.gain.setValueAtTime(fmAmt, now);
+    osc1.gain.connect(filterFmGain);
+    filterFmGain.connect(filterStage1.detune);
+    if (filterStage2) {
+      filterFmGain.connect(filterStage2.detune);
+    }
+
     // ──────────────────────────────────────────────────────────────────────────
     // 6. MODULATION MATRIX ROUTING FOR THIS VOICE
     // ──────────────────────────────────────────────────────────────────────────
-    const modMatrixNodes: GainNode[] = [];
+    const modMatrixNodes: AudioNode[] = [];
     const activeNote: ActiveNote = {
       note,
       frequency,
@@ -1232,6 +1325,7 @@ export class AudioEngine {
       filterStage2,
       filterEnvSource,
       filterEnvGain,
+      filterFmGain,
       amp,
       tremoloGain,
       voicePanner,
@@ -1263,6 +1357,98 @@ export class AudioEngine {
   }
 
   /**
+   * Generates authentic, hardware-modeled Fourier periodic wavetables
+   * capturing the circuit characteristics of legendary analog synthesizers
+   * (Moog Voyager / Minimoog Model D, Roland Juno-106, Sequential Prophet-5, Teenage Engineering OP-series).
+   */
+  private getAnalogPeriodicWave(
+    waveform: Waveform,
+    oscChannel: 'osc1' | 'osc2' | 'osc3' | 'osc4' = 'osc1'
+  ): PeriodicWave {
+    const cacheKey = `${waveform}_${oscChannel}`;
+    let wave = this.periodicWaveCache.get(cacheKey);
+    if (wave) return wave;
+
+    const ctx = this.audioContext!;
+    const numHarmonics = 64;
+    const real = new Float32Array(numHarmonics);
+    const imag = new Float32Array(numHarmonics);
+
+    // Subtle per-oscillator circuit tolerance variance (Voyager discrete VCO 1-4)
+    const oscTolerances = {
+      osc1: { evenMult: 1.0,  oddMult: 1.0,  hfRolloff: 0.014 },
+      osc2: { evenMult: 1.25, oddMult: 1.08, hfRolloff: 0.011 }, // Rich cutting edge
+      osc3: { evenMult: 0.90, oddMult: 0.95, hfRolloff: 0.018 }, // Warm vintage soft-knee
+      osc4: { evenMult: 1.15, oddMult: 1.12, hfRolloff: 0.009 }, // Extended air & sizzle
+    }[oscChannel];
+
+    switch (waveform) {
+      case 'sine': {
+        // Moog Voyager saturated analog sine: rich fundamental with warm 2nd & 3rd harmonic body
+        real[0] = 0;
+        imag[1] = 1.0;
+        imag[2] = 0.085 * oscTolerances.evenMult; // Warm 2nd harmonic
+        imag[3] = 0.042 * oscTolerances.oddMult;  // Soft saturation 3rd harmonic
+        imag[4] = 0.014 * oscTolerances.evenMult;
+        imag[5] = 0.006 * oscTolerances.oddMult;
+        break;
+      }
+
+      case 'triangle': {
+        // Moog Voyager "Sharktooth" / Saturated Analog Triangle
+        // Asymmetric peak rounding delivers rich 2nd, 3rd, 4th harmonics
+        real[0] = 0;
+        for (let n = 1; n < numHarmonics; n++) {
+          const rolloff = Math.exp(-n * oscTolerances.hfRolloff * 1.5);
+          if (n % 2 !== 0) {
+            // Odd harmonics (typical triangle base with analog body)
+            const sign = ((n - 1) / 2) % 2 === 0 ? 1 : -1;
+            imag[n] = (sign * (8 / (Math.PI * Math.PI)) / (n * n)) * 1.8 * oscTolerances.oddMult * rolloff;
+          } else {
+            // Even harmonics from sharktooth diode asymmetry (the Moog signature)
+            real[n] = (0.22 / n) * oscTolerances.evenMult * rolloff;
+          }
+        }
+        break;
+      }
+
+      case 'sawtooth': {
+        // Moog Minimoog / Voyager Transistor Core Exponential Sawtooth
+        // Ramp curvature + flyback inductive ringing creates rich buzzing brass body
+        real[0] = 0;
+        for (let n = 1; n < numHarmonics; n++) {
+          const rolloff = Math.exp(-n * oscTolerances.hfRolloff);
+          imag[n] = (2 / (n * Math.PI)) * (n % 2 === 0 ? -1 : 1) * oscTolerances.oddMult * rolloff;
+          // Even harmonic transistor core charging asymmetry
+          if (n % 2 === 0) {
+            real[n] = (0.16 / n) * oscTolerances.evenMult * rolloff;
+          }
+        }
+        break;
+      }
+
+      case 'square': {
+        // Vintage Roland Juno / Moog Analog Asymmetric Pulse (51/49% duty)
+        real[0] = 0;
+        for (let n = 1; n < numHarmonics; n++) {
+          const rolloff = Math.exp(-n * oscTolerances.hfRolloff * 1.2);
+          if (n % 2 !== 0) {
+            imag[n] = (4 / (n * Math.PI)) * oscTolerances.oddMult * rolloff;
+          } else {
+            // Analog comparator offset creates hollow-reed even harmonic warmth
+            real[n] = (0.18 / n) * oscTolerances.evenMult * rolloff;
+          }
+        }
+        break;
+      }
+    }
+
+    wave = ctx.createPeriodicWave(real, imag, { disableNormalization: false });
+    this.periodicWaveCache.set(cacheKey, wave);
+    return wave;
+  }
+
+  /**
    * Spawns a multi-voice stereo unison cluster for an individual oscillator channel.
    */
   private createOscVoiceGroup(
@@ -1270,7 +1456,8 @@ export class AudioEngine {
     frequency: number,
     time: number,
     masterHeadroom: number,
-    destination: AudioNode
+    destination: AudioNode,
+    oscChannel: 'osc1' | 'osc2' | 'osc3' | 'osc4' = 'osc1'
   ): OscVoiceGroup {
     const ctx = this.audioContext!;
     const unisonCount = Math.max(1, Math.min(8, Math.round(params.unison ?? 1)));
@@ -1293,9 +1480,14 @@ export class AudioEngine {
       const panVal = Math.max(-1, Math.min(1, norm * panSpread));
 
       const osc = ctx.createOscillator();
-      osc.type = params.waveform;
+      const wave = this.getAnalogPeriodicWave(params.waveform, oscChannel);
+      osc.setPeriodicWave(wave);
       osc.frequency.setValueAtTime(frequency, time);
-      osc.detune.setValueAtTime(params.detune + detuneOffset + this.pitchBendCents, time);
+
+      // Analog VCO thermal drift modeling with organic micro-wander and voice variance
+      const driftAmount = this.params.analogDrift ?? 0.25;
+      const voiceThermalDrift = (Math.sin(frequency * 0.17 + i * 2.37) * 0.6 + (Math.random() - 0.5) * 0.8) * driftAmount * 6.5;
+      osc.detune.setValueAtTime(params.detune + detuneOffset + this.pitchBendCents + voiceThermalDrift, time);
 
       const gain = ctx.createGain();
       gain.gain.setValueAtTime(subGainTarget, time);
@@ -1310,7 +1502,7 @@ export class AudioEngine {
       }
 
       osc.start(time);
-      subVoices.push({ osc, gain, panner, detuneOffset });
+      subVoices.push({ osc, gain, panner, detuneOffset, currentWaveform: params.waveform });
     }
 
     return { subVoices, gain: channelGain };
@@ -1363,6 +1555,14 @@ export class AudioEngine {
           break;
         default:
           break;
+      }
+
+      if (!sourceNode && staticWeight !== 0) {
+        const constSrc = ctx.createConstantSource();
+        constSrc.offset.setValueAtTime(staticWeight, time);
+        constSrc.start(time);
+        sourceNode = constSrc;
+        note.modMatrixNodes.push(constSrc);
       }
 
       if (sourceNode) {
@@ -1438,6 +1638,14 @@ export class AudioEngine {
               routeGain.connect(note.voicePanner.pan);
             }
             break;
+          case 'filterFM':
+            if (note.filterFmGain) {
+              depthMultiplier = 3000;
+              routeGain.gain.setValueAtTime(route.amount * depthMultiplier, time);
+              sourceNode.connect(routeGain);
+              routeGain.connect(note.filterFmGain.gain);
+            }
+            break;
           default:
             break;
         }
@@ -1507,6 +1715,7 @@ export class AudioEngine {
       n.tremoloGain.disconnect();
       n.voicePanner?.disconnect();
       n.pwmOffset.disconnect();
+      n.filterFmGain?.disconnect();
 
       for (const modNode of n.modMatrixNodes) {
         modNode.disconnect();
@@ -1612,6 +1821,7 @@ export class AudioEngine {
         n.tremoloGain.disconnect();
         n.voicePanner?.disconnect();
         n.pwmOffset.disconnect();
+        n.filterFmGain?.disconnect();
         for (const modNode of n.modMatrixNodes) {
           modNode.disconnect();
         }
@@ -1883,6 +2093,7 @@ export class AudioEngine {
         n.tremoloGain.disconnect();
         n.voicePanner?.disconnect();
         n.pwmOffset.disconnect();
+        n.filterFmGain?.disconnect();
         for (const modNode of n.modMatrixNodes) {
           modNode.disconnect();
         }
@@ -2055,14 +2266,25 @@ export class AudioEngine {
     pwmOffset.start(startTime);
 
     // 4. Oscillators
-    const osc1 = this.createOscVoiceGroup(this.params.osc1, frequency, startTime, masterHeadroom, preFilterDrive);
-    const osc2 = this.createOscVoiceGroup(this.params.osc2, frequency, startTime, masterHeadroom, preFilterDrive);
-    const osc3 = this.createOscVoiceGroup(this.params.osc3, frequency, startTime, masterHeadroom, preFilterDrive);
-    const osc4 = this.createOscVoiceGroup(this.params.osc4, frequency, startTime, masterHeadroom, preFilterDrive);
+    const osc1 = this.createOscVoiceGroup(this.params.osc1, frequency, startTime, masterHeadroom, preFilterDrive, 'osc1');
+    const osc2 = this.createOscVoiceGroup(this.params.osc2, frequency, startTime, masterHeadroom, preFilterDrive, 'osc2');
+    const osc3 = this.createOscVoiceGroup(this.params.osc3, frequency, startTime, masterHeadroom, preFilterDrive, 'osc3');
+    const osc4 = this.createOscVoiceGroup(this.params.osc4, frequency, startTime, masterHeadroom, preFilterDrive, 'osc4');
 
-    // Sub-Oscillator
+    // Audio-rate Filter FM (Timed voice)
+    let offlineFmGain: GainNode | null = null;
+    const offlineFmAmt = (this.params.filter.filterFM ?? 0) * 4000;
+    if (offlineFmAmt > 0) {
+      offlineFmGain = ctx.createGain();
+      offlineFmGain.gain.setValueAtTime(offlineFmAmt, startTime);
+      osc1.gain.connect(offlineFmGain);
+      offlineFmGain.connect(filterStage1.detune);
+      if (filterStage2) offlineFmGain.connect(filterStage2.detune);
+    }
+
+    // Sub-Oscillator (Square wave 1 octave down with analog pulse body)
     const subOsc = ctx.createOscillator();
-    subOsc.type = 'square';
+    subOsc.setPeriodicWave(this.getAnalogPeriodicWave('square', 'osc1'));
     subOsc.frequency.setValueAtTime(frequency / 2, startTime);
     subOsc.detune.setValueAtTime(this.pitchBendCents, startTime);
     const subGainAmount = pLocks?.subGain !== undefined ? pLocks.subGain : this.params.subGain;
@@ -2201,6 +2423,7 @@ export class AudioEngine {
         tremoloGain.disconnect();
         voicePanner?.disconnect();
         pwmOffset.disconnect();
+        offlineFmGain?.disconnect();
       } catch (e) {}
     }, msUntilCleanup);
   }

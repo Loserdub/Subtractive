@@ -338,6 +338,610 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   SOLAR AURORA — Dynamic Quantum Mesh & Northern Lights
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="solar-aurora"] {
+  --chassis-bg:       #060814;
+  --chassis-gradient: radial-gradient(circle at 50% 0%, #0d122b 0%, #060814 100%);
+  --panel-bg:         #0c1022;
+  --panel-bg-alt:     #080b18;
+  --panel-gradient:   linear-gradient(180deg, #10162e 0%, #090d1c 100%);
+  --panel-border:     rgba(0, 240, 255, 0.35);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(0, 240, 255, 0.15);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.7);
+  --panel-shadow:     0 4px 18px -2px rgba(0, 240, 255, 0.16);
+
+  --oled-bg:          #030510;
+  --oled-bg-grad:     linear-gradient(180deg, #050818 0%, #02030a 100%);
+  --oled-border:      rgba(0, 240, 255, 0.5);
+  --oled-glow:        rgba(0, 240, 255, 0.25);
+  --oled-text:        #00f0ff;
+  --oled-scanline:    rgba(0, 0, 0, 0.15);
+
+  --knob-track:       #0e172a;
+  --knob-ribbed:      #0b1220;
+  --knob-face-grad:   #121d36;
+  --knob-face-border: #00f0ff;
+  --knob-hi:          rgba(0, 240, 255, 0.2);
+  --knob-lo:          #000000;
+
+  --screw-grad:       #182442;
+  --screw-border:     #00f0ff;
+  --screw-line:       #00f0ff;
+
+  --accent-cyan:      #00f0ff;
+  --accent-amber:     #ffaa00;
+  --accent-emerald:   #00ff9d;
+  --accent-red:       #ff007f;
+
+  --text-primary:     #f0f6fc;
+  --text-secondary:   #818cf8;
+  --text-muted:       #383f60;
+  --text-label:       #93c5fd;
+
+  --btn-inactive-bg:     #090d1c;
+  --btn-inactive-border: #1e294b;
+  --btn-inactive-text:   #5b6998;
+  --btn-hover-bg:        #141b38;
+  --section-bg:          #070a16;
+  --section-border:      #16203c;
+  --osc-bg:              #0a0e20;
+  --osc-border:          #1b2648;
+  --waveform-bg:         #040612;
+  --waveform-border:     #131c38;
+
+  --key-white-grad:   #e8effc;
+  --key-white-active: #a5bfe8;
+  --key-black-grad:   #090d1c;
+  --key-black-active: #04060e;
+
+  --wheel-bg:         #050814;
+  --wheel-border:     #00f0ff;
+  --wheel-thumb:      linear-gradient(to right, #005577 0%, #00f0ff 50%, #005577 100%);
+
+  --tab-bar-bg:       #060816;
+  --tab-bar-border:   #00f0ff;
+  --tab-active-bg:    rgba(0, 240, 255, 0.16);
+  --tab-active-border:#00f0ff;
+  --tab-active-text:  #00f0ff;
+  --tab-active-glow:  rgba(0, 240, 255, 0.55);
+  --tab-inactive-text:#4c5b88;
+
+  --body-bg:          #060814;
+  --body-text:        #f0f6fc;
+  --scrollbar-track:  #070a16;
+  --scrollbar-thumb:  #192444;
+  --scrollbar-hover:  #293b6e;
+  --badge-bg:         #070b1a;
+  --badge-border:     #00f0ff;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   CYBER MATRIX — Phosphor Vector Grid & Scanning Lasers
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="cyber-matrix"] {
+  --chassis-bg:       #020804;
+  --chassis-gradient: linear-gradient(180deg, #040e06 0%, #010402 100%);
+  --panel-bg:         #061409;
+  --panel-bg-alt:     #030b05;
+  --panel-gradient:   linear-gradient(180deg, #091d0e 0%, #041007 100%);
+  --panel-border:     rgba(0, 255, 102, 0.4);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(0, 255, 102, 0.15);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.8);
+  --panel-shadow:     0 4px 18px -2px rgba(0, 255, 102, 0.15);
+
+  --oled-bg:          #010502;
+  --oled-bg-grad:     linear-gradient(180deg, #020904 0%, #010402 100%);
+  --oled-border:      rgba(0, 255, 102, 0.55);
+  --oled-glow:        rgba(0, 255, 102, 0.3);
+  --oled-text:        #00ff66;
+  --oled-scanline:    rgba(0, 0, 0, 0.2);
+
+  --knob-track:       #051c0c;
+  --knob-ribbed:      #031408;
+  --knob-face-grad:   #092612;
+  --knob-face-border: #00ff66;
+  --knob-hi:          rgba(0, 255, 102, 0.2);
+  --knob-lo:          #000000;
+
+  --screw-grad:       #0b3017;
+  --screw-border:     #00ff66;
+  --screw-line:       #00ff66;
+
+  --accent-cyan:      #00e5ff;
+  --accent-amber:     #ffbb00;
+  --accent-emerald:   #00ff66;
+  --accent-red:       #ff2255;
+
+  --text-primary:     #e0ffe8;
+  --text-secondary:   #4ade80;
+  --text-muted:       #194d28;
+  --text-label:       #86efac;
+
+  --btn-inactive-bg:     #030d06;
+  --btn-inactive-border: #0c2b14;
+  --btn-inactive-text:   #255e34;
+  --btn-hover-bg:        #081e0e;
+  --section-bg:          #020a04;
+  --section-border:      #08200d;
+  --osc-bg:              #041007;
+  --osc-border:          #0d2e16;
+  --waveform-bg:         #010603;
+  --waveform-border:     #082410;
+
+  --key-white-grad:   #e4faec;
+  --key-white-active: #8ee2ac;
+  --key-black-grad:   #030d06;
+  --key-black-active: #010402;
+
+  --wheel-bg:         #020804;
+  --wheel-border:     #00ff66;
+  --wheel-thumb:      linear-gradient(to right, #005522 0%, #00ff66 50%, #005522 100%);
+
+  --tab-bar-bg:       #020804;
+  --tab-bar-border:   #00ff66;
+  --tab-active-bg:    rgba(0, 255, 102, 0.18);
+  --tab-active-border:#00ff66;
+  --tab-active-text:  #00ff66;
+  --tab-active-glow:  rgba(0, 255, 102, 0.6);
+  --tab-inactive-text:#256135;
+
+  --body-bg:          #020804;
+  --body-text:        #e0ffe8;
+  --scrollbar-track:  #020804;
+  --scrollbar-thumb:  #0d2e16;
+  --scrollbar-hover:  #174d25;
+  --badge-bg:         #030e06;
+  --badge-border:     #00ff66;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   OBSIDIAN MINIMAL — Dieter Rams Swiss Engineering & Safety Orange
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="obsidian-minimal"] {
+  --chassis-bg:       #090a0f;
+  --chassis-gradient: linear-gradient(180deg, #10121a 0%, #07080c 100%);
+  --panel-bg:         #11131c;
+  --panel-bg-alt:     #0c0d14;
+  --panel-gradient:   linear-gradient(180deg, #141724 0%, #0e1018 100%);
+  --panel-border:     rgba(255, 255, 255, 0.16);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(255, 255, 255, 0.1);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.85);
+  --panel-shadow:     0 4px 14px -2px rgba(0, 0, 0, 0.8);
+
+  --oled-bg:          #06070a;
+  --oled-bg-grad:     linear-gradient(180deg, #090b10 0%, #040508 100%);
+  --oled-border:      rgba(255, 107, 0, 0.45);
+  --oled-glow:        rgba(255, 107, 0, 0.15);
+  --oled-text:        #f3f4f6;
+  --oled-scanline:    rgba(0, 0, 0, 0.08);
+
+  --knob-track:       #161922;
+  --knob-ribbed:      #11141c;
+  --knob-face-grad:   #1b1f2b;
+  --knob-face-border: #ff6b00;
+  --knob-hi:          rgba(255, 255, 255, 0.12);
+  --knob-lo:          #000000;
+
+  --screw-grad:       #202432;
+  --screw-border:     #4b5563;
+  --screw-line:       #6b7280;
+
+  --accent-cyan:      #38bdf8;
+  --accent-amber:     #ff6b00;
+  --accent-emerald:   #10b981;
+  --accent-red:       #ef4444;
+
+  --text-primary:     #f9fafb;
+  --text-secondary:   #9ca3af;
+  --text-muted:       #4b5563;
+  --text-label:       #d1d5db;
+
+  --btn-inactive-bg:     #0d0e15;
+  --btn-inactive-border: #212534;
+  --btn-inactive-text:   #6b7280;
+  --btn-hover-bg:        #181b27;
+  --section-bg:          #090a0f;
+  --section-border:      #1a1d29;
+  --osc-bg:              #0d0e16;
+  --osc-border:          #1e2230;
+  --waveform-bg:         #06070a;
+  --waveform-border:     #171924;
+
+  --key-white-grad:   #f3f4f6;
+  --key-white-active: #cbd5e1;
+  --key-black-grad:   #0f1118;
+  --key-black-active: #06070a;
+
+  --wheel-bg:         #07080c;
+  --wheel-border:     #ff6b00;
+  --wheel-thumb:      linear-gradient(to right, #993d00 0%, #ff6b00 50%, #993d00 100%);
+
+  --tab-bar-bg:       #07080c;
+  --tab-bar-border:   #ff6b00;
+  --tab-active-bg:    rgba(255, 107, 0, 0.14);
+  --tab-active-border:#ff6b00;
+  --tab-active-text:  #ff6b00;
+  --tab-active-glow:  rgba(255, 107, 0, 0.4);
+  --tab-inactive-text:#6b7280;
+
+  --body-bg:          #090a0f;
+  --body-text:        #f9fafb;
+  --scrollbar-track:  #08090d;
+  --scrollbar-thumb:  #1e2230;
+  --scrollbar-hover:  #2f354a;
+  --badge-bg:         #0b0d13;
+  --badge-border:     #ff6b00;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TOKYO NEON — Midnight Akihabara Magenta & Hyper-Cyan
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="tokyo-neon"] {
+  --chassis-bg:       #060410;
+  --chassis-gradient: linear-gradient(180deg, #0e0922 0%, #04020a 100%);
+  --panel-bg:         #0f0924;
+  --panel-bg-alt:     #090516;
+  --panel-gradient:   linear-gradient(180deg, #160d34 0%, #0c071d 100%);
+  --panel-border:     rgba(255, 0, 119, 0.45);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(0, 245, 255, 0.2);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.85);
+  --panel-shadow:     0 4px 20px -2px rgba(255, 0, 119, 0.25);
+
+  --oled-bg:          #04010a;
+  --oled-bg-grad:     linear-gradient(180deg, #080314 0%, #020006 100%);
+  --oled-border:      rgba(255, 0, 119, 0.6);
+  --oled-glow:        rgba(255, 0, 119, 0.3);
+  --oled-text:        #ff0077;
+  --oled-scanline:    rgba(0, 0, 0, 0.18);
+
+  --knob-track:       #180528;
+  --knob-ribbed:      #120320;
+  --knob-face-grad:   #220638;
+  --knob-face-border: #ff0077;
+  --knob-hi:          rgba(0, 245, 255, 0.25);
+  --knob-lo:          #000000;
+
+  --screw-grad:       #2a0846;
+  --screw-border:     #00f5ff;
+  --screw-line:       #ff0077;
+
+  --accent-cyan:      #00f5ff;
+  --accent-amber:     #ffe600;
+  --accent-emerald:   #00ffaa;
+  --accent-red:       #ff0077;
+
+  --text-primary:     #f8e8ff;
+  --text-secondary:   #b882e8;
+  --text-muted:       #4c2472;
+  --text-label:       #dfb6ff;
+
+  --btn-inactive-bg:     #090416;
+  --btn-inactive-border: #260f42;
+  --btn-inactive-text:   #6d38a0;
+  --btn-hover-bg:        #15092e;
+  --section-bg:          #060210;
+  --section-border:      #1e0a36;
+  --osc-bg:              #0a0518;
+  --osc-border:          #240e40;
+  --waveform-bg:         #04010a;
+  --waveform-border:     #1b0832;
+
+  --key-white-grad:   #f2e4fc;
+  --key-white-active: #b58ee2;
+  --key-black-grad:   #0b0416;
+  --key-black-active: #04010a;
+
+  --wheel-bg:         #05020c;
+  --wheel-border:     #00f5ff;
+  --wheel-thumb:      linear-gradient(to right, #800050 0%, #ff0077 50%, #00f5ff 100%);
+
+  --tab-bar-bg:       #05020c;
+  --tab-bar-border:   #ff0077;
+  --tab-active-bg:    rgba(255, 0, 119, 0.18);
+  --tab-active-border:#ff0077;
+  --tab-active-text:  #ff0077;
+  --tab-active-glow:  rgba(255, 0, 119, 0.6);
+  --tab-inactive-text:#633394;
+
+  --body-bg:          #060410;
+  --body-text:        #f8e8ff;
+  --scrollbar-track:  #05020c;
+  --scrollbar-thumb:  #240e40;
+  --scrollbar-hover:  #3b1768;
+  --badge-bg:         #080316;
+  --badge-border:     #ff0077;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SYNTHWAVE SUNSET — 80s Miami Sunset Gradient & Twilight Outrun
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="synthwave-sunset"] {
+  --chassis-bg:       #0b0616;
+  --chassis-gradient: linear-gradient(180deg, #170a2a 0%, #090412 100%);
+  --panel-bg:         #130a26;
+  --panel-bg-alt:     #0c061a;
+  --panel-gradient:   linear-gradient(180deg, #1c0e38 0%, #100820 100%);
+  --panel-border:     rgba(255, 122, 0, 0.4);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(255, 19, 129, 0.2);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.85);
+  --panel-shadow:     0 4px 18px -2px rgba(255, 122, 0, 0.2);
+
+  --oled-bg:          #06020e;
+  --oled-bg-grad:     linear-gradient(180deg, #0b041a 0%, #040108 100%);
+  --oled-border:      rgba(255, 122, 0, 0.55);
+  --oled-glow:        rgba(255, 122, 0, 0.25);
+  --oled-text:        #ff7a00;
+  --oled-scanline:    rgba(0, 0, 0, 0.15);
+
+  --knob-track:       #1e0a24;
+  --knob-ribbed:      #15061a;
+  --knob-face-grad:   #280e32;
+  --knob-face-border: #ff7a00;
+  --knob-hi:          rgba(255, 19, 129, 0.25);
+  --knob-lo:          #000000;
+
+  --screw-grad:       #32103e;
+  --screw-border:     #ff1381;
+  --screw-line:       #ff7a00;
+
+  --accent-cyan:      #00c8ff;
+  --accent-amber:     #ff7a00;
+  --accent-emerald:   #00ffcc;
+  --accent-red:       #ff1381;
+
+  --text-primary:     #fff1e8;
+  --text-secondary:   #f08ac6;
+  --text-muted:       #562354;
+  --text-label:       #ffbde0;
+
+  --btn-inactive-bg:     #0c051a;
+  --btn-inactive-border: #29103c;
+  --btn-inactive-text:   #783474;
+  --btn-hover-bg:        #180b32;
+  --section-bg:          #080312;
+  --section-border:      #200a30;
+  --osc-bg:              #0d061c;
+  --osc-border:          #270f38;
+  --waveform-bg:         #05020c;
+  --waveform-border:     #1d082c;
+
+  --key-white-grad:   #fcecf4;
+  --key-white-active: #d69dbf;
+  --key-black-grad:   #0e051a;
+  --key-black-active: #05020c;
+
+  --wheel-bg:         #070210;
+  --wheel-border:     #ff7a00;
+  --wheel-thumb:      linear-gradient(to right, #aa1060 0%, #ff7a00 50%, #aa1060 100%);
+
+  --tab-bar-bg:       #070210;
+  --tab-bar-border:   #ff7a00;
+  --tab-active-bg:    rgba(255, 122, 0, 0.16);
+  --tab-active-border:#ff7a00;
+  --tab-active-text:  #ff7a00;
+  --tab-active-glow:  rgba(255, 122, 0, 0.55);
+  --tab-inactive-text:#682a64;
+
+  --body-bg:          #0b0616;
+  --body-text:        #fff1e8;
+  --scrollbar-track:  #070210;
+  --scrollbar-thumb:  #270f38;
+  --scrollbar-hover:  #421a60;
+  --badge-bg:         #0a0416;
+  --badge-border:     #ff7a00;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   GHOST FROST — Icy Arctic Glass & Translucent Crystalline Glow
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="ghost-frost"] {
+  --chassis-bg:       #060a12;
+  --chassis-gradient: linear-gradient(180deg, #0b1424 0%, #05080f 100%);
+  --panel-bg:         #0c1422;
+  --panel-bg-alt:     #080e18;
+  --panel-gradient:   linear-gradient(180deg, #101c30 0%, #09121e 100%);
+  --panel-border:     rgba(56, 189, 248, 0.35);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(167, 139, 250, 0.2);
+  --panel-inset-lo:   rgba(0, 0, 0, 0.8);
+  --panel-shadow:     0 4px 16px -2px rgba(56, 189, 248, 0.18);
+
+  --oled-bg:          #03060c;
+  --oled-bg-grad:     linear-gradient(180deg, #050b16 0%, #020408 100%);
+  --oled-border:      rgba(56, 189, 248, 0.5);
+  --oled-glow:        rgba(56, 189, 248, 0.22);
+  --oled-text:        #38bdf8;
+  --oled-scanline:    rgba(0, 0, 0, 0.1);
+
+  --knob-track:       #0d1a2c;
+  --knob-ribbed:      #091320;
+  --knob-face-grad:   #13243e;
+  --knob-face-border: #38bdf8;
+  --knob-hi:          rgba(167, 139, 250, 0.2);
+  --knob-lo:          #000000;
+
+  --screw-grad:       #182e4e;
+  --screw-border:     #38bdf8;
+  --screw-line:       #a78bfa;
+
+  --accent-cyan:      #38bdf8;
+  --accent-amber:     #fbbf24;
+  --accent-emerald:   #34d399;
+  --accent-red:       #f43f5e;
+
+  --text-primary:     #f0f9ff;
+  --text-secondary:   #93c5fd;
+  --text-muted:       #334e68;
+  --text-label:       #bae6fd;
+
+  --btn-inactive-bg:     #08101a;
+  --btn-inactive-border: #15273c;
+  --btn-inactive-text:   #486581;
+  --btn-hover-bg:        #102034;
+  --section-bg:          #050a12;
+  --section-border:      #112134;
+  --osc-bg:              #09121e;
+  --osc-border:          #162a42;
+  --waveform-bg:         #03060c;
+  --waveform-border:     #102032;
+
+  --key-white-grad:   #eaf4fc;
+  --key-white-active: #9ec5e8;
+  --key-black-grad:   #08101c;
+  --key-black-active: #03060c;
+
+  --wheel-bg:         #040810;
+  --wheel-border:     #38bdf8;
+  --wheel-thumb:      linear-gradient(to right, #0369a1 0%, #38bdf8 50%, #0369a1 100%);
+
+  --tab-bar-bg:       #040810;
+  --tab-bar-border:   #38bdf8;
+  --tab-active-bg:    rgba(56, 189, 248, 0.16);
+  --tab-active-border:#38bdf8;
+  --tab-active-text:  #38bdf8;
+  --tab-active-glow:  rgba(56, 189, 248, 0.5);
+  --tab-inactive-text:#415f7e;
+
+  --body-bg:          #060a12;
+  --body-text:        #f0f9ff;
+  --scrollbar-track:  #050a12;
+  --scrollbar-thumb:  #162a42;
+  --scrollbar-hover:  #244268;
+  --badge-bg:         #070d18;
+  --badge-border:     #38bdf8;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   FILE FOLDER SECTION TABS ("Layers of a Real File")
+   ══════════════════════════════════════════════════════════════════════ */
+.file-tabs-rack {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  background: var(--section-bg);
+  padding: 4px 6px 0 6px;
+  border-bottom: 2px solid var(--panel-border);
+  box-shadow: inset 0 -3px 8px rgba(0, 0, 0, 0.5);
+  border-radius: 6px 6px 0 0;
+}
+
+.file-folder-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  border: 1px solid var(--btn-inactive-border);
+  border-bottom: none;
+  background: var(--btn-inactive-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+}
+
+.file-folder-tab.inactive {
+  transform: translateY(2px);
+  opacity: 0.78;
+  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.04), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.file-folder-tab.inactive:hover {
+  transform: translateY(0px);
+  opacity: 1;
+  color: var(--text-primary);
+  background: var(--btn-hover-bg);
+  border-color: var(--panel-border);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.file-folder-tab.active {
+  transform: translateY(-2px);
+  background: var(--panel-bg);
+  border-color: var(--tab-accent, var(--panel-border));
+  border-top-width: 2px;
+  color: var(--text-primary);
+  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.6), 0 0 16px var(--tab-glow, rgba(16, 185, 129, 0.35));
+  z-index: 20;
+}
+
+.file-folder-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--panel-bg);
+  z-index: 30;
+}
+
+.file-folder-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ANIMATED SVG MOVING SKIN KEYFRAMES
+   ══════════════════════════════════════════════════════════════════════ */
+@keyframes aurora-wave-1-anim {
+  0%, 100% { transform: translateY(0) scaleY(1); opacity: 0.7; }
+  50% { transform: translateY(-35px) scaleY(1.15) skewX(2deg); opacity: 0.95; }
+}
+.aurora-wave-1 {
+  animation: aurora-wave-1-anim 16s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+@keyframes aurora-wave-2-anim {
+  0%, 100% { transform: translateY(0) scaleX(1); opacity: 0.55; }
+  50% { transform: translateY(30px) scaleX(1.08) skewX(-2.5deg); opacity: 0.85; }
+}
+.aurora-wave-2 {
+  animation: aurora-wave-2-anim 20s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+@keyframes matrix-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(40px); }
+}
+.matrix-grid-scroll {
+  animation: matrix-scroll 2.5s linear infinite;
+}
+
+@keyframes matrix-laser {
+  0% { top: -5%; opacity: 0; }
+  15% { opacity: 0.7; }
+  85% { opacity: 0.7; }
+  100% { top: 105%; opacity: 0; }
+}
+.matrix-scanline {
+  animation: matrix-laser 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    BASE LAYER
    ══════════════════════════════════════════════════════════════════════ */
 @layer base {

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { FilterType } from '../types';
 
 interface FilterResponseCurveProps {
@@ -10,6 +10,13 @@ interface FilterResponseCurveProps {
   color?: 'amber' | 'cyan' | 'emerald' | 'red';
   className?: string;
   height?: number;
+  modActive?: boolean;
+  modDepth?: number;
+  lfoRate?: number;
+  lfoWaveform?: string;
+  envelopeAmount?: number;
+  filterEnvelope?: { attack: number; decay: number; sustain: number; release: number };
+  activeNotesCount?: number;
 }
 
 const MIN_FREQ = 20;
@@ -39,7 +46,6 @@ const dbToYRatio = (db: number): number => {
 // Convert Y coordinate ratio to resonance (0..40)
 const yRatioToResonance = (yRatio: number): number => {
   const clamped = Math.max(0, Math.min(1, yRatio));
-  // Invert: top (0) is high resonance, bottom (1) is low resonance
   const norm = 1 - clamped;
   return Math.round(norm * 40 * 10) / 10;
 };
@@ -53,33 +59,176 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
   color = 'amber',
   className = '',
   height = 110,
+  modActive = false,
+  modDepth = 0,
+  lfoRate = 1,
+  lfoWaveform = 'sine',
+  envelopeAmount = 0,
+  filterEnvelope,
+  activeNotesCount = 0,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Responsive pixel dimensions
+  const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
+    width: 380,
+    height,
+  });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width > 0) {
+        setDimensions({
+          width: Math.round(rect.width),
+          height: Math.round(rect.height || height),
+        });
+      }
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [height]);
 
   const colors = {
-    amber:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.4)',  fill: 'rgba(255, 170, 0, 0.12)' },
-    cyan:    { stroke: '#10b981', glow: 'rgba(16, 185, 129, 0.4)',  fill: 'rgba(16, 185, 129, 0.12)' },
-    emerald: { stroke: '#00ff66', glow: 'rgba(0, 255, 102, 0.4)',  fill: 'rgba(0, 255, 102, 0.12)' },
-    red:     { stroke: '#ff3344', glow: 'rgba(255, 51, 68, 0.4)',   fill: 'rgba(255, 51, 68, 0.12)' },
+    amber: {
+      stroke: '#ffaa00',
+      halo: 'rgba(255, 170, 0, 0.25)',
+      fillTop: 'rgba(255, 170, 0, 0.16)',
+      fillBottom: 'rgba(255, 170, 0, 0.00)',
+      beam: '#ffd580',
+    },
+    cyan: {
+      stroke: '#00f0ff',
+      halo: 'rgba(0, 240, 255, 0.25)',
+      fillTop: 'rgba(0, 240, 255, 0.16)',
+      fillBottom: 'rgba(0, 240, 255, 0.00)',
+      beam: '#7df9ff',
+    },
+    emerald: {
+      stroke: '#00ff66',
+      halo: 'rgba(0, 255, 102, 0.25)',
+      fillTop: 'rgba(0, 255, 102, 0.16)',
+      fillBottom: 'rgba(0, 255, 102, 0.00)',
+      beam: '#99ffbb',
+    },
+    red: {
+      stroke: '#ff3344',
+      halo: 'rgba(255, 51, 68, 0.25)',
+      fillTop: 'rgba(255, 51, 68, 0.16)',
+      fillBottom: 'rgba(255, 51, 68, 0.00)',
+      beam: '#ff7788',
+    },
   };
   const themeColor = colors[color] || colors.amber;
 
-  // Compute points along the frequency curve
-  const pointsCount = 120;
-  const pathData = useMemo(() => {
+  // Layout bounds in true 1:1 pixel coordinates
+  const PADDING_LEFT = 26;
+  const PADDING_RIGHT = 14;
+  const PADDING_TOP = 16;
+  const PADDING_BOTTOM = 20;
+
+  const plotWidth = Math.max(80, dimensions.width - PADDING_LEFT - PADDING_RIGHT);
+  const plotHeight = Math.max(30, dimensions.height - PADDING_TOP - PADDING_BOTTOM);
+
+  const freqToX = useCallback((f: number) => {
+    return PADDING_LEFT + freqToNorm(f) * plotWidth;
+  }, [plotWidth, PADDING_LEFT]);
+
+  const xToFreq = useCallback((x: number) => {
+    const norm = (x - PADDING_LEFT) / plotWidth;
+    return normToFreq(norm);
+  }, [plotWidth, PADDING_LEFT]);
+
+  const dbToY = useCallback((db: number) => {
+    return PADDING_TOP + dbToYRatio(db) * plotHeight;
+  }, [plotHeight, PADDING_TOP]);
+
+  const yToRes = useCallback((y: number) => {
+    const norm = (y - PADDING_TOP) / plotHeight;
+    return yRatioToResonance(norm);
+  }, [plotHeight, PADDING_TOP]);
+
+  // Real-time dynamic modulation state (60 FPS loop)
+  const [dynamicModCutoff, setDynamicModCutoff] = useState<number | null>(null);
+
+  // Modulation animation loop
+  useEffect(() => {
+    const isLfoModulating = modActive && modDepth > 0;
+    const isEnvModulating = activeNotesCount > 0 && envelopeAmount !== 0;
+
+    if (!isLfoModulating && !isEnvModulating) {
+      setDynamicModCutoff(null);
+      return;
+    }
+
+    let animId: number;
+    const startTime = performance.now() / 1000;
+
+    const updateMod = () => {
+      const now = performance.now() / 1000;
+      let totalOctaveOffset = 0;
+
+      // 1. LFO Sweep Contribution
+      if (isLfoModulating) {
+        const t = (now - startTime) * lfoRate;
+        let lfoVal = 0;
+        if (lfoWaveform === 'triangle') {
+          lfoVal = Math.asin(Math.sin(2 * Math.PI * t)) * (2 / Math.PI);
+        } else if (lfoWaveform === 'square') {
+          lfoVal = Math.sin(2 * Math.PI * t) >= 0 ? 1 : -1;
+        } else if (lfoWaveform === 'sawtooth') {
+          lfoVal = 2 * (t % 1) - 1;
+        } else {
+          lfoVal = Math.sin(2 * Math.PI * t);
+        }
+        totalOctaveOffset += lfoVal * modDepth * 2.2;
+      }
+
+      // 2. Filter Envelope Sweep Contribution
+      if (isEnvModulating && filterEnvelope) {
+        const elapsed = (now - startTime) % (filterEnvelope.attack + filterEnvelope.decay + 1.0);
+        let envVal = 0;
+        if (elapsed < filterEnvelope.attack) {
+          envVal = elapsed / Math.max(0.001, filterEnvelope.attack);
+        } else if (elapsed < filterEnvelope.attack + filterEnvelope.decay) {
+          const decayProgress = (elapsed - filterEnvelope.attack) / Math.max(0.001, filterEnvelope.decay);
+          envVal = 1.0 - decayProgress * (1.0 - filterEnvelope.sustain);
+        } else {
+          envVal = filterEnvelope.sustain;
+        }
+        totalOctaveOffset += envVal * (envelopeAmount / 100) * 3.5;
+      }
+
+      const modulated = Math.max(MIN_FREQ, Math.min(MAX_FREQ, cutoff * Math.pow(2, totalOctaveOffset)));
+      setDynamicModCutoff(modulated);
+
+      animId = requestAnimationFrame(updateMod);
+    };
+
+    animId = requestAnimationFrame(updateMod);
+    return () => cancelAnimationFrame(animId);
+  }, [modActive, modDepth, lfoRate, lfoWaveform, envelopeAmount, filterEnvelope, activeNotesCount, cutoff]);
+
+  // High-precision Biquad Transfer Curve Generator (240 sample points)
+  const generateCurve = useCallback((activeCutoff: number) => {
+    const pointsCount = 200;
     const points: [number, number][] = [];
     const qEff = Math.max(0.4, Math.min(30, resonance * 0.75 + 0.5));
 
     for (let i = 0; i <= pointsCount; i++) {
       const normX = i / pointsCount;
       const f = normToFreq(normX);
-      const w = f / Math.max(20, cutoff);
+      const w = f / Math.max(20, activeCutoff);
       const w2 = w * w;
 
-      // Second order state variable / biquad magnitude
       const denom = Math.sqrt(Math.pow(1 - w2, 2) + Math.pow(w / qEff, 2));
 
       let mag = 0;
@@ -99,51 +248,60 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
       }
 
       const db = 20 * Math.log10(Math.max(0.001, mag));
-      const normY = dbToYRatio(db);
-      points.push([normX, normY]);
+      const px = PADDING_LEFT + normX * plotWidth;
+      const py = dbToY(db);
+      points.push([px, py]);
     }
 
-    // Generate SVG path string (scaled to 1000 x 500 internal viewBox for resolution)
-    const strokePath = points.map(([x, y], idx) => {
-      const px = x * 1000;
-      const py = y * 500;
-      return `${idx === 0 ? 'M' : 'L'} ${px.toFixed(1)} ${py.toFixed(1)}`;
-    }).join(' ');
-
-    const fillPath = `${strokePath} L 1000 500 L 0 500 Z`;
+    const strokePath = points.map(([x, y], idx) => `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+    const fillPath = `${strokePath} L ${(PADDING_LEFT + plotWidth).toFixed(1)} ${(dimensions.height - PADDING_BOTTOM).toFixed(1)} L ${PADDING_LEFT.toFixed(1)} ${(dimensions.height - PADDING_BOTTOM).toFixed(1)} Z`;
 
     return { strokePath, fillPath };
-  }, [cutoff, resonance, filterType]);
+  }, [resonance, filterType, plotWidth, PADDING_LEFT, PADDING_BOTTOM, dimensions.height, dbToY]);
 
-  // Compute position of the draggable interactive control node
+  // Main primary curve
+  const pathData = useMemo(() => generateCurve(cutoff), [generateCurve, cutoff]);
+
+  // Dynamic modulated ghost curve (when modulation is actively sweeping)
+  const modPathData = useMemo(() => {
+    if (dynamicModCutoff === null || Math.abs(dynamicModCutoff - cutoff) < 5) return null;
+    return generateCurve(dynamicModCutoff);
+  }, [generateCurve, dynamicModCutoff, cutoff]);
+
+  // Position of draggable interactive control reticle node
   const nodeCoords = useMemo(() => {
-    const normX = freqToNorm(cutoff);
-    // Peak dB at cutoff: for lowpass/highpass is Q, for bandpass is 0dB (scaled by resonance)
+    const x = freqToX(cutoff);
     const qEff = Math.max(0.4, Math.min(30, resonance * 0.75 + 0.5));
     let peakDb = 0;
     if (filterType === 'notch') {
-      peakDb = -24;
+      peakDb = -22;
     } else {
       peakDb = 20 * Math.log10(qEff);
     }
-    const normY = dbToYRatio(peakDb);
+    const y = dbToY(peakDb);
 
-    return {
-      x: normX * 1000,
-      y: normY * 500,
-      normX,
-      normY
-    };
-  }, [cutoff, resonance, filterType]);
+    return { x, y };
+  }, [cutoff, resonance, filterType, freqToX, dbToY]);
 
-  // Frequency grid references
+  // Dynamic modulated laser position
+  const dynamicModX = useMemo(() => {
+    if (dynamicModCutoff === null) return null;
+    return freqToX(dynamicModCutoff);
+  }, [dynamicModCutoff, freqToX]);
+
+  // High-def logarithmic frequency reference marks
   const freqGrid = [
-    { freq: 100, label: '100Hz' },
-    { freq: 1000, label: '1kHz' },
-    { freq: 10000, label: '10kHz' },
+    { freq: 50, label: '50' },
+    { freq: 100, label: '100' },
+    { freq: 250, label: '250' },
+    { freq: 500, label: '500' },
+    { freq: 1000, label: '1k' },
+    { freq: 2500, label: '2.5k' },
+    { freq: 5000, label: '5k' },
+    { freq: 10000, label: '10k' },
   ];
 
-  // dB reference lines
+  // dB scale reference lines
   const dbGrid = [
     { db: 12, label: '+12' },
     { db: 0, label: '0dB' },
@@ -151,37 +309,41 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
     { db: -24, label: '-24' },
   ];
 
-  const updateFromPointer = useCallback((clientX: number, clientY: number) => {
+  const updateFromPointer = useCallback((clientX: number, clientY: number, fine: boolean) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
 
-    const normX = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    const normY = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    const px = clientX - rect.left;
+    const py = clientY - rect.top;
 
-    const newCutoff = Math.round(normToFreq(normX));
-    const newResonance = yRatioToResonance(normY);
+    const rawFreq = xToFreq(px);
+    const rawRes = yToRes(py);
 
-    onCutoffChange(newCutoff);
-    onResonanceChange(newResonance);
-  }, [onCutoffChange, onResonanceChange]);
+    const stepScale = fine ? 0.2 : 1.0;
+    const newCutoff = Math.round(fine ? cutoff + (rawFreq - cutoff) * stepScale : rawFreq);
+    const newResonance = +(fine ? resonance + (rawRes - resonance) * stepScale : rawRes).toFixed(1);
+
+    onCutoffChange(Math.max(MIN_FREQ, Math.min(MAX_FREQ, newCutoff)));
+    onResonanceChange(Math.max(0, Math.min(40, newResonance)));
+  }, [cutoff, resonance, onCutoffChange, onResonanceChange, xToFreq, yToRes]);
 
   const handlePointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     if (!svgRef.current) return;
     svgRef.current.setPointerCapture(e.pointerId);
     setIsDragging(true);
-    updateFromPointer(e.clientX, e.clientY);
+    updateFromPointer(e.clientX, e.clientY, e.shiftKey);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
-    setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setHoverPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
 
     if (isDragging) {
       e.preventDefault();
-      updateFromPointer(e.clientX, e.clientY);
+      updateFromPointer(e.clientX, e.clientY, e.shiftKey);
     }
   };
 
@@ -203,18 +365,23 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
     return `${Math.round(f)} Hz`;
   };
 
+  // Hover frequency readout
+  const hoverFreq = useMemo(() => {
+    if (!hoverPos) return null;
+    return Math.round(xToFreq(hoverPos.x));
+  }, [hoverPos, xToFreq]);
+
   return (
     <div 
+      ref={containerRef}
       className={`relative w-full rounded-sm overflow-hidden select-none oled-screen ${className}`}
       style={{ height }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setCursorPos(null); }}
+      onMouseLeave={() => { setIsHovered(false); setHoverPos(null); }}
     >
-      {/* SVG Canvas */}
       <svg
         ref={svgRef}
-        viewBox="0 0 1000 500"
-        preserveAspectRatio="none"
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
         className="w-full h-full cursor-crosshair touch-none"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -223,39 +390,33 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
         onDoubleClick={handleDoubleClick}
       >
         <defs>
+          {/* High-def linear gradient: subtle 16% opacity fading cleanly to black */}
           <linearGradient id={`filter-grad-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={themeColor.stroke} stopOpacity="0.45" />
-            <stop offset="60%" stopColor={themeColor.stroke} stopOpacity="0.15" />
-            <stop offset="100%" stopColor={themeColor.stroke} stopOpacity="0.0" />
+            <stop offset="0%" stopColor={themeColor.stroke} stopOpacity="0.16" />
+            <stop offset="65%" stopColor={themeColor.stroke} stopOpacity="0.04" />
+            <stop offset="100%" stopColor={themeColor.stroke} stopOpacity="0.00" />
           </linearGradient>
-          <filter id={`filter-glow-${color}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="6" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Frequency Grid Lines (Logarithmic) */}
         {freqGrid.map(item => {
-          const x = freqToNorm(item.freq) * 1000;
+          const x = freqToX(item.freq);
           return (
             <g key={item.freq}>
               <line
                 x1={x}
-                y1={0}
+                y1={PADDING_TOP}
                 x2={x}
-                y2={500}
-                stroke="rgba(255, 255, 255, 0.08)"
-                strokeDasharray="4 4"
-                strokeWidth="1.5"
+                y2={dimensions.height - PADDING_BOTTOM}
+                stroke="rgba(255, 255, 255, 0.06)"
+                strokeDasharray="2 3"
+                strokeWidth="1"
               />
               <text
-                x={x + 6}
-                y={490}
-                fill="rgba(255, 255, 255, 0.3)"
-                fontSize="24"
+                x={x + 3}
+                y={dimensions.height - 6}
+                fill="rgba(255, 255, 255, 0.28)"
+                fontSize="8"
                 fontFamily="'Space Mono', monospace"
               >
                 {item.label}
@@ -266,24 +427,24 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
 
         {/* dB Scale Grid Lines */}
         {dbGrid.map(item => {
-          const y = dbToYRatio(item.db) * 500;
+          const y = dbToY(item.db);
           const isZero = item.db === 0;
           return (
             <g key={item.db}>
               <line
-                x1={0}
+                x1={PADDING_LEFT}
                 y1={y}
-                x2={1000}
+                x2={dimensions.width - PADDING_RIGHT}
                 y2={y}
-                stroke={isZero ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.05)'}
-                strokeWidth={isZero ? '2' : '1'}
-                strokeDasharray={isZero ? undefined : '3 3'}
+                stroke={isZero ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.04)'}
+                strokeWidth="1"
+                strokeDasharray={isZero ? undefined : '1 4'}
               />
               <text
-                x={12}
-                y={y - 6}
-                fill={isZero ? 'rgba(255, 255, 255, 0.5)' : 'rgba(255, 255, 255, 0.2)'}
-                fontSize="20"
+                x={4}
+                y={y + 3}
+                fill={isZero ? 'rgba(255, 255, 255, 0.45)' : 'rgba(255, 255, 255, 0.2)'}
+                fontSize="7"
                 fontFamily="'Space Mono', monospace"
               >
                 {item.label}
@@ -292,113 +453,155 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
           );
         })}
 
-        {/* Area Fill Under Curve */}
+        {/* Dynamic Hover Hairline Cursor */}
+        {isHovered && hoverPos && hoverPos.x >= PADDING_LEFT && hoverPos.x <= dimensions.width - PADDING_RIGHT && (
+          <line
+            x1={hoverPos.x}
+            y1={PADDING_TOP}
+            x2={hoverPos.x}
+            y2={dimensions.height - PADDING_BOTTOM}
+            stroke={themeColor.stroke}
+            strokeWidth="1"
+            strokeDasharray="2 2"
+            opacity="0.3"
+          />
+        )}
+
+        {/* Dynamic Modulated Cutoff Sweep Laser (Sweeping 60 FPS in real time with LFO/Envelope) */}
+        {dynamicModX !== null && (
+          <g>
+            <line
+              x1={dynamicModX}
+              y1={PADDING_TOP}
+              x2={dynamicModX}
+              y2={dimensions.height - PADDING_BOTTOM}
+              stroke={themeColor.beam}
+              strokeWidth="1.2"
+              strokeDasharray="3 2"
+              opacity="0.65"
+            />
+            {/* Pulsing locator pip at top of modulated beam */}
+            <circle cx={dynamicModX} cy={PADDING_TOP + 4} r="2.5" fill={themeColor.beam} opacity="0.8" />
+          </g>
+        )}
+
+        {/* Dynamic Modulated Ghost Curve (Sweeping in real time with audio modulation) */}
+        {modPathData && (
+          <path
+            d={modPathData.strokePath}
+            fill="none"
+            stroke={themeColor.beam}
+            strokeWidth="1"
+            strokeDasharray="2 3"
+            opacity="0.4"
+          />
+        )}
+
+        {/* High-Definition Area Fill */}
         <path
           d={pathData.fillPath}
           fill={`url(#filter-grad-${color})`}
         />
 
-        {/* Outer Glow Stroke */}
+        {/* Core Razor-Sharp Vector Beam (1.5px laser line with clean micro drop-shadow) */}
         <path
           d={pathData.strokePath}
           fill="none"
-          stroke={themeColor.stroke}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          opacity="0.4"
-          filter={`url(#filter-glow-${color})`}
-        />
-
-        {/* Core Crisp Beam */}
-        <path
-          d={pathData.strokePath}
-          fill="none"
-          stroke={themeColor.stroke}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Cutoff Vertical Guideline */}
-        <line
-          x1={nodeCoords.x}
-          y1={0}
-          x2={nodeCoords.x}
-          y2={500}
           stroke={themeColor.stroke}
           strokeWidth="1.5"
-          strokeDasharray="4 4"
-          opacity={isDragging || isHovered ? 0.7 : 0.25}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          style={{ filter: `drop-shadow(0 0 2px ${themeColor.stroke}aa)` }}
         />
 
-        {/* Interactive Draggable Handle Node */}
+        {/* Cutoff Vertical Laser Guideline */}
+        <line
+          x1={nodeCoords.x}
+          y1={PADDING_TOP}
+          x2={nodeCoords.x}
+          y2={dimensions.height - PADDING_BOTTOM}
+          stroke={themeColor.stroke}
+          strokeWidth="1"
+          strokeDasharray="2 3"
+          opacity={isDragging || isHovered ? 0.65 : 0.25}
+        />
+
+        {/* Precision Laboratory Reticle Handle */}
         <g transform={`translate(${nodeCoords.x}, ${nodeCoords.y})`}>
-          {/* Outer Pulse Ring when dragging */}
-          {isDragging && (
+          {/* Active / Drag expand ring */}
+          {(isDragging || isHovered) && (
             <circle
-              r="24"
+              r="12"
               fill="none"
-              stroke={themeColor.stroke}
-              strokeWidth="2"
+              stroke={themeColor.beam}
+              strokeWidth="1"
+              strokeDasharray="2 2"
               opacity="0.6"
-              className="animate-ping"
             />
           )}
 
-          {/* Halo Glow */}
+          {/* Outer reticle ring */}
           <circle
-            r="16"
-            fill={themeColor.stroke}
-            opacity="0.25"
-          />
-
-          {/* Node Border */}
-          <circle
-            r="10"
-            fill="#06090e"
+            r="6"
+            fill="#04070c"
             stroke={themeColor.stroke}
-            strokeWidth="3"
-            filter={`drop-shadow(0 0 8px ${themeColor.stroke})`}
+            strokeWidth="1.2"
           />
 
-          {/* Center Pip */}
+          {/* Reticle 4 Crosshair Micro Ticks */}
+          <line x1="-8" y1="0" x2="-6" y2="0" stroke={themeColor.stroke} strokeWidth="1" />
+          <line x1="6" y1="0" x2="8" y2="0" stroke={themeColor.stroke} strokeWidth="1" />
+          <line x1="0" y1="-8" x2="0" y2="-6" stroke={themeColor.stroke} strokeWidth="1" />
+          <line x1="0" y1="6" x2="0" y2="8" stroke={themeColor.stroke} strokeWidth="1" />
+
+          {/* Center core pip */}
           <circle
-            r="4"
+            r="1.8"
             fill={isDragging ? '#ffffff' : themeColor.stroke}
           />
+
+          {/* Generous touch target */}
+          <circle r="18" fill="transparent" />
         </g>
       </svg>
 
       {/* Header Overlay Badge: Filter Mode & Status */}
       <div className="absolute top-1.5 left-2 pointer-events-none flex items-center gap-2">
         <span 
-          className="text-[9px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-sm"
-          style={{ background: 'rgba(0,0,0,0.7)', color: themeColor.stroke, border: `1px solid ${themeColor.stroke}44` }}
+          className="text-[8px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-xs"
+          style={{ background: 'rgba(0,0,0,0.8)', color: themeColor.stroke, border: `1px solid ${themeColor.stroke}44` }}
         >
           {filterType.toUpperCase()}
         </span>
-        <span className="text-[9px] font-mono text-gray-400">
+        <span className="text-[8px] font-mono text-gray-400">
           {formatFreq(cutoff)} • Q {resonance.toFixed(1)}
+          {dynamicModCutoff !== null && (
+            <span className="ml-1.5 text-white/90">
+              MOD: <strong style={{ color: themeColor.beam }}>{formatFreq(dynamicModCutoff)}</strong>
+            </span>
+          )}
         </span>
       </div>
 
-      {/* Floating Readout Tooltip on Drag / Hover */}
-      {(isDragging || (isHovered && cursorPos)) && (
+      {/* Floating Precision Readout Tooltip on Drag or Hover */}
+      {(isDragging || (isHovered && hoverPos)) && (
         <div
-          className="absolute pointer-events-none z-30 px-2 py-1 rounded text-[9px] font-mono-lcd shadow-lg transition-transform duration-75"
+          className="absolute pointer-events-none z-30 px-2 py-0.5 rounded-xs text-[8px] font-mono-lcd shadow-lg uppercase backdrop-blur-sm"
           style={{
-            left: `${nodeCoords.normX * 100}%`,
-            top: `${Math.max(10, Math.min(80, nodeCoords.normY * 100 - 32))}%`,
-            transform: 'translate(-50%, -100%)',
+            left: `${nodeCoords.x}px`,
+            top: '24px',
+            transform: 'translate(-50%, 0)',
             background: 'var(--oled-bg)',
             border: `1px solid ${themeColor.stroke}`,
             color: themeColor.stroke,
-            boxShadow: `0 4px 12px rgba(0,0,0,0.8), 0 0 10px ${themeColor.glow}`
+            boxShadow: `0 4px 12px rgba(0,0,0,0.8), 0 0 8px ${themeColor.halo}`
           }}
         >
           <span>CUTOFF: {formatFreq(cutoff)}</span>
-          <span className="ml-2 opacity-80">RES: {resonance.toFixed(1)}</span>
+          <span className="ml-2 opacity-90">Q: {resonance.toFixed(1)}</span>
+          {hoverFreq && hoverFreq !== cutoff && (
+            <span className="ml-2 text-gray-400">PTR: {formatFreq(hoverFreq)}</span>
+          )}
         </div>
       )}
     </div>

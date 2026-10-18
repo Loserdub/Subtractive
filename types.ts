@@ -29,6 +29,7 @@ export interface FilterParams {
   type: FilterType;
   model?: FilterModel; // 'clean' | 'ladder24' | 'diode12'
   drive?: number; // 0 to 1 (pre-filter analog saturation)
+  filterFM?: number; // 0 to 1 (Oscillator 1 audio-rate FM to VCF Cutoff)
 }
 
 export type LFOTarget = 'pitch' | 'filter' | 'amp' | 'pwm';
@@ -68,6 +69,7 @@ export type ModDestination =
   | 'noiseGain'
   | 'subGain'
   | 'fxMix'
+  | 'filterFM'
   | 'pan';
 
 export interface ModMatrixRoute {
@@ -88,6 +90,7 @@ export interface MasterFXParams {
     rate: number; // 0.1 to 8 Hz
     depth: number; // 0 to 1
     mix: number; // 0 to 1
+    mode?: 'off' | 'I' | 'II' | 'I+II';
   };
   delay: {
     enabled: boolean;
@@ -166,6 +169,7 @@ export interface SynthParameters {
   };
   fx: MasterFXParams;
   arpeggiator: ArpeggiatorParams;
+  analogDrift?: number; // 0 to 1 (per-voice vintage oscillator thermal circuit drift)
 }
 
 // Types for the Drum Machine

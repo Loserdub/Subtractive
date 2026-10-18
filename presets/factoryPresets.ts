@@ -2424,7 +2424,7 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
       filter: { cutoff: 1900, resonance: 14, type: 'lowpass' },
       ampEnvelope: { attack: 0.005, decay: 0.22, sustain: 0.15, release: 0.15 },
       filterEnvelope: { attack: 0.005, decay: 0.18, sustain: 0.08, release: 0.15, amount: 4200 },
-      arpeggiator: { enabled: true, mode: 'up-down', octaves: 2, division: '1/16', gate: 0.65 },
+      arpeggiator: { enabled: true, mode: 'updown', octaves: 2, division: '1/16', gate: 0.65 },
       fx: { drive: { enabled: true, amount: 0.3 }, delay: { enabled: true, time: 0.25, feedback: 0.5, mix: 0.35, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.2, mix: 0.25 } }
     })
   },

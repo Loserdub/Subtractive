@@ -335,31 +335,48 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
 
           {/* Right: Pitch & Mod Wheels + Collapse Toggle */}
           <div className="flex items-center gap-2.5 shrink-0">
-            {/* Desktop Mini Wheels */}
-            <div className="hidden md:flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <span className="text-[7px] font-mono text-gray-400 uppercase">PITCH</span>
+            {/* Desktop Mini Wheels with Knurled Rubber Grip & Neon Detent */}
+            <div className="hidden md:flex items-center gap-2.5">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[7px] font-mono text-gray-400 uppercase font-bold">PITCH</span>
                 <div 
-                  className="relative w-3.5 h-5 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-none select-none shadow-inner overflow-hidden"
+                  className="relative w-4 h-6 bg-[#07090e] border border-[#232b3c] rounded-xs cursor-ns-resize touch-none select-none shadow-[inset_0_2px_5px_rgba(0,0,0,0.9)] overflow-hidden"
                   onPointerDown={handlePitchWheelPointerDown}
                   title="Pitch Bend (Click & drag vertically)"
                 >
+                  {/* Knurled rubber barrel ridges */}
                   <div 
-                    className="absolute left-0 right-0 h-1 bg-white rounded-sm shadow-[0_0_3px_white]"
-                    style={{ top: `${(1 - pitchVal) * 75}%` }}
+                    className="absolute inset-0 opacity-40 pointer-events-none"
+                    style={{
+                      background: 'repeating-linear-gradient(to bottom, #000 0px, #000 2px, #3a475d 2px, #3a475d 4px)'
+                    }}
+                  />
+                  {/* Glowing center indicator pip */}
+                  <div 
+                    className="absolute left-0 right-0 h-1 bg-[#38bdf8] rounded-xs shadow-[0_0_5px_#38bdf8]"
+                    style={{ top: `${(1 - pitchVal) * 78}%` }}
                   />
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-[7px] font-mono text-gray-400 uppercase">MOD</span>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[7px] font-mono text-gray-400 uppercase font-bold">MOD</span>
                 <div 
-                  className="relative w-3.5 h-5 bg-[#090b0f] border border-[#252d3d] rounded-sm cursor-ns-resize touch-none select-none shadow-inner overflow-hidden"
+                  className="relative w-4 h-6 bg-[#07090e] border border-[#232b3c] rounded-xs cursor-ns-resize touch-none select-none shadow-[inset_0_2px_5px_rgba(0,0,0,0.9)] overflow-hidden"
                   onPointerDown={handleModWheelPointerDown}
                   title="Modulation Wheel (Click & drag vertically)"
                 >
+                  {/* Knurled rubber barrel ridges */}
                   <div 
-                    className="absolute left-0 right-0 h-1 bg-[#10b981] rounded-sm shadow-[0_0_4px_#10b981]"
-                    style={{ top: `${(1 - modVal) * 75}%` }}
+                    className="absolute inset-0 opacity-40 pointer-events-none"
+                    style={{
+                      background: 'repeating-linear-gradient(to bottom, #000 0px, #000 2px, #3a475d 2px, #3a475d 4px)'
+                    }}
+                  />
+                  {/* Glowing mod indicator pip */}
+                  <div 
+                    className="absolute left-0 right-0 h-1 bg-[#10b981] rounded-xs shadow-[0_0_5px_#10b981]"
+                    style={{ top: `${(1 - modVal) * 78}%` }}
                   />
                 </div>
               </div>
@@ -418,6 +435,16 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
       {/* ── Main Piano Keybed ────────────────────────────────────────── */}
       <div className="relative w-full h-36 md:h-40 min-h-[140px] bg-[#06080c] p-1 rounded border border-[#1b2230] overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)]">
         
+        {/* Authentic Pro Red Felt Damper Bushing Strip */}
+        <div 
+          className="absolute top-1 left-1 right-1 h-2 z-30 pointer-events-none rounded-t-xs"
+          style={{
+            background: 'linear-gradient(to bottom, #991b1b, #7f1d1d)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.25)',
+            borderBottom: '1px solid rgba(0,0,0,0.7)'
+          }}
+        />
+
         {/* White Keys Row */}
         <div className="absolute top-1 left-1 right-1 bottom-1 flex gap-[2px]">
           {whiteKeys.map(key => {
@@ -489,8 +516,11 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                     className={`h-full w-full rounded-b-sm border-x border-b border-black/80 relative flex flex-col justify-end items-center pb-1.5 transition-all duration-75 touch-none select-none ${
                       isActive 
                         ? 'bg-gradient-to-b from-[#090b0f] to-[#1a202c] transform translate-y-[2px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]' 
-                        : 'bg-gradient-to-b from-[#222733] via-[#11141c] to-[#090b0f] hover:from-[#333a4d] shadow-[2px_4px_8px_rgba(0,0,0,0.7)]'
+                        : 'bg-gradient-to-b from-[#222733] via-[#11141c] to-[#090b0f] hover:from-[#333a4d]'
                     }`}
+                    style={{
+                      filter: isActive ? 'drop-shadow(1px 2px 3px rgba(0,0,0,0.9))' : 'drop-shadow(2px 5px 6px rgba(0,0,0,0.75))'
+                    }}
                   >
                     {/* Active LED Light on Black key */}
                     <div 

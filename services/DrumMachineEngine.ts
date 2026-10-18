@@ -8,9 +8,29 @@ interface TrackChannelStrip {
   meterBuffer: Uint8Array;
 }
 
+export type TransportQuantizeMode = 'bar' | 'beat' | 'instant';
+
+export interface TransportState {
+  isDrumPlaying: boolean;
+  isSeqPlaying: boolean;
+  isDrumQueued: boolean;
+  isSeqQueued: boolean;
+  isDrumStopQueued: boolean;
+  isSeqStopQueued: boolean;
+  quantizeMode: TransportQuantizeMode;
+  currentStep: number;
+}
+
 export class DrumMachineEngine {
   private audioContext: AudioContext;
   private isPlaying = false;
+  private isDrumPlaying = false;
+  private isSeqPlaying = false;
+  private isDrumQueued = false;
+  private isSeqQueued = false;
+  private isDrumStopQueued = false;
+  private isSeqStopQueued = false;
+  private quantizeMode: TransportQuantizeMode = 'bar';
   private bpm = 120;
   private pattern: StepSequencePattern | null = null;
   private currentStep = 0;
@@ -20,6 +40,7 @@ export class DrumMachineEngine {
   private nextNoteTime = 0.0;
   private onStepChange?: (step: number) => void;
   private stepListeners = new Set<(step: number | null) => void>();
+  private transportListeners = new Set<(state: TransportState) => void>();
   
   private swing = 0; // 0 to 100
   private trackSettings: Record<DrumTrackName, DrumTrackSettings> = JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS));
@@ -48,6 +69,32 @@ export class DrumMachineEngine {
     return () => {
       this.stepListeners.delete(listener);
     };
+  }
+
+  public subscribeTransport(listener: (state: TransportState) => void): () => void {
+    this.transportListeners.add(listener);
+    listener(this.getTransportState());
+    return () => {
+      this.transportListeners.delete(listener);
+    };
+  }
+
+  public getTransportState(): TransportState {
+    return {
+      isDrumPlaying: this.isDrumPlaying,
+      isSeqPlaying: this.isSeqPlaying,
+      isDrumQueued: this.isDrumQueued,
+      isSeqQueued: this.isSeqQueued,
+      isDrumStopQueued: this.isDrumStopQueued,
+      isSeqStopQueued: this.isSeqStopQueued,
+      quantizeMode: this.quantizeMode,
+      currentStep: this.currentStep % 16,
+    };
+  }
+
+  private notifyTransportState() {
+    const state = this.getTransportState();
+    this.transportListeners.forEach(fn => fn(state));
   }
 
   private initChannelStrips() {
@@ -352,6 +399,40 @@ export class DrumMachineEngine {
     if (!this.pattern) return;
     const secondsPerBeat = 60.0 / this.bpm;
     const secondsPer16thNote = secondsPerBeat / 4;
+
+    // Check quantized transitions at boundaries (e.g. step 0 of bar, or step % 4 of beat)
+    const quantum = this.quantizeMode === 'bar' ? 16 : this.quantizeMode === 'beat' ? 4 : 1;
+    if (this.currentStep % quantum === 0) {
+      let stateChanged = false;
+      if (this.isDrumQueued) {
+        this.isDrumPlaying = true;
+        this.isDrumQueued = false;
+        stateChanged = true;
+      }
+      if (this.isSeqQueued) {
+        this.isSeqPlaying = true;
+        this.isSeqQueued = false;
+        stateChanged = true;
+      }
+      if (this.isDrumStopQueued) {
+        this.isDrumPlaying = false;
+        this.isDrumStopQueued = false;
+        stateChanged = true;
+      }
+      if (this.isSeqStopQueued) {
+        this.isSeqPlaying = false;
+        this.isSeqStopQueued = false;
+        stateChanged = true;
+      }
+      if (stateChanged) {
+        this.notifyTransportState();
+      }
+    }
+
+    if (!this.isDrumPlaying && !this.isSeqPlaying && !this.isDrumQueued && !this.isSeqQueued) {
+      this.stopMasterClock();
+      return;
+    }
     
     const isOffbeat = this.currentStep % 2 === 1;
     const swingFactor = this.swing / 100;
@@ -360,30 +441,33 @@ export class DrumMachineEngine {
     const playTime = this.nextNoteTime + swingDelay;
     const stepToNotify = this.currentStep;
 
-    const tracks: DrumTrackName[] = ['kick', 'snare', 'hihat', 'crash'];
-    for (const track of tracks) {
-      const len = this.trackLengths[track] || 16;
-      const stepIdx = this.currentStep % len;
-      const stepVal = this.pattern[track][stepIdx];
-      const ratchet = Math.min(4, Math.max(1, this.trackRatchets[track]?.[stepIdx] || 1));
+    // Drum Track Scheduling (only when drums are playing)
+    if (this.isDrumPlaying) {
+      const tracks: DrumTrackName[] = ['kick', 'snare', 'hihat', 'crash'];
+      for (const track of tracks) {
+        const len = this.trackLengths[track] || 16;
+        const stepIdx = this.currentStep % len;
+        const stepVal = this.pattern[track][stepIdx];
+        const ratchet = Math.min(4, Math.max(1, this.trackRatchets[track]?.[stepIdx] || 1));
 
-      if (stepVal > 0) {
-        const subInterval = secondsPer16thNote / ratchet;
-        for (let r = 0; r < ratchet; r++) {
-          const hitTime = playTime + r * subInterval;
-          const hitVel = r === 0 ? stepVal : (stepVal === 2 ? 1.4 : 0.85);
-          switch(track) {
-            case 'kick': this.createKick(hitTime, hitVel); break;
-            case 'snare': this.createSnare(hitTime, hitVel); break;
-            case 'hihat': this.createHihat(hitTime, hitVel); break;
-            case 'crash': this.createCrash(hitTime, hitVel); break;
+        if (stepVal > 0) {
+          const subInterval = secondsPer16thNote / ratchet;
+          for (let r = 0; r < ratchet; r++) {
+            const hitTime = playTime + r * subInterval;
+            const hitVel = r === 0 ? stepVal : (stepVal === 2 ? 1.4 : 0.85);
+            switch(track) {
+              case 'kick': this.createKick(hitTime, hitVel); break;
+              case 'snare': this.createSnare(hitTime, hitVel); break;
+              case 'hihat': this.createHihat(hitTime, hitVel); break;
+              case 'crash': this.createCrash(hitTime, hitVel); break;
+            }
           }
         }
       }
     }
 
-    // Melodic Synth Sequencer scheduling
-    if (this.melodicPattern && this.melodicPattern.enabled && this.onScheduleMelodicStep) {
+    // Melodic Synth Sequencer scheduling (only when seq is playing)
+    if (this.isSeqPlaying && this.melodicPattern && this.melodicPattern.enabled && this.onScheduleMelodicStep) {
       const stepCount = this.melodicPattern.length || this.melodicPattern.steps.length || 16;
       const stepIdx = this.currentStep % stepCount;
       const step = this.melodicPattern.steps[stepIdx];
@@ -398,9 +482,9 @@ export class DrumMachineEngine {
     const timeUntilNote = Math.max(0, playTime - this.audioContext.currentTime);
     setTimeout(() => {
       if (this.isPlaying) {
-        this.stepListeners.forEach(fn => fn(stepToNotify));
+        this.stepListeners.forEach(fn => fn(stepToNotify % 16));
         if (this.onStepChange) {
-          this.onStepChange(stepToNotify);
+          this.onStepChange(stepToNotify % 16);
         }
       }
     }, timeUntilNote * 1000);
@@ -415,17 +499,14 @@ export class DrumMachineEngine {
     }
   }
 
-  public play() {
-    if (this.isPlaying || !this.pattern) return;
-    
+  private startMasterClock() {
+    if (this.isPlaying) return;
     if (this.audioContext.state === 'suspended') {
       this.audioContext.resume();
     }
-    
     this.isPlaying = true;
     this.currentStep = 0;
     this.nextNoteTime = this.audioContext.currentTime + 0.05;
-    
     if (this.worker) {
       this.worker.postMessage('start');
     } else {
@@ -438,7 +519,7 @@ export class DrumMachineEngine {
     }
   }
 
-  public stop() {
+  private stopMasterClock() {
     if (!this.isPlaying) return;
     this.isPlaying = false;
     if (this.worker) {
@@ -446,8 +527,139 @@ export class DrumMachineEngine {
     }
     this.stepListeners.forEach(fn => fn(null));
     if (this.onStepChange) {
-      this.onStepChange(-1); 
+      this.onStepChange(-1);
     }
+    this.notifyTransportState();
+  }
+
+  public toggleDrums(instant: boolean = false) {
+    if (this.isDrumPlaying) {
+      if (instant || this.quantizeMode === 'instant' || !this.isSeqPlaying) {
+        this.isDrumPlaying = false;
+        this.isDrumQueued = false;
+        this.isDrumStopQueued = false;
+        if (!this.isSeqPlaying && !this.isSeqQueued) {
+          this.stopMasterClock();
+        }
+      } else {
+        this.isDrumStopQueued = true;
+      }
+    } else if (this.isDrumQueued) {
+      this.isDrumQueued = false;
+      if (!this.isSeqPlaying && !this.isSeqQueued) {
+        this.stopMasterClock();
+      }
+    } else {
+      if (!this.isPlaying) {
+        this.isDrumPlaying = true;
+        this.startMasterClock();
+      } else {
+        if (instant || this.quantizeMode === 'instant') {
+          this.isDrumPlaying = true;
+        } else {
+          this.isDrumQueued = true;
+        }
+      }
+    }
+    this.notifyTransportState();
+  }
+
+  public toggleSeq(instant: boolean = false) {
+    if (this.isSeqPlaying) {
+      if (instant || this.quantizeMode === 'instant' || !this.isDrumPlaying) {
+        this.isSeqPlaying = false;
+        this.isSeqQueued = false;
+        this.isSeqStopQueued = false;
+        if (!this.isDrumPlaying && !this.isDrumQueued) {
+          this.stopMasterClock();
+        }
+      } else {
+        this.isSeqStopQueued = true;
+      }
+    } else if (this.isSeqQueued) {
+      this.isSeqQueued = false;
+      if (!this.isDrumPlaying && !this.isDrumQueued) {
+        this.stopMasterClock();
+      }
+    } else {
+      if (!this.isPlaying) {
+        this.isSeqPlaying = true;
+        this.startMasterClock();
+      } else {
+        if (instant || this.quantizeMode === 'instant') {
+          this.isSeqPlaying = true;
+        } else {
+          this.isSeqQueued = true;
+        }
+      }
+    }
+    this.notifyTransportState();
+  }
+
+  public setQuantizeMode(mode: TransportQuantizeMode) {
+    this.quantizeMode = mode;
+    this.notifyTransportState();
+  }
+
+  public getQuantizeMode(): TransportQuantizeMode {
+    return this.quantizeMode;
+  }
+
+  public playDrums(quantized: boolean = true) {
+    if (this.isDrumPlaying) return;
+    this.toggleDrums(!quantized);
+  }
+
+  public stopDrums(quantized: boolean = true) {
+    if (!this.isDrumPlaying && !this.isDrumQueued) return;
+    this.toggleDrums(!quantized);
+  }
+
+  public playSeq(quantized: boolean = true) {
+    if (this.isSeqPlaying) return;
+    this.toggleSeq(!quantized);
+  }
+
+  public stopSeq(quantized: boolean = true) {
+    if (!this.isSeqPlaying && !this.isSeqQueued) return;
+    this.toggleSeq(!quantized);
+  }
+
+  public stopAll() {
+    this.isDrumPlaying = false;
+    this.isSeqPlaying = false;
+    this.isDrumQueued = false;
+    this.isSeqQueued = false;
+    this.isDrumStopQueued = false;
+    this.isSeqStopQueued = false;
+    this.stopMasterClock();
+  }
+
+  public play() {
+    this.isDrumPlaying = true;
+    this.isSeqPlaying = true;
+    this.isDrumQueued = false;
+    this.isSeqQueued = false;
+    this.isDrumStopQueued = false;
+    this.isSeqStopQueued = false;
+    this.startMasterClock();
+    this.notifyTransportState();
+  }
+
+  public stop() {
+    this.stopAll();
+  }
+
+  public getIsPlaying(): boolean {
+    return this.isDrumPlaying || this.isSeqPlaying;
+  }
+
+  public getIsDrumsPlaying(): boolean {
+    return this.isDrumPlaying;
+  }
+
+  public getIsSeqPlaying(): boolean {
+    return this.isSeqPlaying;
   }
   
   public setBpm(newBpm: number) {

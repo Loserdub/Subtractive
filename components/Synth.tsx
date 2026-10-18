@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings, PresetPatch, WorkspaceMode, MelodicSequencerPattern, DrumTrackLengths, DrumTrackRatchets } from '../types';
 import { patchParams } from '../utils/patchParams';
+import { useSynthStore, MobileTab, VisualizerMode } from '../stores/useSynthStore';
 import { AudioEngine } from '../services/AudioEngine';
-import { DrumMachineEngine } from '../services/DrumMachineEngine';
+import { DrumMachineEngine, TransportState, TransportQuantizeMode } from '../services/DrumMachineEngine';
 import { Knob } from './Knob';
 import { Keyboard } from './Keyboard';
 import { DrumMachine } from './DrumMachine';
@@ -22,7 +23,9 @@ import { PresetBrowser } from './PresetBrowser';
 import { AudioRecorder } from '../services/AudioRecorder';
 import { MidiManager } from '../services/MidiManager';
 import { useTheme, THEMES } from '../contexts/ThemeContext';
+import { SkinPicker } from './SkinPicker';
 import { ErrorBoundary } from './ErrorBoundary';
+import { ModulationFlowHUD } from './ModulationFlowHUD';
 
 interface PanelProps {
   title: string;
@@ -55,27 +58,79 @@ const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, cla
   );
 };
 
+const WORKSPACE_TABS: Array<{
+  id: WorkspaceMode;
+  idx: string;
+  label: string;
+  sublabel: string;
+  icon: string;
+  color: string;
+  glow: string;
+  hotkey: string;
+}> = [
+  { id: 'synth',   idx: '01', label: 'SYNTH',   sublabel: 'SOUND LAB',   icon: '🎛️', color: '#10b981', glow: 'rgba(16, 185, 129, 0.45)', hotkey: '1' },
+  { id: 'fx',      idx: '02', label: 'FX',      sublabel: 'STUDIO RACK', icon: '⚡', color: '#ff3344', glow: 'rgba(255, 51, 68, 0.45)',   hotkey: '2' },
+  { id: 'arp',     idx: '03', label: 'ARP',     sublabel: 'POLY ARP',    icon: '♩',  color: '#00e5ff', glow: 'rgba(0, 229, 255, 0.45)',  hotkey: '3' },
+  { id: 'seq',     idx: '04', label: 'SEQ',     sublabel: '16-ST MOTION',icon: '🎼', color: '#00ff66', glow: 'rgba(0, 255, 102, 0.45)',  hotkey: '4' },
+  { id: 'groove',  idx: '05', label: 'GROOVE',  sublabel: 'DRUM MATRIX', icon: '🥁', color: '#ffaa00', glow: 'rgba(255, 170, 0, 0.45)',    hotkey: '5' },
+  { id: 'perform', idx: '06', label: 'PERFORM', sublabel: 'LIVE DECK',   icon: '🎚️', color: '#38bdf8', glow: 'rgba(56, 189, 248, 0.45)',  hotkey: '6' },
+];
+
 export const Synth: React.FC = () => {
   const { theme, setTheme } = useTheme();
-  const [params, setParams] = useState<SynthParameters>(DEFAULT_SYNTH_PARAMS);
-  const [selectedPresetName, setSelectedPresetName] = useState<string>('Analog Init');
-  const [midiStatus, setMidiStatus] = useState<string>('Engine Standby');
-  const [isStarted, setIsStarted] = useState(false);
-  const [activeNotes, setActiveNotes] = useState<Set<number>>(new Set());
-  
-  // Workspace Focus Modes: 'synth' (Sound Design) | 'fx' (Master FX) | 'arp' (Arpeggiator) | 'seq' (Melodic Sequencer) | 'groove' (Rhythm) | 'perform' (Live Deck)
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(() => {
-    try {
-      const saved = localStorage.getItem('subtractive_workspace_mode') as WorkspaceMode;
-      return (['synth', 'fx', 'arp', 'seq', 'groove', 'perform'] as WorkspaceMode[]).includes(saved) ? saved : 'synth';
-    } catch {
-      return 'synth';
-    }
-  });
+  // Centralized Zustand Store Subscriptions
+  const params = useSynthStore(s => s.params);
+  const setParams = useSynthStore(s => s.setParams);
+  const selectedPresetName = useSynthStore(s => s.selectedPresetName);
+  const setSelectedPresetName = useSynthStore(s => s.setSelectedPresetName);
+  const midiStatus = useSynthStore(s => s.midiStatus);
+  const setMidiStatus = useSynthStore(s => s.setMidiStatus);
+  const isStarted = useSynthStore(s => s.isStarted);
+  const setIsStarted = useSynthStore(s => s.setIsStarted);
+  const activeNotes = useSynthStore(s => s.activeNotes);
+  const setActiveNotes = useSynthStore(s => s.setActiveNotes);
+  const noteOn = useSynthStore(s => s.noteOn);
+  const noteOff = useSynthStore(s => s.noteOff);
+
+  const workspaceMode = useSynthStore(s => s.workspaceMode);
+  const setWorkspaceMode = useSynthStore(s => s.setWorkspaceMode);
+  const activeTab = useSynthStore(s => s.activeTab);
+  const setActiveTab = useSynthStore(s => s.setActiveTab);
+  const selectedMobileOsc = useSynthStore(s => s.selectedMobileOsc);
+  const setSelectedMobileOsc = useSynthStore(s => s.setSelectedMobileOsc);
+  const visualizerMode = useSynthStore(s => s.visualizerMode);
+  const setVisualizerMode = useSynthStore(s => s.setVisualizerMode);
+  const selectedEnvTab = useSynthStore(s => s.selectedEnvTab);
+  const setSelectedEnvTab = useSynthStore(s => s.setSelectedEnvTab);
+  const isKeybedVisible = useSynthStore(s => s.isKeybedVisible);
+  const setIsKeybedVisible = useSynthStore(s => s.setIsKeybedVisible);
+  const isPresetBrowserOpen = useSynthStore(s => s.isPresetBrowserOpen);
+  const setIsPresetBrowserOpen = useSynthStore(s => s.setIsPresetBrowserOpen);
+  const userPresets = useSynthStore(s => s.userPresets);
+  const setUserPresets = useSynthStore(s => s.setUserPresets);
+
+  const runningStep = useSynthStore(s => s.runningStep);
+  const setRunningStep = useSynthStore(s => s.setRunningStep);
+  const arpActiveStep = useSynthStore(s => s.arpActiveStep);
+  const setArpActiveStep = useSynthStore(s => s.setArpActiveStep);
+  const arpActiveNote = useSynthStore(s => s.arpActiveNote);
+  const setArpActiveNote = useSynthStore(s => s.setArpActiveNote);
+
+  const isRecording = useSynthStore(s => s.isRecording);
+  const setIsRecording = useSynthStore(s => s.setIsRecording);
+  const recordingSeconds = useSynthStore(s => s.recordingSeconds);
+  const setRecordingSeconds = useSynthStore(s => s.setRecordingSeconds);
+  const audioRecorderRef = useRef<AudioRecorder | null>(null);
+  const midiManagerRef = useRef<MidiManager | null>(null);
+  const learningParamId = useSynthStore(s => s.learningParamId);
+  const setLearningParamId = useSynthStore(s => s.setLearningParamId);
+  const mappedCCs = useSynthStore(s => s.mappedCCs);
+  const setMappedCCs = useSynthStore(s => s.setMappedCCs);
+  const rawMappedCCs = useSynthStore(s => s.rawMappedCCs);
+  const setRawMappedCCs = useSynthStore(s => s.setRawMappedCCs);
 
   const handleWorkspaceModeChange = useCallback((mode: WorkspaceMode) => {
     setWorkspaceMode(mode);
-    // Sync mobile activeTab when viewport is below md (768px)
     if (window.innerWidth < 768) {
       const mobileTabMap: Partial<Record<WorkspaceMode, MobileTab>> = {
         synth: 'vco',
@@ -87,66 +142,7 @@ export const Synth: React.FC = () => {
       const mappedTab = mobileTabMap[mode];
       if (mappedTab) setActiveTab(mappedTab);
     }
-    try {
-      localStorage.setItem('subtractive_workspace_mode', mode);
-    } catch {}
-  }, []);
-
-  const [runningStep, setRunningStep] = useState<number | null>(null);
-  const [arpActiveStep, setArpActiveStep] = useState<number | null>(null);
-  const [arpActiveNote, setArpActiveNote] = useState<number | null>(null);
-
-  // Explicit mobile tabs
-  type MobileTab = 'vco' | 'vcf' | 'env' | 'fx' | 'arp' | 'seq' | 'drums' | 'keys';
-  const [activeTab, setActiveTab] = useState<MobileTab>('vco');
-  const [selectedMobileOsc, setSelectedMobileOsc] = useState<'osc1' | 'osc2' | 'osc3' | 'osc4'>('osc1');
-  type VisualizerMode = 'oscilloscope' | 'spectrum' | 'lissajous';
-  const [visualizerMode, setVisualizerMode] = useState<VisualizerMode>('oscilloscope');
-  const [selectedEnvTab, setSelectedEnvTab] = useState<'amp' | 'filter'>('amp');
-  const [isKeybedVisible, setIsKeybedVisible] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem('subtractive_keybed_visible');
-      return saved !== null ? saved === 'true' : true;
-    } catch {
-      return true;
-    }
-  });
-  const [isPresetBrowserOpen, setIsPresetBrowserOpen] = useState(false);
-  const [userPresets, setUserPresets] = useState<PresetPatch[]>(() => {
-    try {
-      const saved = localStorage.getItem('subtractive_user_presets');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const audioRecorderRef = useRef<AudioRecorder | null>(null);
-  const midiManagerRef = useRef<MidiManager | null>(null);
-  const [learningParamId, setLearningParamId] = useState<string | null>(null);
-  const [mappedCCs, setMappedCCs] = useState<Record<string, number>>(() => {
-    try {
-      const saved = localStorage.getItem('subtractive_midi_cc_mappings');
-      if (saved) {
-        const ccMap: Record<number, string> = JSON.parse(saved);
-        const inverted: Record<string, number> = {};
-        for (const [cc, id] of Object.entries(ccMap)) {
-          inverted[id] = parseInt(cc, 10);
-        }
-        return inverted;
-      }
-    } catch {}
-    return {};
-  });
-  const [rawMappedCCs, setRawMappedCCs] = useState<Record<number, string>>(() => {
-    try {
-      const saved = localStorage.getItem('subtractive_midi_cc_mappings');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
+  }, [setWorkspaceMode, setActiveTab]);
 
   useEffect(() => {
     let timer: any = null;
@@ -317,43 +313,46 @@ export const Synth: React.FC = () => {
     }
   }, [learningParamId]);
   
-  // Drum Machine State
-  const [banks, setBanks] = useState<StepSequencePattern[]>(() => 
-    Array(4).fill(null).map(() => JSON.parse(JSON.stringify(DEFAULT_DRUM_PATTERN)))
-  );
-  const [currentBankIndex, setCurrentBankIndex] = useState<number>(0);
+  // Drum Machine State from Store
+  const banks = useSynthStore(s => s.banks);
+  const setBanks = useSynthStore(s => s.setBanks);
+  const currentBankIndex = useSynthStore(s => s.currentBankIndex);
+  const setCurrentBankIndex = useSynthStore(s => s.setCurrentBankIndex);
   const drumPattern = banks[currentBankIndex];
 
-  const [selectedTrack, setSelectedTrack] = useState<DrumTrackName>('kick');
-  const [isDrumMachinePlaying, setIsDrumMachinePlaying] = useState(false);
-  const [bpm, setBpm] = useState(DEFAULT_BPM);
-  const [swing, setSwing] = useState(0);
-  const [drumSettings, setDrumSettings] = useState<Record<DrumTrackName, DrumTrackSettings>>(
-    JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS))
-  );
-  const [drumTrackLengths, setDrumTrackLengths] = useState<DrumTrackLengths>(() => ({ ...DEFAULT_DRUM_TRACK_LENGTHS }));
-  const [drumTrackRatchets, setDrumTrackRatchets] = useState<DrumTrackRatchets>(() => JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_RATCHETS)));
+  const selectedTrack = useSynthStore(s => s.selectedTrack);
+  const setSelectedTrack = useSynthStore(s => s.setSelectedTrack);
+  const isDrumPlaying = useSynthStore(s => s.isDrumPlaying);
+  const isSeqPlaying = useSynthStore(s => s.isSeqPlaying);
+  const isDrumQueued = useSynthStore(s => s.isDrumQueued);
+  const isSeqQueued = useSynthStore(s => s.isSeqQueued);
+  const quantizeMode = useSynthStore(s => s.quantizeMode);
+  const setQuantizeMode = useSynthStore(s => s.setQuantizeMode);
+  const isDrumMachinePlaying = useSynthStore(s => s.isDrumMachinePlaying);
+  const setTransportState = useSynthStore(s => s.setTransportState);
+  const bpm = useSynthStore(s => s.bpm);
+  const setBpm = useSynthStore(s => s.setBpm);
+  const swing = useSynthStore(s => s.swing);
+  const setSwing = useSynthStore(s => s.setSwing);
+  const drumSettings = useSynthStore(s => s.drumSettings);
+  const setDrumSettings = useSynthStore(s => s.setDrumSettings);
+  const drumTrackLengths = useSynthStore(s => s.drumTrackLengths);
+  const setDrumTrackLengths = useSynthStore(s => s.setDrumTrackLengths);
+  const drumTrackRatchets = useSynthStore(s => s.drumTrackRatchets);
+  const setDrumTrackRatchets = useSynthStore(s => s.setDrumTrackRatchets);
 
-  // Melodic Motion Sequencer State
-  const [melodicBanks, setMelodicBanks] = useState<MelodicSequencerPattern[]>(() => {
-    try {
-      const saved = localStorage.getItem('subtractive_melodic_banks');
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return Array(4).fill(null).map(() => JSON.parse(JSON.stringify(DEFAULT_MELODIC_PATTERN)));
-  });
+  // Melodic Motion Sequencer State from Store
+  const melodicBanks = useSynthStore(s => s.melodicBanks);
+  const setMelodicBanks = useSynthStore(s => s.setMelodicBanks);
   const melodicPattern = melodicBanks[currentBankIndex] || DEFAULT_MELODIC_PATTERN;
 
   const handleMelodicPatternChange = useCallback((newPattern: MelodicSequencerPattern) => {
     setMelodicBanks(prev => {
       const next = [...prev];
       next[currentBankIndex] = newPattern;
-      try {
-        localStorage.setItem('subtractive_melodic_banks', JSON.stringify(next));
-      } catch {}
       return next;
     });
-  }, [currentBankIndex]);
+  }, [currentBankIndex, setMelodicBanks]);
 
   const audioEngine = useRef<AudioEngine | null>(null);
   const drumMachineEngine = useRef<DrumMachineEngine | null>(null);
@@ -387,6 +386,9 @@ export const Synth: React.FC = () => {
     
     drumMachineEngine.current = new DrumMachineEngine(audioContext, undefined, engine.getMasterGainNode());
     drumMachineEngine.current.subscribeStep((step) => setRunningStep(step));
+    drumMachineEngine.current.subscribeTransport((tState) => {
+      setTransportState(tState);
+    });
     drumMachineEngine.current.setPattern(drumPattern);
     drumMachineEngine.current.setMelodicPattern(melodicPattern);
     drumMachineEngine.current.setOnScheduleMelodicStep((time, stepIndex, step, stepDuration) => {
@@ -394,6 +396,7 @@ export const Synth: React.FC = () => {
     });
     drumMachineEngine.current.setSwing(swing);
     drumMachineEngine.current.setBpm(bpm);
+    drumMachineEngine.current.setQuantizeMode(quantizeMode);
     Object.entries(drumSettings).forEach(([track, settings]) => {
       drumMachineEngine.current?.setTrackSettings(track as DrumTrackName, settings);
     });
@@ -413,15 +416,11 @@ export const Synth: React.FC = () => {
       },
       onNoteOn: (note, vel) => {
         audioEngine.current?.noteOn(note, vel);
-        setActiveNotes(prev => new Set(prev).add(note));
+        noteOn(note);
       },
       onNoteOff: (note) => {
         audioEngine.current?.noteOff(note);
-        setActiveNotes(prev => {
-          const s = new Set(prev);
-          s.delete(note);
-          return s;
-        });
+        noteOff(note);
       },
       onPitchBend: (val) => {
         audioEngine.current?.setPitchBend(val);
@@ -436,19 +435,41 @@ export const Synth: React.FC = () => {
     midiManagerRef.current = midiMgr;
   }, [isStarted, params, drumPattern, swing, drumSettings, bpm, handleMidiParamChange]);
 
+  const handleDrumPlayToggle = useCallback(async () => {
+    if (!isStarted) {
+      await handleStart();
+    }
+    drumMachineEngine.current?.toggleDrums();
+  }, [isStarted, handleStart]);
+
+  const handleSeqPlayToggle = useCallback(async () => {
+    if (!isStarted) {
+      await handleStart();
+    }
+    drumMachineEngine.current?.toggleSeq();
+  }, [isStarted, handleStart]);
+
+  const handleStopAll = useCallback(() => {
+    drumMachineEngine.current?.stopAll();
+  }, []);
+
+  const handleQuantizeModeChange = useCallback((mode: TransportQuantizeMode) => {
+    setQuantizeMode(mode);
+    drumMachineEngine.current?.setQuantizeMode(mode);
+  }, []);
+
   const handlePlayToggle = useCallback(async () => {
     if (!isStarted) {
       await handleStart();
     }
     if (!drumMachineEngine.current) return;
-    const nextIsPlaying = !isDrumMachinePlaying;
-    setIsDrumMachinePlaying(nextIsPlaying);
-    if (nextIsPlaying) {
-      drumMachineEngine.current.play();
+    if (isDrumPlaying || isSeqPlaying || isDrumQueued || isSeqQueued) {
+      drumMachineEngine.current.stopAll();
     } else {
-      drumMachineEngine.current.stop();
+      drumMachineEngine.current.toggleDrums();
+      drumMachineEngine.current.toggleSeq();
     }
-  }, [isStarted, handleStart, isDrumMachinePlaying]);
+  }, [isStarted, handleStart, isDrumPlaying, isSeqPlaying, isDrumQueued, isSeqQueued]);
 
   useEffect(() => {
     if (audioEngine.current) {
@@ -875,8 +896,18 @@ export const Synth: React.FC = () => {
     setParams(p => patchParams(p, { filter: { type } }));
   };
 
+  const isAnyNoteActive = activeNotes.size > 0 || arpActiveStep !== null || isSeqPlaying;
+
   const renderOscControl = (oscKey: 'osc1' | 'osc2' | 'osc3' | 'osc4', label: string) => {
     const oscParams = params[oscKey] || DEFAULT_SYNTH_PARAMS[oscKey];
+    const currentFootage = Math.round(oscParams.detune / 1200); // -1 -> 16', 0 -> 8', 1 -> 4', 2 -> 2'
+    const fineDetuneCents = oscParams.detune - (currentFootage * 1200);
+
+    const setFootage = (octaveStep: number) => {
+      const targetDetune = octaveStep * 1200 + fineDetuneCents;
+      setParams(p => patchParams(p, { [oscKey]: { detune: targetDetune } }));
+    };
+
     return (
       <div 
         className="flex flex-col p-2 rounded-sm w-full min-w-0 relative shadow-sm border" 
@@ -884,9 +915,22 @@ export const Synth: React.FC = () => {
       >
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-1 mb-1.5 border-b" style={{ borderColor: 'var(--osc-border)' }}>
-          <span className="text-[10px] font-mono font-bold tracking-wider" style={{ color: 'var(--text-label)' }}>
-            {label}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-mono font-bold tracking-wider" style={{ color: 'var(--text-label)' }}>
+              {label}
+            </span>
+            {/* Analog thermal drift / voice activity micro-indicator */}
+            <div 
+              className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+                oscParams.enabled && isAnyNoteActive 
+                  ? 'bg-[#10b981] shadow-[0_0_6px_#10b981] animate-pulse' 
+                  : oscParams.enabled 
+                  ? 'bg-[#10b981]/40' 
+                  : 'bg-gray-700'
+              }`} 
+              title={oscParams.enabled ? "VCO Active (Analog Thermal Drift Active)" : "VCO Powered Down"}
+            />
+          </div>
           <ToggleSwitch 
             label="" 
             checked={oscParams.enabled} 
@@ -897,7 +941,7 @@ export const Synth: React.FC = () => {
         </div>
         
         {/* Waveform Selector + Preview */}
-        <div className="flex items-stretch gap-1.5 w-full mb-2">
+        <div className="flex items-stretch gap-1.5 w-full mb-1.5">
           {/* Waveform 4 Buttons */}
           <div className="grid grid-cols-2 gap-0.5 p-0.5 rounded-sm shrink-0" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
             {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
@@ -934,7 +978,8 @@ export const Synth: React.FC = () => {
             <div className="h-6 w-full my-0.5">
               <WaveformDisplay 
                 waveform={oscParams.waveform} 
-                isPlaying={oscParams.enabled} 
+                enabled={oscParams.enabled}
+                isPlaying={isAnyNoteActive && oscParams.enabled} 
                 amplitudeScale={oscParams.gain}
                 color="#10b981"
               />
@@ -942,7 +987,37 @@ export const Synth: React.FC = () => {
           </div>
         </div>
 
-        {/* Knobs Row: GAIN and DETUNE side by side with plenty of room */}
+        {/* Vintage Octave Footage Selector Rocker: 16', 8', 4', 2' */}
+        <div className="flex items-center justify-between gap-1 w-full px-1 py-0.5 mb-1.5 rounded-xs bg-[#090c12] border border-[#1d2636]">
+          <span className="text-[7px] font-mono text-gray-400 font-bold uppercase tracking-wider">OCT</span>
+          <div className="flex items-center gap-0.5">
+            {[
+              { label: "16'", oct: -1 },
+              { label: "8'",  oct: 0 },
+              { label: "4'",  oct: 1 },
+              { label: "2'",  oct: 2 },
+            ].map(f => {
+              const isSelected = currentFootage === f.oct;
+              return (
+                <button
+                  key={f.label}
+                  type="button"
+                  onClick={() => setFootage(f.oct)}
+                  className={`px-1.5 py-0.5 text-[7.5px] font-mono font-bold rounded-xs transition-all ${
+                    isSelected
+                      ? 'bg-[#10b981] text-black shadow-[0_0_5px_#10b981]'
+                      : 'text-gray-400 hover:text-white bg-[#121822]'
+                  }`}
+                  title={`${f.label} Footage (${f.oct > 0 ? `+${f.oct}` : f.oct} Octave)`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Knobs Row: GAIN and FINE DETUNE */}
         <div className="flex items-center justify-around w-full pt-1 border-t" style={{ borderColor: 'var(--osc-border)' }}>
           <Knob 
             label="Gain" 
@@ -959,13 +1034,16 @@ export const Synth: React.FC = () => {
             onMidiLearn={handleMidiLearn}
           />
           <Knob 
-            label="Detune" 
-            value={oscParams.detune} 
-            min={-2400} 
-            max={2400} 
+            label="Fine" 
+            value={fineDetuneCents} 
+            min={-100} 
+            max={100} 
             size={30}
-            onChange={v => setParams(p => patchParams(p, { [oscKey]: { detune: v } }))} 
-            unit="cents"
+            onChange={v => {
+              const newDetune = currentFootage * 1200 + v;
+              setParams(p => patchParams(p, { [oscKey]: { detune: newDetune } }));
+            }} 
+            unit="ct"
             color="amber"
             modActive={params.lfo.target === 'pitch' && params.lfo.depth > 0}
             modDepth={params.lfo.depth}
@@ -1113,6 +1191,50 @@ export const Synth: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Start Screen Bottom Bar: Author & Official Website */}
+        <footer 
+          className="w-full max-w-2xl mt-4 px-3 py-1.5 rounded border flex items-center justify-between text-[9px] sm:text-[10px] font-mono select-none shadow-md backdrop-blur-md"
+          style={{
+            background: 'var(--panel-bg)',
+            borderColor: 'var(--panel-border)',
+            color: 'var(--text-muted)'
+          }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="flex items-center gap-1.5 font-bold tracking-widest text-white uppercase text-[8px] sm:text-[9px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_6px_#10b981]" />
+              SUBTRACTIVE
+            </span>
+            <span className="text-gray-600 hidden sm:inline">•</span>
+            <span className="truncate">
+              CREATED BY{' '}
+              <a 
+                href="https://trustnodelogic.com/#person" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="font-bold text-white hover:text-[#10b981] transition-colors underline decoration-dotted underline-offset-2"
+                title="Justin Ray — Creative Technologist & DSP Engineer"
+              >
+                JUSTIN RAY
+              </a>
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href="https://trustnodelogic.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/10 hover:border-[#10b981]/50 bg-black/40 hover:bg-black/60 text-gray-300 hover:text-white transition-all group shadow-xs"
+              title="Visit Trust Node Logic — Official Website of Justin Ray"
+            >
+              <span className="text-[#10b981] group-hover:scale-110 transition-transform">🌐</span>
+              <span className="font-bold tracking-wider">trustnodelogic.com</span>
+              <span className="text-[8px] text-gray-500 group-hover:text-[#10b981] transition-colors">↗</span>
+            </a>
+          </div>
+        </footer>
       </div>
     );
   }
@@ -1228,22 +1350,9 @@ export const Synth: React.FC = () => {
               mappedCC={mappedCCs['masterGain'] ?? null}
               onMidiLearn={handleMidiLearn}
             />
-            {/* Mobile Theme Chips (compact 2x2 grid) */}
-            <div className="grid grid-cols-2 gap-1 pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
-              {THEMES.map(t => (
-                <button
-                  key={t.id}
-                  title={t.description}
-                  onClick={() => setTheme(t.id)}
-                  className={`theme-chip ${theme === t.id ? 'active' : ''}`}
-                  style={{
-                    background: t.chipColor,
-                    borderColor: theme === t.id ? t.chipBorder : 'rgba(255,255,255,0.2)',
-                    boxShadow: theme === t.id ? `0 0 6px ${t.chipBorder}` : 'none',
-                    width: 12, height: 12,
-                  }}
-                />
-              ))}
+            {/* Mobile Skin Picker */}
+            <div className="pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
+              <SkinPicker />
             </div>
           </div>
         </div>
@@ -1264,87 +1373,60 @@ export const Synth: React.FC = () => {
             </div>
           </div>
 
-          {/* Serum-Style Workspace Focus Mode Selector */}
-          <div className="flex items-center gap-1 bg-[#090e18] p-1 rounded-sm border border-[#1e2a3c] shadow-inner shrink-0">
-            <button
-              type="button"
-              onClick={() => handleWorkspaceModeChange('synth')}
-              title="Sound Design Lab (Hotkey: 1)"
-              className={`px-2 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
-                workspaceMode === 'synth'
-                  ? 'bg-[#10b981] text-black shadow-[0_0_10px_#10b981]'
-                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
-              }`}
-            >
-              <span className="text-[10px]">🎛️</span>
-              <span>SYNTH</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleWorkspaceModeChange('fx')}
-              title="Master Studio FX Rack (Hotkey: 2)"
-              className={`px-2 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
-                workspaceMode === 'fx'
-                  ? 'bg-[#ff3344] text-white shadow-[0_0_10px_#ff3344]'
-                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
-              }`}
-            >
-              <span className="text-[10px]">⚡</span>
-              <span>FX</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleWorkspaceModeChange('arp')}
-              title="Poly Arpeggiator Console (Hotkey: 3)"
-              className={`px-2 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
-                workspaceMode === 'arp'
-                  ? 'bg-[#00e5ff] text-black shadow-[0_0_10px_#00e5ff]'
-                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
-              }`}
-            >
-              <span className="text-[10px]">♩</span>
-              <span>ARP</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleWorkspaceModeChange('seq')}
-              title="16-Step Melodic Motion Sequencer (Hotkey: 4)"
-              className={`px-2 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
-                workspaceMode === 'seq'
-                  ? 'bg-[#00ff66] text-black shadow-[0_0_10px_#00ff66]'
-                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
-              }`}
-            >
-              <span className="text-[10px]">🎼</span>
-              <span>SEQ</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleWorkspaceModeChange('groove')}
-              title="16-Step Rhythm Workstation (Hotkey: 5)"
-              className={`px-2 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
-                workspaceMode === 'groove'
-                  ? 'bg-[#ffaa00] text-black shadow-[0_0_10px_#ffaa00]'
-                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
-              }`}
-            >
-              <span className="text-[10px]">🥁</span>
-              <span>GROOVE</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleWorkspaceModeChange('perform')}
-              title="Live Jam & Expression Deck (Hotkey: 6)"
-              className={`px-2 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider transition-all flex items-center gap-1.5 ${
-                workspaceMode === 'perform'
-                  ? 'bg-[#38bdf8] text-black shadow-[0_0_10px_#38bdf8]'
-                  : 'bg-[#121824] text-gray-400 hover:text-white border border-[#222f44]'
-              }`}
-            >
-              <span className="text-[10px]">🎚️</span>
-              <span>PERFORM</span>
-            </button>
-          </div>
+          {/* Physical File Folder Section Tabs ("Layers of a Real File") */}
+          <nav aria-label="Section Folders" className="file-tabs-rack flex items-end gap-1 shrink-0 overflow-x-auto scrollbar-none">
+            {WORKSPACE_TABS.map((tab) => {
+              const isActive = workspaceMode === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => handleWorkspaceModeChange(tab.id as WorkspaceMode)}
+                  title={`${tab.label} (${tab.sublabel}) — Hotkey: ${tab.hotkey}`}
+                  className={`file-folder-tab ${isActive ? 'active' : 'inactive'}`}
+                  style={{
+                    ['--tab-accent' as any]: tab.color,
+                    ['--tab-glow' as any]: tab.glow,
+                  }}
+                >
+                  {/* File Folder Colored Top Accent Stripe */}
+                  <div
+                    className="file-folder-accent-bar"
+                    style={{
+                      background: isActive ? tab.color : 'transparent',
+                      boxShadow: isActive ? `0 0 8px ${tab.color}` : 'none',
+                    }}
+                  />
+                  {/* Folder Tab Index Number Ear */}
+                  <span
+                    className="text-[8px] font-mono font-bold tracking-tight px-1 py-0.5 rounded-xs"
+                    style={{
+                      background: isActive ? `${tab.color}25` : 'rgba(255, 255, 255, 0.05)',
+                      color: isActive ? tab.color : 'var(--text-muted)',
+                      border: `1px solid ${isActive ? tab.color + '44' : 'transparent'}`,
+                    }}
+                  >
+                    {tab.idx}
+                  </span>
+                  <span className="text-[12px] leading-none">{tab.icon}</span>
+                  <div className="flex flex-col items-start leading-tight">
+                    <span className="text-[11px] font-black tracking-wider text-inherit">
+                      {tab.label}
+                    </span>
+                    <span className="hidden 2xl:inline text-[7px] font-mono tracking-widest opacity-60">
+                      {tab.sublabel}
+                    </span>
+                  </div>
+                  <span
+                    className="hidden lg:inline text-[8px] font-mono font-bold ml-0.5 opacity-40 group-hover:opacity-80"
+                    style={{ color: isActive ? tab.color : undefined }}
+                  >
+                    [{tab.hotkey}]
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
 
           <div className="oled-screen px-3 py-1.5 rounded-sm flex items-center gap-4 flex-1 md:flex-initial justify-between shadow-inner">
             <div className="flex flex-col">
@@ -1466,24 +1548,9 @@ export const Synth: React.FC = () => {
               mappedCC={mappedCCs['masterGain'] ?? null}
               onMidiLearn={handleMidiLearn}
             />
-            {/* Desktop Theme Chip Switcher */}
-            <div className="flex flex-col gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--panel-border)' }}>
-              <span className="text-[6px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-muted)' }}>SKIN</span>
-              <div className="flex gap-1">
-                {THEMES.map(t => (
-                  <button
-                    key={t.id}
-                    title={t.description}
-                    onClick={() => setTheme(t.id)}
-                    className={`theme-chip ${theme === t.id ? 'active' : ''}`}
-                    style={{
-                      background: t.chipColor,
-                      borderColor: theme === t.id ? t.chipBorder : 'rgba(255,255,255,0.2)',
-                      boxShadow: theme === t.id ? `0 0 8px ${t.chipBorder}` : 'none',
-                    }}
-                  />
-                ))}
-              </div>
+            {/* Desktop Skin & Aesthetics Palette */}
+            <div className="pl-2" style={{ borderLeft: '1px solid var(--panel-border)' }}>
+              <SkinPicker />
             </div>
           </div>
         </div>
@@ -1513,6 +1580,143 @@ export const Synth: React.FC = () => {
         ))}
       </div>
 
+      {/* ── Universal Dual Transport & Master Sync Bar (Accessible Always) ── */}
+      <div 
+        className="shrink-0 flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-sm border shadow-sm transition-all"
+        style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
+      >
+        {/* Left: Dual Independent Transports with Quantized Sync Feedback */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Drum Transport */}
+          <button
+            type="button"
+            onClick={handleDrumPlayToggle}
+            title={isDrumQueued ? "Drums Armed: Syncing to downbeat" : isDrumPlaying ? "Stop Drum Beat" : "Start Drum Beat (Quantized Sync)"}
+            className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider flex items-center gap-1.5 border transition-all ${
+              isDrumQueued
+                ? 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_10px_#ffaa00] animate-pulse'
+                : isDrumPlaying
+                ? 'bg-[#10b981] text-black border-[#10b981] shadow-[0_0_10px_#10b981]'
+                : 'bg-[#121824] text-gray-400 hover:text-white border-[#222f44]'
+            }`}
+          >
+            <div className={`w-1.5 h-1.5 rounded-full ${
+              isDrumQueued ? 'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]' : isDrumPlaying ? 'bg-black' : 'bg-gray-500'
+            }`} />
+            <span>{isDrumQueued ? 'DRUM: SYNCING' : isDrumPlaying ? '■ STOP DRUM' : '▶ START DRUM'}</span>
+          </button>
+
+          {/* Melodic Sequencer Transport */}
+          <button
+            type="button"
+            onClick={handleSeqPlayToggle}
+            title={isSeqQueued ? "Sequencer Armed: Syncing to downbeat" : isSeqPlaying ? "Stop Melodic Sequencer" : "Start Melodic Sequencer (Quantized Sync)"}
+            className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider flex items-center gap-1.5 border transition-all ${
+              isSeqQueued
+                ? 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_10px_#ffaa00] animate-pulse'
+                : isSeqPlaying
+                ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_10px_#00e5ff]'
+                : 'bg-[#121824] text-gray-400 hover:text-white border-[#222f44]'
+            }`}
+          >
+            <div className={`w-1.5 h-1.5 rounded-full ${
+              isSeqQueued ? 'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]' : isSeqPlaying ? 'bg-black' : 'bg-gray-500'
+            }`} />
+            <span>{isSeqQueued ? 'SEQ: SYNCING' : isSeqPlaying ? '■ STOP SEQ' : '▶ START SEQ'}</span>
+          </button>
+
+          {/* Panic / All Stop */}
+          {(isDrumPlaying || isSeqPlaying || isDrumQueued || isSeqQueued) && (
+            <button
+              type="button"
+              onClick={handleStopAll}
+              title="Stop All Transports (Drums & Melodic Sequencer)"
+              className="px-2 py-1 rounded-xs font-mono text-[8px] font-black tracking-wider bg-[#ff3344]/15 text-[#ff3344] border border-[#ff3344]/50 hover:bg-[#ff3344] hover:text-white transition-all"
+            >
+              STOP ALL
+            </button>
+          )}
+        </div>
+
+        {/* Center: Live Clock & Bar Counter + Quantize Mode */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <div className="oled-screen px-2.5 py-0.5 rounded-xs flex items-center gap-2 border border-[#1e2a3c]">
+            <span className="text-[7px] font-mono text-gray-400 uppercase tracking-widest">CLOCK</span>
+            <span className="font-mono-lcd text-xs font-bold text-[#00ff66] whitespace-nowrap">
+              {runningStep !== null 
+                ? `BAR 01 : STEP ${String((runningStep % 16) + 1).padStart(2, '0')}`
+                : 'STOPPED'}
+            </span>
+          </div>
+
+          {/* Quantize Sync Mode Selector */}
+          <div className="flex items-center gap-0.5 bg-[#0a0f18] p-0.5 rounded border border-[#1e2a3c]">
+            <span className="text-[7px] font-mono uppercase text-gray-500 px-1">SYNC</span>
+            {(['bar', 'beat', 'instant'] as TransportQuantizeMode[]).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => handleQuantizeModeChange(mode)}
+                title={`Sync Mode: ${mode === 'bar' ? 'Wait for 1 Bar / 16-step measure' : mode === 'beat' ? 'Wait for 1 Beat / 4 steps' : 'Instant (No delay)'}`}
+                className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded-xs transition-all uppercase ${
+                  quantizeMode === mode
+                    ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {mode === 'bar' ? '1 BAR' : mode === 'beat' ? '1 BEAT' : 'INST'}
+              </button>
+            ))}
+          </div>
+
+          {/* 16-step running LED indicators */}
+          <div className="hidden xl:flex items-center gap-1 pl-1">
+            {Array.from({ length: 16 }).map((_, idx) => (
+              <div
+                key={idx}
+                className={`w-2 h-2.5 rounded-xs transition-all ${
+                  runningStep !== null && runningStep % 16 === idx
+                    ? isDrumPlaying && isSeqPlaying
+                      ? 'bg-[#00ff66] shadow-[0_0_8px_#00ff66]'
+                      : isDrumPlaying
+                      ? 'bg-[#10b981] shadow-[0_0_8px_#10b981]'
+                      : isSeqPlaying
+                      ? 'bg-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
+                      : 'bg-white shadow-[0_0_8px_#ffffff]'
+                    : idx % 4 === 0
+                    ? 'bg-[#1a2333] border border-[#2b3a54]'
+                    : 'bg-[#0e1420]'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Right: Master Tempo, Swing & Banks */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Knob label="Tempo" value={bpm} min={60} max={200} size={26} onChange={setBpm} unit="BPM" color="amber" />
+          <Knob label="Swing" value={swing} min={0} max={100} size={26} onChange={setSwing} unit="%" color="emerald" />
+          
+          <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--panel-border)' }}>
+            <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1 hidden sm:inline">BANK</span>
+            {[0, 1, 2, 3].map(b => (
+              <button
+                key={b}
+                type="button"
+                onClick={() => setCurrentBankIndex(b)}
+                className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
+                  currentBankIndex === b
+                    ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
+                    : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                }`}
+              >
+                {String.fromCharCode(65 + b)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── Main Synth Modules Layout ── */}
       <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-1.5">
 
@@ -1523,6 +1727,12 @@ export const Synth: React.FC = () => {
               <GrooveWorkspace
                 isPlaying={isDrumMachinePlaying}
                 onPlayToggle={handlePlayToggle}
+                isDrumPlaying={isDrumPlaying}
+                isDrumQueued={isDrumQueued}
+                onDrumPlayToggle={handleDrumPlayToggle}
+                isSeqPlaying={isSeqPlaying}
+                isSeqQueued={isSeqQueued}
+                onSeqPlayToggle={handleSeqPlayToggle}
                 bpm={bpm}
                 onBpmChange={setBpm}
                 swing={swing}
@@ -1573,8 +1783,12 @@ export const Synth: React.FC = () => {
                 onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
                 keyboardLayout={keyboardLayout}
                 onChangeKeyboardLayout={setKeyboardLayout}
-                isDrumPlaying={isDrumMachinePlaying}
-                onDrumPlayToggle={handlePlayToggle}
+                isDrumPlaying={isDrumPlaying}
+                isDrumQueued={isDrumQueued}
+                onDrumPlayToggle={handleDrumPlayToggle}
+                isSeqPlaying={isSeqPlaying}
+                isSeqQueued={isSeqQueued}
+                onSeqPlayToggle={handleSeqPlayToggle}
                 bpm={bpm}
                 onBpmChange={setBpm}
                 currentBank={currentBankIndex}
@@ -1590,7 +1804,7 @@ export const Synth: React.FC = () => {
           <ErrorBoundary fallbackTitle="Studio FX Rack" onReset={() => handleWorkspaceModeChange('synth')}>
             <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
               {/* Master FX Signal Visualizer */}
-              <div className="oled-screen p-2 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
+              <div className="oled-screen p-2 rounded-sm h-20 w-full flex flex-col justify-between shrink-0">
                 <div className="flex items-center justify-between px-1 mb-1">
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344]" />
@@ -1598,7 +1812,7 @@ export const Synth: React.FC = () => {
                       MASTER FX SIGNAL CHAIN
                     </span>
                     <span className="font-mono-lcd text-[8px] text-gray-400">
-                      [DRIVE / SATURATION] ➔ [STEREO DELAY] ➔ [STUDIO REVERB] ➔ [MASTER BUS]
+                      [DRIVE / TAPE] ➔ [JUNO CHORUS] ➔ [STEREO DELAY] ➔ [PLATE REVERB] ➔ [VCA BUS COMP] ➔ [MASTER BUS]
                     </span>
                   </div>
                   <div className="flex gap-1">
@@ -1611,7 +1825,8 @@ export const Synth: React.FC = () => {
                   <WaveformDisplay 
                     analyser={audioEngine.current?.getAnalyser() || null} 
                     stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
-                    isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
+                    enabled={true}
+                    isPlaying={isAnyNoteActive} 
                     color="#ff3344" 
                     mode={visualizerMode} 
                   />
@@ -1627,66 +1842,6 @@ export const Synth: React.FC = () => {
                   learningParamId={learningParamId}
                   mappedCCs={rawMappedCCs}
                 />
-              </div>
-
-              {/* Beat Transport Bar */}
-              <div 
-                className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
-                style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-              >
-                <div className="flex items-center gap-3">
-                  <LEDButton
-                    label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
-                    active={isDrumMachinePlaying}
-                    onClick={handlePlayToggle}
-                    color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
-                    size="sm"
-                    className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
-                  />
-                  <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
-                  <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
-                  <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-                    <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
-                    {[0, 1, 2, 3].map(b => (
-                      <button
-                        key={b}
-                        onClick={() => setCurrentBankIndex(b)}
-                        className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
-                          currentBankIndex === b
-                            ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                            : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
-                        }`}
-                      >
-                        {String.fromCharCode(65 + b)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 16-step running LED indicators */}
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 16 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-2 h-2.5 rounded-xs transition-all ${
-                        runningStep === idx
-                          ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                          : idx % 4 === 0
-                          ? 'bg-[#2b374c]'
-                          : 'bg-[#141b27]'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleWorkspaceModeChange('groove')}
-                  className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
-                >
-                  <span>OPEN 4-TRACK GROOVE MATRIX</span>
-                  <span>↗</span>
-                </button>
               </div>
             </div>
           </ErrorBoundary>
@@ -1777,7 +1932,7 @@ export const Synth: React.FC = () => {
                           max={1}
                           size={32}
                           onChange={(v) => setParams(p => ({ ...p, fx: { ...p.fx, delay: { ...p.fx.delay, mix: v } } }))}
-                          color="rose"
+                          color="red"
                         />
                       </div>
                       <div className="flex flex-col items-center">
@@ -1788,7 +1943,7 @@ export const Synth: React.FC = () => {
                           max={1}
                           size={32}
                           onChange={(v) => setParams(p => ({ ...p, fx: { ...p.fx, reverb: { ...p.fx.reverb, mix: v } } }))}
-                          color="purple"
+                          color="cyan"
                         />
                       </div>
                     </div>
@@ -1821,76 +1976,6 @@ export const Synth: React.FC = () => {
                   </div>
                 </div>
               </div>
-
-              {/* Beat Transport Bar */}
-              <div 
-                className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
-                style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-              >
-                <div className="flex items-center gap-3">
-                  <LEDButton
-                    label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
-                    active={isDrumMachinePlaying}
-                    onClick={handlePlayToggle}
-                    color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
-                    size="sm"
-                    className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
-                  />
-                  <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
-                  <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
-                  <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-                    <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
-                    {[0, 1, 2, 3].map(b => (
-                      <button
-                        key={b}
-                        onClick={() => setCurrentBankIndex(b)}
-                        className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
-                          currentBankIndex === b
-                            ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                            : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
-                        }`}
-                      >
-                        {String.fromCharCode(65 + b)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 16-step running LED indicators */}
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 16 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-2 h-2.5 rounded-xs transition-all ${
-                        runningStep === idx
-                          ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                          : idx % 4 === 0
-                          ? 'bg-[#2b374c]'
-                          : 'bg-[#141b27]'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleWorkspaceModeChange('seq')}
-                    className="text-[8px] font-mono text-[#00ff66] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#00ff66]/40 bg-[#0c1420] transition-all hover:bg-[#00ff66]/20"
-                  >
-                    <span>16-STEP MELODIC SEQ</span>
-                    <span>↗</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleWorkspaceModeChange('groove')}
-                    className="text-[8px] font-mono text-[#ffaa00] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#ffaa00]/40 bg-[#0c1420] transition-all hover:bg-[#ffaa00]/20"
-                  >
-                    <span>GROOVE MATRIX</span>
-                    <span>↗</span>
-                  </button>
-                </div>
-              </div>
             </div>
           </ErrorBoundary>
         ) : workspaceMode === 'seq' ? (
@@ -1914,7 +1999,7 @@ export const Synth: React.FC = () => {
                     pattern={melodicPattern}
                     onChange={handleMelodicPatternChange}
                     activeStep={runningStep}
-                    isPlaying={isDrumMachinePlaying}
+                    isPlaying={isSeqPlaying}
                     bpm={bpm}
                     drumPattern={drumPattern}
                     onAuditionNote={handleAuditionNote}
@@ -1923,75 +2008,158 @@ export const Synth: React.FC = () => {
                     mappedCCs={rawMappedCCs}
                   />
                 </div>
-              </div>
 
-              {/* Beat Transport Bar */}
-              <div 
-                className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-0.5"
-                style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-              >
-                <div className="flex items-center gap-3">
-                  <LEDButton
-                    label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
-                    active={isDrumMachinePlaying}
-                    onClick={handlePlayToggle}
-                    color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
-                    size="sm"
-                    className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
-                  />
-                  <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
-                  <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
-                  <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-                    <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
-                    {[0, 1, 2, 3].map(b => (
-                      <button
-                        key={b}
-                        onClick={() => setCurrentBankIndex(b)}
-                        className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
-                          currentBankIndex === b
-                            ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                            : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
-                        }`}
-                      >
-                        {String.fromCharCode(65 + b)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 16-step running LED indicators */}
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 16 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-2 h-2.5 rounded-xs transition-all ${
-                        runningStep === idx
-                          ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                          : idx % 4 === 0
-                          ? 'bg-[#2b374c]'
-                          : 'bg-[#141b27]'
-                      }`}
+                {/* Real-Time Synth Sound Shaping & Quick Tweak Console */}
+                <div className="mt-2 p-2 rounded-sm border flex flex-col xl:flex-row items-center justify-between gap-3 shrink-0" style={{ background: 'var(--panel-bg-alt)', borderColor: 'var(--panel-border)' }}>
+                  
+                  {/* Left: Quick Filter & Tone Shaping */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col pr-1">
+                      <span className="text-[7.5px] font-mono uppercase font-bold text-gray-400">VCF TONE</span>
+                      <span className="text-[9px] font-mono font-bold text-[#ffaa00] uppercase">{params.filter.type || 'LP'}</span>
+                    </div>
+                    <Knob
+                      label="Cutoff"
+                      value={params.filter.cutoff}
+                      min={20}
+                      max={20000}
+                      size={32}
+                      onChange={(v) => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
+                      color="amber"
+                      unit="Hz"
                     />
-                  ))}
-                </div>
+                    <Knob
+                      label="Reso"
+                      value={params.filter.resonance}
+                      min={0.1}
+                      max={25}
+                      size={32}
+                      onChange={(v) => setParams(p => patchParams(p, { filter: { resonance: v } }))}
+                      color="amber"
+                    />
+                    <Knob
+                      label="Filter FM"
+                      value={params.filter.filterFM ?? 0}
+                      min={0}
+                      max={1}
+                      size={32}
+                      onChange={(v) => {
+                        setParams(p => patchParams(p, { filter: { filterFM: v } }));
+                        audioEngine.current?.setFilterFM(v);
+                      }}
+                      color="red"
+                      unit="%"
+                    />
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleWorkspaceModeChange('arp')}
-                    className="text-[8px] font-mono text-[#00e5ff] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#00e5ff]/40 bg-[#0c1420] transition-all hover:bg-[#00e5ff]/20"
-                  >
-                    <span>POLY ARPEGGIATOR</span>
-                    <span>↗</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleWorkspaceModeChange('groove')}
-                    className="text-[8px] font-mono text-[#ffaa00] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#ffaa00]/40 bg-[#0c1420] transition-all hover:bg-[#ffaa00]/20"
-                  >
-                    <span>GROOVE MATRIX</span>
-                    <span>↗</span>
-                  </button>
+                  {/* Center: Envelope Dynamics */}
+                  <div className="flex items-center gap-1.5 px-2 border-x border-[#1e2a3c]">
+                    <div className="flex flex-col pr-1">
+                      <span className="text-[7.5px] font-mono uppercase font-bold text-gray-400">AMP ADSR</span>
+                      <span className="text-[9px] font-mono font-bold text-[#00f0ff] uppercase">ENV</span>
+                    </div>
+                    <Knob
+                      label="Attack"
+                      value={params.ampEnvelope.attack}
+                      min={0.001}
+                      max={2}
+                      size={28}
+                      onChange={(v) => setParams(p => patchParams(p, { ampEnvelope: { attack: v } }))}
+                      unit="s"
+                      color="cyan"
+                    />
+                    <Knob
+                      label="Decay"
+                      value={params.ampEnvelope.decay}
+                      min={0.01}
+                      max={2}
+                      size={28}
+                      onChange={(v) => setParams(p => patchParams(p, { ampEnvelope: { decay: v } }))}
+                      unit="s"
+                      color="cyan"
+                    />
+                    <Knob
+                      label="Sustain"
+                      value={params.ampEnvelope.sustain}
+                      min={0}
+                      max={1}
+                      size={28}
+                      onChange={(v) => setParams(p => patchParams(p, { ampEnvelope: { sustain: v } }))}
+                      unit="%"
+                      color="cyan"
+                    />
+                    <Knob
+                      label="Release"
+                      value={params.ampEnvelope.release}
+                      min={0.01}
+                      max={5}
+                      size={28}
+                      onChange={(v) => setParams(p => patchParams(p, { ampEnvelope: { release: v } }))}
+                      unit="s"
+                      color="cyan"
+                    />
+                  </div>
+
+                  {/* Right: Master FX & Quick Navigation */}
+                  <div className="flex items-center gap-2">
+                    <Knob
+                      label="Drive"
+                      value={params.fx?.drive?.enabled ? params.fx.drive.amount : 0}
+                      min={0}
+                      max={1}
+                      size={28}
+                      onChange={(v) => setParams(p => patchParams(p, { fx: { drive: { enabled: v > 0, amount: v } } }))}
+                      color="red"
+                      unit="%"
+                    />
+                    <Knob
+                      label="Delay"
+                      value={params.fx?.delay?.enabled ? params.fx.delay.mix : 0}
+                      min={0}
+                      max={1}
+                      size={28}
+                      onChange={(v) => setParams(p => patchParams(p, { fx: { delay: { enabled: v > 0, mix: v } } }))}
+                      color="cyan"
+                      unit="%"
+                    />
+                    <Knob
+                      label="Reverb"
+                      value={params.fx?.reverb?.enabled ? params.fx.reverb.mix : 0}
+                      min={0}
+                      max={1}
+                      size={28}
+                      onChange={(v) => setParams(p => patchParams(p, { fx: { reverb: { enabled: v > 0, mix: v } } }))}
+                      color="emerald"
+                      unit="%"
+                    />
+                    <Knob
+                      label="Sub Bass"
+                      value={params.subGain ?? 0}
+                      min={0}
+                      max={1}
+                      size={28}
+                      onChange={(v) => setParams(p => patchParams(p, { subGain: v }))}
+                      color="emerald"
+                      unit="%"
+                    />
+                    <div className="flex flex-col gap-1 pl-1">
+                      <button
+                        type="button"
+                        onClick={() => handleWorkspaceModeChange('synth')}
+                        className="text-[8px] font-mono text-[#00f0ff] hover:text-white px-2 py-1 rounded border border-[#00f0ff]/30 bg-[#0c1618] flex items-center justify-center gap-1 transition-all"
+                      >
+                        <span>SYNTH LAB ↗</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleWorkspaceModeChange('groove')}
+                        className="text-[8px] font-mono text-[#ffaa00] hover:text-white px-2 py-1 rounded border border-[#ffaa00]/30 bg-[#16120c] flex items-center justify-center gap-1 transition-all"
+                      >
+                        <span>GROOVE ↗</span>
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
               </div>
             </div>
@@ -2074,6 +2242,20 @@ export const Synth: React.FC = () => {
                       mappedCC={mappedCCs['pwm'] ?? null}
                       onMidiLearn={handleMidiLearn}
                     />
+                    <Knob 
+                      label="VCO Drift"   
+                      value={params.analogDrift ?? 0.25}     
+                      min={0}   
+                      max={1} 
+                      size={30} 
+                      onChange={(v) => setParams(p => patchParams(p, { analogDrift: v }))}     
+                      unit="%"  
+                      color="amber"
+                      paramId="analogDrift"
+                      isLearning={learningParamId === 'analogDrift'}
+                      mappedCC={mappedCCs['analogDrift'] ?? null}
+                      onMidiLearn={handleMidiLearn}
+                    />
                   </div>
                   {/* Oscillator Grid (desktop: clean responsive 4 column grid) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 w-full">
@@ -2104,7 +2286,8 @@ export const Synth: React.FC = () => {
                       <WaveformDisplay 
                         analyser={audioEngine.current?.getAnalyser() || null} 
                         stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
-                        isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
+                        enabled={true}
+                        isPlaying={isAnyNoteActive} 
                         color="#10b981" 
                         mode={visualizerMode} 
                       />
@@ -2130,6 +2313,13 @@ export const Synth: React.FC = () => {
                           onResonanceChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}
                           color="amber"
                           height={95}
+                          modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
+                          modDepth={params.lfo.depth}
+                          lfoRate={params.lfo.rate}
+                          lfoWaveform={params.lfo.waveform}
+                          envelopeAmount={params.filterEnvelope.amount}
+                          filterEnvelope={params.filterEnvelope}
+                          activeNotesCount={activeNotes.size}
                         />
                       </div>
 
@@ -2180,13 +2370,30 @@ export const Synth: React.FC = () => {
                           mappedCC={mappedCCs['filterEnvelope.amount'] ?? null}
                           onMidiLearn={handleMidiLearn}
                         />
+                        <Knob 
+                          label="Filter FM" 
+                          value={params.filter.filterFM ?? 0}       
+                          min={0}   
+                          max={1}    
+                          size={34}             
+                          onChange={v => {
+                            setParams(p => patchParams(p, { filter: { filterFM: v } }));
+                            audioEngine.current?.setFilterFM(v);
+                          }}                    
+                          unit="%"
+                          color="red"
+                          paramId="filter.filterFM"
+                          isLearning={learningParamId === 'filter.filterFM'}
+                          mappedCC={mappedCCs['filter.filterFM'] ?? null}
+                          onMidiLearn={handleMidiLearn}
+                        />
                       </div>
                     </div>
                   </Panel>
                 </div>
 
                 {/* Right Column: Modulation Suite (LFO + ADSR Envelopes) */}
-                <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+                <div className="flex-1 flex flex-col gap-1.5 min-w-0">
                   {/* LFO Modulation Panel */}
                   <Panel title="LFO — MODULATION GENERATOR" badgeColor="emerald" className="w-full">
                     <div className="flex flex-col gap-2 w-full">
@@ -2200,7 +2407,7 @@ export const Synth: React.FC = () => {
                             );
                           })}
                         </div>
-                        <div className="flex-1 h-8"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
+                        <div className="flex-1 h-8"><WaveformDisplay waveform={params.lfo.waveform} enabled={params.lfo.depth > 0} isPlaying={isAnyNoteActive && params.lfo.depth > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
                       </div>
 
                       <div className="flex items-center justify-around gap-2">
@@ -2289,7 +2496,7 @@ export const Synth: React.FC = () => {
                         )}
                       </div>
 
-                      <div className="w-full h-24">
+                      <div className="w-full h-22">
                         {selectedEnvTab === 'amp' ? (
                           <EnvelopeEditor
                             title="AMP ADSR"
@@ -2300,7 +2507,7 @@ export const Synth: React.FC = () => {
                             maxRelease={5}
                             activeNotesCount={activeNotes.size}
                             color="cyan"
-                            height={95}
+                            height={85}
                           />
                         ) : (
                           <EnvelopeEditor
@@ -2312,7 +2519,7 @@ export const Synth: React.FC = () => {
                             maxRelease={10}
                             activeNotesCount={activeNotes.size}
                             color="amber"
-                            height={95}
+                            height={85}
                             amount={params.filterEnvelope.amount}
                             onAmountChange={v => setParams(p => patchParams(p, { filterEnvelope: { amount: v } }))}
                           />
@@ -2336,69 +2543,19 @@ export const Synth: React.FC = () => {
                       )}
                     </div>
                   </Panel>
+
+                  {/* Dynamic Signal-Flow Modulation HUD */}
+                  <ModulationFlowHUD
+                    modMatrix={params.modMatrix || []}
+                    onModMatrixChange={(routes) => setParams(p => ({ ...p, modMatrix: routes }))}
+                    lfoTarget={params.lfo.target}
+                    lfoDepth={params.lfo.depth}
+                    filterFM={params.filter.filterFM ?? 0}
+                    isNoteActive={isAnyNoteActive}
+                  />
                 </div>
 
               </div>{/* end lower row */}
-
-              {/* Beat Transport Bar in Synth mode */}
-              <div 
-                className="flex items-center justify-between px-3 py-1.5 rounded-sm shrink-0 border mt-1"
-                style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
-              >
-                <div className="flex items-center gap-3">
-                  <LEDButton
-                    label={isDrumMachinePlaying ? 'STOP BEAT' : 'START BEAT'}
-                    active={isDrumMachinePlaying}
-                    onClick={handlePlayToggle}
-                    color={isDrumMachinePlaying ? 'emerald' : 'cyan'}
-                    size="sm"
-                    className="px-2.5 py-1 text-[9px] font-mono font-bold tracking-wider shrink-0"
-                  />
-                  <Knob label="Tempo" value={bpm} min={60} max={200} size={28} onChange={setBpm} unit="BPM" color="amber" />
-                  <Knob label="Swing" value={swing} min={0} max={100} size={28} onChange={setSwing} unit="%" color="emerald" />
-                  <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--osc-border)' }}>
-                    <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1">BANK</span>
-                    {[0, 1, 2, 3].map(b => (
-                      <button
-                        key={b}
-                        onClick={() => setCurrentBankIndex(b)}
-                        className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
-                          currentBankIndex === b
-                            ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                            : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
-                        }`}
-                      >
-                        {String.fromCharCode(65 + b)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 16-step running LED indicators */}
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 16 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-2 h-2.5 rounded-xs transition-all ${
-                        runningStep === idx
-                          ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                          : idx % 4 === 0
-                          ? 'bg-[#2b374c]'
-                          : 'bg-[#141b27]'
-                      }`}
-                    />
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleWorkspaceModeChange('groove')}
-                  className="text-[8px] font-mono text-[#10b981] hover:underline flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#10b981]/40 bg-[#0c1420] transition-all hover:bg-[#10b981]/20"
-                >
-                  <span>OPEN 4-TRACK GROOVE MATRIX</span>
-                  <span>↗</span>
-                </button>
-              </div>
 
             </div>
           </ErrorBoundary>
@@ -2482,6 +2639,20 @@ export const Synth: React.FC = () => {
                     mappedCC={mappedCCs['pwm'] ?? null}
                     onMidiLearn={handleMidiLearn}
                   />
+                  <Knob 
+                    label="VCO Drift"   
+                    value={params.analogDrift ?? 0.25}     
+                    min={0}   
+                    max={1} 
+                    size={36} 
+                    onChange={(v) => setParams(p => patchParams(p, { analogDrift: v }))}     
+                    unit="%"  
+                    color="amber"
+                    paramId="analogDrift"
+                    isLearning={learningParamId === 'analogDrift'}
+                    mappedCC={mappedCCs['analogDrift'] ?? null}
+                    onMidiLearn={handleMidiLearn}
+                  />
                 </div>
                 {/* Mobile OSC Selector */}
                 <div className="flex items-center justify-center gap-1.5 w-full my-2">
@@ -2522,7 +2693,8 @@ export const Synth: React.FC = () => {
                   <WaveformDisplay 
                     analyser={audioEngine.current?.getAnalyser() || null} 
                     stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
-                    isPlaying={activeNotes.size > 0 || isDrumMachinePlaying} 
+                    enabled={true}
+                    isPlaying={isAnyNoteActive} 
                     color="#10b981" 
                     mode={visualizerMode} 
                   />
@@ -2547,6 +2719,13 @@ export const Synth: React.FC = () => {
                         onResonanceChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}
                         color="amber"
                         height={100}
+                        modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
+                        modDepth={params.lfo.depth}
+                        lfoRate={params.lfo.rate}
+                        lfoWaveform={params.lfo.waveform}
+                        envelopeAmount={params.filterEnvelope.amount}
+                        filterEnvelope={params.filterEnvelope}
+                        activeNotesCount={activeNotes.size}
                       />
                     </div>
 
@@ -2597,6 +2776,23 @@ export const Synth: React.FC = () => {
                         mappedCC={mappedCCs['filterEnvelope.amount'] ?? null}
                         onMidiLearn={handleMidiLearn}
                       />
+                      <Knob 
+                        label="FM"    
+                        value={params.filter.filterFM ?? 0}  
+                        min={0}   
+                        max={1} 
+                        size={40}             
+                        onChange={v => {
+                          setParams(p => patchParams(p, { filter: { filterFM: v } }));
+                          audioEngine.current?.setFilterFM(v);
+                        }} 
+                        unit="%"
+                        color="red"
+                        paramId="filter.filterFM"
+                        isLearning={learningParamId === 'filter.filterFM'}
+                        mappedCC={mappedCCs['filter.filterFM'] ?? null}
+                        onMidiLearn={handleMidiLearn}
+                      />
                     </div>
                   </div>
                 </Panel>
@@ -2619,7 +2815,7 @@ export const Synth: React.FC = () => {
                         );
                       })}
                     </div>
-                    <div className="flex-1 h-14"><WaveformDisplay waveform={params.lfo.waveform} isPlaying={activeNotes.size > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
+                    <div className="flex-1 h-14"><WaveformDisplay waveform={params.lfo.waveform} enabled={params.lfo.depth > 0} isPlaying={isAnyNoteActive && params.lfo.depth > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
                   </div>
                   <div className="flex items-center justify-around gap-2">
                     <Knob 
@@ -2815,6 +3011,12 @@ export const Synth: React.FC = () => {
               <GrooveWorkspace
                 isPlaying={isDrumMachinePlaying}
                 onPlayToggle={handlePlayToggle}
+                isDrumPlaying={isDrumPlaying}
+                isDrumQueued={isDrumQueued}
+                onDrumPlayToggle={handleDrumPlayToggle}
+                isSeqPlaying={isSeqPlaying}
+                isSeqQueued={isSeqQueued}
+                onSeqPlayToggle={handleSeqPlayToggle}
                 bpm={bpm}
                 onBpmChange={setBpm}
                 swing={swing}
@@ -2867,9 +3069,9 @@ export const Synth: React.FC = () => {
 
       </main>
 
-      {/* Desktop Virtual Keyboard Footer (dockable / toggleable) */}
+      {/* Desktop Virtual Keyboard Dock (dockable / toggleable) */}
       {workspaceMode !== 'perform' && isKeybedVisible && (
-        <footer className="shrink-0 hidden md:block">
+        <section className="shrink-0 hidden md:block">
           <Keyboard 
             onNoteOn={handleNoteOn} 
             onNoteOff={handleNoteOff} 
@@ -2883,8 +3085,54 @@ export const Synth: React.FC = () => {
             keyboardLayout={keyboardLayout}
             onChangeKeyboardLayout={setKeyboardLayout}
           />
-        </footer>
+        </section>
       )}
+
+      {/* Global Device Chassis Bottom Bar: Author & Official Website */}
+      <footer 
+        className="shrink-0 w-full px-3 py-1 border-t flex items-center justify-between gap-3 text-[9px] md:text-[10px] font-mono select-none z-20 backdrop-blur-md"
+        style={{
+          background: 'var(--panel-bg)',
+          borderColor: 'var(--panel-border)',
+          color: 'var(--text-muted)'
+        }}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="flex items-center gap-1.5 font-bold tracking-widest text-white uppercase text-[8px] md:text-[9px]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_6px_#10b981]" />
+            SUBTRACTIVE
+          </span>
+          <span className="text-gray-600 hidden sm:inline">•</span>
+          <span className="hidden sm:inline text-gray-400">ANALOG MODELLING SYNTHESIZER</span>
+          <span className="text-gray-600">•</span>
+          <span className="truncate">
+            CREATED BY{' '}
+            <a 
+              href="https://trustnodelogic.com/#person" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="font-bold text-white hover:text-[#10b981] transition-colors underline decoration-dotted underline-offset-2"
+              title="Justin Ray — Creative Technologist & DSP Engineer"
+            >
+              JUSTIN RAY
+            </a>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0">
+          <a
+            href="https://trustnodelogic.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/10 hover:border-[#10b981]/50 bg-black/40 hover:bg-black/60 text-gray-300 hover:text-white transition-all group shadow-xs"
+            title="Visit Trust Node Logic — Official Website of Justin Ray"
+          >
+            <span className="text-[#10b981] group-hover:scale-110 transition-transform">🌐</span>
+            <span className="font-bold tracking-wider">trustnodelogic.com</span>
+            <span className="text-[8px] text-gray-500 group-hover:text-[#10b981] transition-colors">↗</span>
+          </a>
+        </div>
+      </footer>
 
       {/* Studio Preset Browser Modal */}
       <PresetBrowser

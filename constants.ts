@@ -46,14 +46,18 @@ export const KEYBOARD_LAYOUT = [
 ];
 
 // Drum Machine Constants
-export const DEFAULT_BPM = 120;
+export const DEFAULT_BPM = 124;
 export const DRUM_TRACKS: DrumTrackName[] = ['kick', 'snare', 'hihat', 'crash'];
 
 export const DEFAULT_DRUM_PATTERN: StepSequencePattern = {
-  kick:  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  snare: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  hihat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  crash: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  // 4-on-the-floor sub kick with velocity 2 downbeat accents
+  kick:  [2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0],
+  // Punchy backbeat on beats 2 & 4 with ghost turnaround on 14
+  snare: [0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0],
+  // Rolling 16th groove with open offbeat 8th accents
+  hihat: [1, 0, 2, 1, 1, 0, 2, 1, 1, 0, 2, 1, 1, 0, 2, 1],
+  // Downbeat ambient crash
+  crash: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 };
 
 export const DEFAULT_DRUM_TRACK_SETTINGS: Record<DrumTrackName, DrumTrackSettings> = {
@@ -112,22 +116,22 @@ export const DEFAULT_MELODIC_PATTERN: MelodicSequencerPattern = {
   rootNote: 0, // C
   motionRecording: false,
   steps: [
-    { note: 48, enabled: true, velocity: 115, gate: 0.85, slide: false, probability: 100, pLocks: { cutoff: 1600, drive: 0.2 } },
-    { note: 48, enabled: false, velocity: 90, gate: 0.8, slide: false, probability: 100 },
-    { note: 51, enabled: true, velocity: 100, gate: 0.8, slide: false, probability: 100 },
-    { note: 53, enabled: true, velocity: 110, gate: 0.95, slide: true, probability: 100, pLocks: { cutoff: 3200 } },
-    { note: 55, enabled: true, velocity: 120, gate: 0.7, slide: false, probability: 100, pLocks: { resonance: 14 } },
-    { note: 48, enabled: false, velocity: 90, gate: 0.8, slide: false, probability: 100 },
-    { note: 58, enabled: true, velocity: 95, gate: 0.8, slide: false, probability: 100 },
-    { note: 60, enabled: true, velocity: 125, gate: 0.8, slide: false, ratchet: 2, probability: 100, pLocks: { delayMix: 0.45 } },
-    { note: 48, enabled: true, velocity: 110, gate: 0.8, slide: false, probability: 100, pLocks: { cutoff: 1200 } },
-    { note: 51, enabled: false, velocity: 90, gate: 0.8, slide: false, probability: 100 },
-    { note: 53, enabled: true, velocity: 105, gate: 0.8, slide: false, probability: 100 },
-    { note: 55, enabled: true, velocity: 110, gate: 0.9, slide: true, probability: 100 },
-    { note: 58, enabled: true, velocity: 115, gate: 0.8, slide: false, probability: 100, pLocks: { cutoff: 4200, drive: 0.35 } },
-    { note: 56, enabled: true, velocity: 100, gate: 0.8, slide: false, probability: 100 },
-    { note: 55, enabled: true, velocity: 110, gate: 0.8, slide: false, probability: 100 },
-    { note: 53, enabled: true, velocity: 95, gate: 0.8, slide: false, ratchet: 2, probability: 100 },
+    { note: 48, enabled: true, velocity: 120, gate: 0.85, slide: false, probability: 100, pLocks: { cutoff: 2400, drive: 0.25 } },
+    { note: 48, enabled: false, velocity: 90, gate: 0.5, slide: false, probability: 100 },
+    { note: 48, enabled: true, velocity: 95, gate: 0.6, slide: false, probability: 100, pLocks: { cutoff: 1400 } },
+    { note: 51, enabled: true, velocity: 110, gate: 0.95, slide: true, probability: 100, pLocks: { cutoff: 3200 } },
+    { note: 55, enabled: true, velocity: 125, gate: 0.8, slide: false, probability: 100, pLocks: { cutoff: 3600, resonance: 12 } },
+    { note: 48, enabled: false, velocity: 90, gate: 0.5, slide: false, probability: 100 },
+    { note: 51, enabled: true, velocity: 100, gate: 0.7, slide: false, probability: 100 },
+    { note: 58, enabled: true, velocity: 115, gate: 0.95, slide: true, probability: 100, pLocks: { cutoff: 4000 } },
+    { note: 48, enabled: true, velocity: 122, gate: 0.85, slide: false, probability: 100, pLocks: { cutoff: 2200 } },
+    { note: 48, enabled: false, velocity: 90, gate: 0.5, slide: false, probability: 100 },
+    { note: 48, enabled: true, velocity: 95, gate: 0.6, slide: false, probability: 100, pLocks: { cutoff: 1300 } },
+    { note: 53, enabled: true, velocity: 110, gate: 0.95, slide: true, probability: 100, pLocks: { cutoff: 3100 } },
+    { note: 55, enabled: true, velocity: 120, gate: 0.8, slide: false, probability: 100, pLocks: { cutoff: 3500 } },
+    { note: 48, enabled: false, velocity: 90, gate: 0.5, slide: false, probability: 100 },
+    { note: 60, enabled: true, velocity: 125, gate: 0.85, slide: false, probability: 100, pLocks: { cutoff: 4600, delayMix: 0.35 } },
+    { note: 58, enabled: true, velocity: 105, gate: 0.8, slide: false, ratchet: 2, probability: 100 },
   ],
 };
 

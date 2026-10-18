@@ -32,10 +32,138 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
   amount,
   onAmountChange,
 }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const [activeHandle, setActiveHandle] = useState<DragHandle>(null);
   const [isHovered, setIsHovered] = useState(false);
   const [hoveredHandle, setHoveredHandle] = useState<DragHandle>(null);
+  const [hoverX, setHoverX] = useState<number | null>(null);
+
+  // Responsive container pixel dimensions
+  const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
+    width: 380,
+    height,
+  });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const updateSize = () => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      if (rect.width > 0) {
+        setDimensions({
+          width: Math.round(rect.width),
+          height: Math.round(rect.height || height),
+        });
+      }
+    };
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, [height]);
+
+  // High-def studio phosphor color profiles
+  const colorMap = {
+    cyan: {
+      stroke: '#00f0ff',
+      halo: 'rgba(0, 240, 255, 0.25)',
+      fillTop: 'rgba(0, 240, 255, 0.16)',
+      fillBottom: 'rgba(0, 240, 255, 0.00)',
+      beam: '#7df9ff',
+    },
+    amber: {
+      stroke: '#ffaa00',
+      halo: 'rgba(255, 170, 0, 0.25)',
+      fillTop: 'rgba(255, 170, 0, 0.16)',
+      fillBottom: 'rgba(255, 170, 0, 0.00)',
+      beam: '#ffd580',
+    },
+    emerald: {
+      stroke: '#00ff66',
+      halo: 'rgba(0, 255, 102, 0.25)',
+      fillTop: 'rgba(0, 255, 102, 0.16)',
+      fillBottom: 'rgba(0, 255, 102, 0.00)',
+      beam: '#99ffbb',
+    },
+  };
+  const theme = colorMap[color] || colorMap.cyan;
+
+  // ViewBox layout metrics in true pixel coordinates
+  const PADDING_LEFT = 24;
+  const PADDING_RIGHT = 18;
+  const PADDING_TOP = 20;
+  const PADDING_BOTTOM = 22;
+
+  const contentWidth = Math.max(80, dimensions.width - PADDING_LEFT - PADDING_RIGHT);
+  const contentHeight = Math.max(30, dimensions.height - PADDING_TOP - PADDING_BOTTOM);
+
+  const Y_TOP = PADDING_TOP;
+  const Y_BOTTOM = dimensions.height - PADDING_BOTTOM;
+
+  // Time segment budgets (distributed proportionally across available pixel width)
+  const ATTACK_BUDGET = contentWidth * 0.25;
+  const DECAY_BUDGET = contentWidth * 0.25;
+  const SUSTAIN_BUDGET = contentWidth * 0.25;
+  const RELEASE_BUDGET = contentWidth * 0.25;
+
+  // Compute coordinate points in real 1:1 screen pixels
+  const points = useMemo(() => {
+    const aNorm = Math.min(1, Math.max(0.005, envelope.attack / maxAttack));
+    const dNorm = Math.min(1, Math.max(0.005, envelope.decay / maxDecay));
+    const sNorm = Math.min(1, Math.max(0, envelope.sustain));
+    const rNorm = Math.min(1, Math.max(0.005, envelope.release / maxRelease));
+
+    const x0 = PADDING_LEFT;
+    const y0 = Y_BOTTOM;
+
+    const xA = x0 + Math.max(10, aNorm * ATTACK_BUDGET);
+    const yA = Y_TOP;
+
+    const xD = xA + Math.max(10, dNorm * DECAY_BUDGET);
+    const yS = Y_BOTTOM - sNorm * contentHeight;
+
+    const xS = xD + SUSTAIN_BUDGET;
+
+    const xR = Math.min(dimensions.width - PADDING_RIGHT, xS + Math.max(10, rNorm * RELEASE_BUDGET));
+    const yR = Y_BOTTOM;
+
+    return {
+      x0, y0,
+      xA, yA,
+      xD, yS,
+      xS,
+      xR, yR,
+    };
+  }, [envelope, maxAttack, maxDecay, maxRelease, contentWidth, contentHeight, dimensions.width, Y_BOTTOM, Y_TOP, ATTACK_BUDGET, DECAY_BUDGET, SUSTAIN_BUDGET, RELEASE_BUDGET]);
+
+  // Generate organic cubic bezier paths
+  const curvePaths = useMemo(() => {
+    const { x0, y0, xA, yA, xD, yS, xS, xR, yR } = points;
+
+    // Attack: logarithmic ease-in
+    const cAx1 = x0 + (xA - x0) * 0.35;
+    const cAy1 = y0;
+    const cAx2 = x0 + (xA - x0) * 0.75;
+    const cAy2 = yA + (y0 - yA) * 0.05;
+
+    // Decay: natural exponential decay
+    const cDx1 = xA + (xD - xA) * 0.25;
+    const cDy1 = yS + (yA - yS) * 0.2;
+    const cDx2 = xA + (xD - xA) * 0.65;
+    const cDy2 = yS;
+
+    // Release: smooth exponential drop
+    const cRx1 = xS + (xR - xS) * 0.25;
+    const cRy1 = yR + (yS - yR) * 0.2;
+    const cRx2 = xS + (xR - xS) * 0.65;
+    const cRy2 = yR;
+
+    const strokePath = `M ${x0.toFixed(1)} ${y0.toFixed(1)} C ${cAx1.toFixed(1)} ${cAy1.toFixed(1)}, ${cAx2.toFixed(1)} ${cAy2.toFixed(1)}, ${xA.toFixed(1)} ${yA.toFixed(1)} C ${cDx1.toFixed(1)} ${cDy1.toFixed(1)}, ${cDx2.toFixed(1)} ${cDy2.toFixed(1)}, ${xD.toFixed(1)} ${yS.toFixed(1)} L ${xS.toFixed(1)} ${yS.toFixed(1)} C ${cRx1.toFixed(1)} ${cRy1.toFixed(1)}, ${cRx2.toFixed(1)} ${cRy2.toFixed(1)}, ${xR.toFixed(1)} ${yR.toFixed(1)}`;
+    const fillPath = `${strokePath} L ${xR.toFixed(1)} ${Y_BOTTOM} L ${x0.toFixed(1)} ${Y_BOTTOM} Z`;
+
+    return { strokePath, fillPath };
+  }, [points, Y_BOTTOM]);
 
   // Playhead animation state
   const playheadRef = useRef<{
@@ -50,112 +178,24 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
     releaseLevel: 0,
   });
 
-  const [playheadPos, setPlayheadPos] = useState<{ x: number; y: number; active: boolean }>({
+  const [playheadPos, setPlayheadPos] = useState<{ x: number; y: number; active: boolean; stage: DragHandle }>({
     x: 0,
-    y: 450,
+    y: Y_BOTTOM,
     active: false,
+    stage: null,
   });
 
-  const colorMap = {
-    cyan:    { stroke: '#10b981', glow: 'rgba(16, 185, 129, 0.45)',  fill: 'rgba(16, 185, 129, 0.12)' },
-    amber:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.45)',  fill: 'rgba(255, 170, 0, 0.12)' },
-    emerald: { stroke: '#00ff66', glow: 'rgba(0, 255, 102, 0.45)',  fill: 'rgba(0, 255, 102, 0.12)' },
-  };
-  const theme = colorMap[color] || colorMap.cyan;
-
-  // ViewBox layout bounds: 1000 x 500
-  // Margins: left = 40, right = 960, top = 50, bottom = 450
-  const X_START = 40;
-  const X_END = 960;
-  const Y_TOP = 50;
-  const Y_BOTTOM = 450;
-  const Y_HEIGHT = Y_BOTTOM - Y_TOP;
-
-  // Time segment budgets (normalized widths within total envelope span)
-  const ATTACK_BUDGET = 220;
-  const DECAY_BUDGET = 240;
-  const SUSTAIN_BUDGET = 220;
-  const RELEASE_BUDGET = 240;
-
-  // Compute coordinate points
-  const points = useMemo(() => {
-    const aNorm = Math.min(1, Math.max(0.01, envelope.attack / maxAttack));
-    const dNorm = Math.min(1, Math.max(0.01, envelope.decay / maxDecay));
-    const sNorm = Math.min(1, Math.max(0, envelope.sustain));
-    const rNorm = Math.min(1, Math.max(0.01, envelope.release / maxRelease));
-
-    const x0 = X_START;
-    const y0 = Y_BOTTOM;
-
-    const xA = x0 + Math.max(20, aNorm * ATTACK_BUDGET);
-    const yA = Y_TOP;
-
-    const xD = xA + Math.max(20, dNorm * DECAY_BUDGET);
-    const yS = Y_BOTTOM - sNorm * Y_HEIGHT;
-
-    const xS = xD + SUSTAIN_BUDGET;
-
-    const xR = Math.min(X_END, xS + Math.max(20, rNorm * RELEASE_BUDGET));
-    const yR = Y_BOTTOM;
-
-    return {
-      x0, y0,
-      xA, yA,
-      xD, yS,
-      xS,
-      xR, yR,
-    };
-  }, [envelope, maxAttack, maxDecay, maxRelease, Y_HEIGHT]);
-
-  // Generate SVG curve with smooth organic easing
-  const curvePaths = useMemo(() => {
-    const { x0, y0, xA, yA, xD, yS, xS, xR, yR } = points;
-
-    // Attack curve: gentle logarithmic ease-in
-    const cAx1 = x0 + (xA - x0) * 0.4;
-    const cAy1 = y0;
-    const cAx2 = x0 + (xA - x0) * 0.8;
-    const cAy2 = yA + (y0 - yA) * 0.1;
-
-    // Decay curve: natural exponential decay
-    const cDx1 = xA + (xD - xA) * 0.25;
-    const cDy1 = yS + (yA - yS) * 0.2;
-    const cDx2 = xA + (xD - xA) * 0.65;
-    const cDy2 = yS;
-
-    // Release curve: exponential falloff to baseline
-    const cRx1 = xS + (xR - xS) * 0.25;
-    const cRy1 = yR + (yS - yR) * 0.2;
-    const cRx2 = xS + (xR - xS) * 0.65;
-    const cRy2 = yR;
-
-    const strokePath = `
-      M ${x0.toFixed(1)} ${y0.toFixed(1)}
-      C ${cAx1.toFixed(1)} ${cAy1.toFixed(1)}, ${cAx2.toFixed(1)} ${cAy2.toFixed(1)}, ${xA.toFixed(1)} ${yA.toFixed(1)}
-      C ${cDx1.toFixed(1)} ${cDy1.toFixed(1)}, ${cDx2.toFixed(1)} ${cDy2.toFixed(1)}, ${xD.toFixed(1)} ${yS.toFixed(1)}
-      L ${xS.toFixed(1)} ${yS.toFixed(1)}
-      C ${cRx1.toFixed(1)} ${cRy1.toFixed(1)}, ${cRx2.toFixed(1)} ${cRy2.toFixed(1)}, ${xR.toFixed(1)} ${yR.toFixed(1)}
-    `;
-
-    const fillPath = `${strokePath} L ${xR.toFixed(1)} ${Y_BOTTOM} L ${x0.toFixed(1)} ${Y_BOTTOM} Z`;
-
-    return { strokePath, fillPath };
-  }, [points]);
-
-  // Track Note-On and Note-Off for 60 FPS playhead cursor
+  // Track Note-On and Note-Off
   useEffect(() => {
     const isNoteActive = activeNotesCount > 0;
     const now = performance.now() / 1000;
 
     if (isNoteActive && !playheadRef.current.gate) {
-      // Key pressed: Start Attack phase
       playheadRef.current.gate = true;
       playheadRef.current.startTime = now;
     } else if (!isNoteActive && playheadRef.current.gate) {
-      // Key released: Start Release phase
       playheadRef.current.gate = false;
       playheadRef.current.releaseTime = now;
-      // Current level at time of release
       const elapsed = now - playheadRef.current.startTime;
       if (elapsed < envelope.attack) {
         playheadRef.current.releaseLevel = elapsed / Math.max(0.001, envelope.attack);
@@ -168,7 +208,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
     }
   }, [activeNotesCount, envelope]);
 
-  // 60 FPS requestAnimationFrame loop for glowing playhead
+  // High-def 60 FPS playhead tracer
   useEffect(() => {
     let animId: number;
 
@@ -178,38 +218,32 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
       const { x0, xA, yA, xD, yS, xS, xR, yR } = points;
 
       if (state.gate) {
-        // Gate is held
         const elapsed = now - state.startTime;
         if (elapsed < envelope.attack) {
-          // Attack phase
           const progress = elapsed / Math.max(0.001, envelope.attack);
           const x = x0 + progress * (xA - x0);
           const y = Y_BOTTOM - progress * (Y_BOTTOM - yA);
-          setPlayheadPos({ x, y, active: true });
+          setPlayheadPos({ x, y, active: true, stage: 'attack' });
         } else if (elapsed < envelope.attack + envelope.decay) {
-          // Decay phase
           const progress = (elapsed - envelope.attack) / Math.max(0.001, envelope.decay);
           const x = xA + progress * (xD - xA);
           const y = yA + progress * (yS - yA);
-          setPlayheadPos({ x, y, active: true });
+          setPlayheadPos({ x, y, active: true, stage: 'decay' });
         } else {
-          // Sustain phase (gentle pulsing on sustain bar)
           const holdElapsed = elapsed - (envelope.attack + envelope.decay);
-          const sProgress = (Math.sin(holdElapsed * 3) + 1) * 0.5;
+          const sProgress = (Math.sin(holdElapsed * 3.5) + 1) * 0.5;
           const x = xD + sProgress * (xS - xD);
-          setPlayheadPos({ x, y: yS, active: true });
+          setPlayheadPos({ x, y: yS, active: true, stage: 'sustain' });
         }
       } else if (state.releaseTime > 0) {
-        // In Release phase
         const relElapsed = now - state.releaseTime;
         if (relElapsed < envelope.release) {
           const progress = relElapsed / Math.max(0.001, envelope.release);
           const x = xS + progress * (xR - xS);
           const y = yS + progress * (yR - yS);
-          setPlayheadPos({ x, y, active: true });
+          setPlayheadPos({ x, y, active: true, stage: 'release' });
         } else {
-          // Idle resting state
-          setPlayheadPos(prev => prev.active ? { ...prev, active: false } : prev);
+          setPlayheadPos(prev => prev.active ? { ...prev, active: false, stage: null } : prev);
           state.releaseTime = 0;
         }
       }
@@ -219,9 +253,9 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
 
     animId = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animId);
-  }, [points, envelope]);
+  }, [points, envelope, Y_BOTTOM]);
 
-  // Drag interaction handling
+  // Drag interaction handling with smooth pointer tracking
   const handlePointerDown = (handle: DragHandle) => (e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -230,37 +264,69 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
     setActiveHandle(handle);
   };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
-    if (!activeHandle || !svgRef.current) return;
-    e.preventDefault();
+  // Canvas-wide intelligent click-to-drag pick
+  const handleCanvasPointerDown = (e: React.PointerEvent) => {
+    if (!svgRef.current) return;
     const rect = svgRef.current.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return;
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
 
-    const normX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    const normY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    // Pick closest handle or phase region
+    let targetHandle: DragHandle = 'attack';
+    if (px < points.xA + (points.xD - points.xA) * 0.3) {
+      targetHandle = 'attack';
+    } else if (px < points.xD + (points.xS - points.xD) * 0.5) {
+      targetHandle = 'decay';
+    } else if (px < points.xS + (points.xR - points.xS) * 0.3) {
+      targetHandle = 'sustain';
+    } else {
+      targetHandle = 'release';
+    }
 
-    const svgX = normX * 1000;
-    const svgY = normY * 500;
+    svgRef.current.setPointerCapture(e.pointerId);
+    setActiveHandle(targetHandle);
 
+    // Apply immediate update
+    updateValueFromCoords(targetHandle, px, py, e.shiftKey);
+  };
+
+  const updateValueFromCoords = (handle: DragHandle, px: number, py: number, fine: boolean) => {
     const newEnv = { ...envelope };
+    const stepScale = fine ? 0.2 : 1.0;
 
-    if (activeHandle === 'attack') {
-      const budgetX = Math.max(10, Math.min(ATTACK_BUDGET, svgX - X_START));
-      newEnv.attack = Math.max(0.001, Math.min(maxAttack, +( (budgetX / ATTACK_BUDGET) * maxAttack ).toFixed(3)));
-    } else if (activeHandle === 'decay') {
-      const budgetX = Math.max(10, Math.min(DECAY_BUDGET, svgX - points.xA));
-      newEnv.decay = Math.max(0.001, Math.min(maxDecay, +( (budgetX / DECAY_BUDGET) * maxDecay ).toFixed(3)));
-      const sLevel = Math.max(0, Math.min(1, 1 - (svgY - Y_TOP) / Y_HEIGHT));
+    if (handle === 'attack') {
+      const budgetX = Math.max(4, Math.min(ATTACK_BUDGET, px - PADDING_LEFT));
+      const targetAttack = (budgetX / ATTACK_BUDGET) * maxAttack;
+      newEnv.attack = Math.max(0.001, Math.min(maxAttack, +(fine ? envelope.attack + (targetAttack - envelope.attack) * stepScale : targetAttack).toFixed(3)));
+    } else if (handle === 'decay') {
+      const budgetX = Math.max(4, Math.min(DECAY_BUDGET, px - points.xA));
+      const targetDecay = (budgetX / DECAY_BUDGET) * maxDecay;
+      newEnv.decay = Math.max(0.001, Math.min(maxDecay, +(fine ? envelope.decay + (targetDecay - envelope.decay) * stepScale : targetDecay).toFixed(3)));
+      const sLevel = Math.max(0, Math.min(1, 1 - (py - Y_TOP) / contentHeight));
       newEnv.sustain = +sLevel.toFixed(2);
-    } else if (activeHandle === 'sustain') {
-      const sLevel = Math.max(0, Math.min(1, 1 - (svgY - Y_TOP) / Y_HEIGHT));
+    } else if (handle === 'sustain') {
+      const sLevel = Math.max(0, Math.min(1, 1 - (py - Y_TOP) / contentHeight));
       newEnv.sustain = +sLevel.toFixed(2);
-    } else if (activeHandle === 'release') {
-      const budgetX = Math.max(10, Math.min(RELEASE_BUDGET, svgX - points.xS));
-      newEnv.release = Math.max(0.001, Math.min(maxRelease, +( (budgetX / RELEASE_BUDGET) * maxRelease ).toFixed(3)));
+    } else if (handle === 'release') {
+      const budgetX = Math.max(4, Math.min(RELEASE_BUDGET, px - points.xS));
+      const targetRel = (budgetX / RELEASE_BUDGET) * maxRelease;
+      newEnv.release = Math.max(0.001, Math.min(maxRelease, +(fine ? envelope.release + (targetRel - envelope.release) * stepScale : targetRel).toFixed(3)));
     }
 
     onChange(newEnv);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    setHoverX(px);
+
+    if (activeHandle) {
+      e.preventDefault();
+      updateValueFromCoords(activeHandle, px, py, e.shiftKey);
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
@@ -276,36 +342,60 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
     return `${seconds.toFixed(2)}s`;
   };
 
+  // Determine which phase mouse is hovering
+  const activeHoverPhase: DragHandle = useMemo(() => {
+    if (hoverX === null) return null;
+    if (hoverX <= points.xA) return 'attack';
+    if (hoverX <= points.xD) return 'decay';
+    if (hoverX <= points.xS) return 'sustain';
+    return 'release';
+  }, [hoverX, points]);
+
   return (
     <div 
+      ref={containerRef}
       className={`relative w-full rounded-sm overflow-hidden select-none oled-screen ${className}`}
       style={{ height }}
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => { setIsHovered(false); setHoveredHandle(null); }}
+      onMouseLeave={() => { setIsHovered(false); setHoveredHandle(null); setHoverX(null); }}
     >
       <svg
         ref={svgRef}
-        viewBox="0 0 1000 500"
-        preserveAspectRatio="none"
-        className="w-full h-full cursor-pointer touch-none"
+        viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+        className="w-full h-full cursor-crosshair touch-none"
+        onPointerDown={handleCanvasPointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerUp}
       >
         <defs>
+          {/* High-def linear gradient: subtle 16% opacity fading cleanly to pure black without haze */}
           <linearGradient id={`env-grad-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={theme.stroke} stopOpacity="0.45" />
-            <stop offset="65%" stopColor={theme.stroke} stopOpacity="0.12" />
-            <stop offset="100%" stopColor={theme.stroke} stopOpacity="0.0" />
+            <stop offset="0%" stopColor={theme.stroke} stopOpacity="0.16" />
+            <stop offset="60%" stopColor={theme.stroke} stopOpacity="0.04" />
+            <stop offset="100%" stopColor={theme.stroke} stopOpacity="0.00" />
           </linearGradient>
-          <filter id={`env-glow-${color}`} x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
+
+          {/* Active section phosphor highlight gradient */}
+          <linearGradient id={`section-glow-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={theme.stroke} stopOpacity="0.08" />
+            <stop offset="100%" stopColor={theme.stroke} stopOpacity="0.01" />
+          </linearGradient>
         </defs>
+
+        {/* Phase Zone Background Phosphor Highlights on Hover or Playing */}
+        {(activeHoverPhase === 'attack' || playheadPos.stage === 'attack') && (
+          <rect x={points.x0} y={Y_TOP} width={points.xA - points.x0} height={contentHeight} fill={`url(#section-glow-${color})`} />
+        )}
+        {(activeHoverPhase === 'decay' || playheadPos.stage === 'decay') && (
+          <rect x={points.xA} y={Y_TOP} width={points.xD - points.xA} height={contentHeight} fill={`url(#section-glow-${color})`} />
+        )}
+        {(activeHoverPhase === 'sustain' || playheadPos.stage === 'sustain') && (
+          <rect x={points.xD} y={Y_TOP} width={points.xS - points.xD} height={contentHeight} fill={`url(#section-glow-${color})`} />
+        )}
+        {(activeHoverPhase === 'release' || playheadPos.stage === 'release') && (
+          <rect x={points.xS} y={Y_TOP} width={points.xR - points.xS} height={contentHeight} fill={`url(#section-glow-${color})`} />
+        )}
 
         {/* Stage Boundary Vertical Guides */}
         {[points.xA, points.xD, points.xS].map((x, i) => (
@@ -316,62 +406,92 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
             x2={x}
             y2={Y_BOTTOM}
             stroke="rgba(255, 255, 255, 0.08)"
-            strokeDasharray="4 4"
-            strokeWidth="1.5"
+            strokeDasharray="2 3"
+            strokeWidth="1"
           />
         ))}
 
-        {/* Horizontal Baseline and 100% lines */}
-        <line x1={X_START} y1={Y_BOTTOM} x2={X_END} y2={Y_BOTTOM} stroke="rgba(255, 255, 255, 0.15)" strokeWidth="1.5" />
-        <line x1={X_START} y1={Y_TOP} x2={X_END} y2={Y_TOP} stroke="rgba(255, 255, 255, 0.06)" strokeDasharray="3 3" strokeWidth="1" />
+        {/* Horizontal Precision Gridlines (0%, 50%, 100% Level) */}
+        <line x1={PADDING_LEFT} y1={Y_BOTTOM} x2={dimensions.width - PADDING_RIGHT} y2={Y_BOTTOM} stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1" />
+        <line x1={PADDING_LEFT} y1={Y_TOP + contentHeight * 0.5} x2={dimensions.width - PADDING_RIGHT} y2={Y_TOP + contentHeight * 0.5} stroke="rgba(255, 255, 255, 0.04)" strokeDasharray="1 4" strokeWidth="1" />
+        <line x1={PADDING_LEFT} y1={Y_TOP} x2={dimensions.width - PADDING_RIGHT} y2={Y_TOP} stroke="rgba(255, 255, 255, 0.08)" strokeDasharray="2 4" strokeWidth="1" />
 
-        {/* Phase Region Text Labels */}
-        <text x={(points.x0 + points.xA) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="'Space Mono', monospace" letterSpacing="0.08em" textAnchor="middle">ATTACK</text>
-        <text x={(points.xA + points.xD) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="'Space Mono', monospace" letterSpacing="0.08em" textAnchor="middle">DECAY</text>
-        <text x={(points.xD + points.xS) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="'Space Mono', monospace" letterSpacing="0.08em" textAnchor="middle">SUSTAIN</text>
-        <text x={(points.xS + points.xR) / 2} y={485} fill="rgba(255, 255, 255, 0.35)" fontSize="24" fontFamily="'Space Mono', monospace" letterSpacing="0.08em" textAnchor="middle">RELEASE</text>
+        {/* Dynamic Hover Hairline Cursor */}
+        {isHovered && hoverX !== null && hoverX >= PADDING_LEFT && hoverX <= dimensions.width - PADDING_RIGHT && (
+          <line
+            x1={hoverX}
+            y1={Y_TOP}
+            x2={hoverX}
+            y2={Y_BOTTOM}
+            stroke={theme.stroke}
+            strokeWidth="1"
+            strokeDasharray="2 2"
+            opacity="0.3"
+          />
+        )}
 
-        {/* Envelope Area Fill */}
+        {/* Phase Region Text Labels (evenly spaced across the 4 stages to prevent label collision) */}
+        {[
+          { key: 'attack', label: 'ATTACK', short: 'A', x: PADDING_LEFT + contentWidth * 0.125 },
+          { key: 'decay', label: 'DECAY', short: 'D', x: PADDING_LEFT + contentWidth * 0.375 },
+          { key: 'sustain', label: 'SUSTAIN', short: 'S', x: PADDING_LEFT + contentWidth * 0.625 },
+          { key: 'release', label: 'RELEASE', short: 'R', x: PADDING_LEFT + contentWidth * 0.875 },
+        ].map(item => (
+          <text
+            key={item.key}
+            x={item.x}
+            y={dimensions.height - 6}
+            fill={activeHoverPhase === item.key || activeHandle === item.key ? theme.stroke : 'rgba(255, 255, 255, 0.28)'}
+            fontSize={contentWidth < 200 ? '7' : '8'}
+            fontFamily="'Space Mono', monospace"
+            letterSpacing="0.08em"
+            textAnchor="middle"
+            fontWeight={activeHoverPhase === item.key ? 'bold' : 'normal'}
+          >
+            {contentWidth < 180 ? item.short : item.label}
+          </text>
+        ))}
+
+        {/* High-Definition Area Fill */}
         <path d={curvePaths.fillPath} fill={`url(#env-grad-${color})`} />
 
-        {/* Diffuse Glow Curve */}
+        {/* Core Razor-Sharp Vector Beam (1.5px laser line with clean micro drop-shadow) */}
         <path
           d={curvePaths.strokePath}
           fill="none"
           stroke={theme.stroke}
-          strokeWidth="6"
+          strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          opacity="0.4"
-          filter={`url(#env-glow-${color})`}
+          style={{ filter: `drop-shadow(0 0 2px ${theme.stroke}aa)` }}
         />
 
-        {/* Core Crisp Curve */}
-        <path
-          d={curvePaths.strokePath}
-          fill="none"
-          stroke={theme.stroke}
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-
-        {/* Sustain Horizontal Draggable Bar */}
+        {/* Sustain Horizontal Draggable Reticle Bar */}
         <line
           x1={points.xD}
           y1={points.yS}
           x2={points.xS}
           y2={points.yS}
-          stroke={theme.stroke}
-          strokeWidth="4"
-          opacity={hoveredHandle === 'sustain' || activeHandle === 'sustain' ? 1 : 0.6}
+          stroke={theme.beam}
+          strokeWidth="2"
+          strokeDasharray={hoveredHandle === 'sustain' || activeHandle === 'sustain' ? undefined : '4 2'}
+          opacity={hoveredHandle === 'sustain' || activeHandle === 'sustain' ? 1 : 0.75}
+        />
+        {/* Sustain Bar Hit Target */}
+        <line
+          x1={points.xD}
+          y1={points.yS}
+          x2={points.xS}
+          y2={points.yS}
+          stroke="transparent"
+          strokeWidth="14"
           className="cursor-ns-resize"
           onPointerDown={handlePointerDown('sustain')}
           onMouseEnter={() => setHoveredHandle('sustain')}
           onMouseLeave={() => setHoveredHandle(null)}
         />
 
-        {/* Interactive Handle 1: Attack Node */}
+        {/* Handle 1: Attack Node Reticle */}
         <g 
           transform={`translate(${points.xA}, ${points.yA})`}
           className="cursor-ew-resize"
@@ -379,12 +499,17 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
           onMouseEnter={() => setHoveredHandle('attack')}
           onMouseLeave={() => setHoveredHandle(null)}
         >
-          <circle r="14" fill={theme.stroke} opacity={activeHandle === 'attack' || hoveredHandle === 'attack' ? 0.35 : 0.15} />
-          <circle r="8" fill="#06090e" stroke={theme.stroke} strokeWidth="2.5" />
-          <circle r="3" fill="#ffffff" />
+          {/* Target halo */}
+          <circle r={activeHandle === 'attack' || hoveredHandle === 'attack' ? 9 : 6} fill="none" stroke={theme.stroke} strokeWidth="1" opacity={activeHandle === 'attack' || hoveredHandle === 'attack' ? 0.9 : 0.3} />
+          {/* Core bevel */}
+          <circle r="4" fill="#04070c" stroke={theme.stroke} strokeWidth="1.5" />
+          {/* Center pip */}
+          <circle r="1.5" fill="#ffffff" />
+          {/* Generous touch target */}
+          <circle r="16" fill="transparent" />
         </g>
 
-        {/* Interactive Handle 2: Decay / Sustain Node */}
+        {/* Handle 2: Decay / Sustain Corner Reticle */}
         <g 
           transform={`translate(${points.xD}, ${points.yS})`}
           className="cursor-move"
@@ -392,12 +517,13 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
           onMouseEnter={() => setHoveredHandle('decay')}
           onMouseLeave={() => setHoveredHandle(null)}
         >
-          <circle r="14" fill={theme.stroke} opacity={activeHandle === 'decay' || hoveredHandle === 'decay' ? 0.35 : 0.15} />
-          <circle r="8" fill="#06090e" stroke={theme.stroke} strokeWidth="2.5" />
-          <circle r="3" fill="#ffffff" />
+          <circle r={activeHandle === 'decay' || hoveredHandle === 'decay' ? 9 : 6} fill="none" stroke={theme.stroke} strokeWidth="1" opacity={activeHandle === 'decay' || hoveredHandle === 'decay' ? 0.9 : 0.3} />
+          <circle r="4" fill="#04070c" stroke={theme.stroke} strokeWidth="1.5" />
+          <circle r="1.5" fill="#ffffff" />
+          <circle r="16" fill="transparent" />
         </g>
 
-        {/* Interactive Handle 3: Release Node */}
+        {/* Handle 3: Release End Reticle */}
         <g 
           transform={`translate(${points.xR}, ${points.yR})`}
           className="cursor-ew-resize"
@@ -405,66 +531,69 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
           onMouseEnter={() => setHoveredHandle('release')}
           onMouseLeave={() => setHoveredHandle(null)}
         >
-          <circle r="14" fill={theme.stroke} opacity={activeHandle === 'release' || hoveredHandle === 'release' ? 0.35 : 0.15} />
-          <circle r="8" fill="#06090e" stroke={theme.stroke} strokeWidth="2.5" />
-          <circle r="3" fill="#ffffff" />
+          <circle r={activeHandle === 'release' || hoveredHandle === 'release' ? 9 : 6} fill="none" stroke={theme.stroke} strokeWidth="1" opacity={activeHandle === 'release' || hoveredHandle === 'release' ? 0.9 : 0.3} />
+          <circle r="4" fill="#04070c" stroke={theme.stroke} strokeWidth="1.5" />
+          <circle r="1.5" fill="#ffffff" />
+          <circle r="16" fill="transparent" />
         </g>
 
-        {/* Real-time 60 FPS Glowing Playhead Cursor */}
+        {/* High-Definition Oscilloscope Laser Playhead (Clean 1.5px laser scanline + crisp micro-bead) */}
         {playheadPos.active && (
           <g transform={`translate(${playheadPos.x}, ${playheadPos.y})`}>
-            {/* Vertical scanning laser line */}
+            {/* Fine laser scanline */}
             <line
               x1="0"
-              y1={-playheadPos.y + Y_TOP}
+              y1={Y_TOP - playheadPos.y}
               x2="0"
               y2={Y_BOTTOM - playheadPos.y}
-              stroke="#ffffff"
-              strokeWidth="1.5"
-              strokeDasharray="2 2"
-              opacity="0.6"
+              stroke={theme.stroke}
+              strokeWidth="1"
+              strokeDasharray="2 3"
+              opacity="0.45"
             />
-            {/* Glowing tracer orb */}
-            <circle r="16" fill="#ffffff" opacity="0.3" className="animate-ping" />
-            <circle r="8" fill={theme.stroke} filter={`drop-shadow(0 0 8px #ffffff)`} />
-            <circle r="4" fill="#ffffff" />
+            {/* Phosphor halo */}
+            <circle r="6" fill={theme.stroke} opacity="0.25" />
+            {/* Outer precision ring */}
+            <circle r="4" fill="#04070c" stroke={theme.beam} strokeWidth="1.2" />
+            {/* Crisp center core */}
+            <circle r="1.8" fill="#ffffff" />
           </g>
         )}
       </svg>
 
-      {/* Header Overlay: Title & Value Chips */}
+      {/* Header Overlay: Title & Value Readout Chips */}
       <div className="absolute top-1.5 left-2 pointer-events-none flex items-center gap-2">
         <span 
-          className="text-[9px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-sm"
-          style={{ background: 'rgba(0,0,0,0.7)', color: theme.stroke, border: `1px solid ${theme.stroke}44` }}
+          className="text-[8px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-xs"
+          style={{ background: 'rgba(0,0,0,0.8)', color: theme.stroke, border: `1px solid ${theme.stroke}44` }}
         >
           {title}
         </span>
         <div className="flex items-center gap-2 text-[8px] font-mono text-gray-400">
-          <span>A: <strong className="text-gray-200">{formatTime(envelope.attack)}</strong></span>
-          <span>D: <strong className="text-gray-200">{formatTime(envelope.decay)}</strong></span>
-          <span>S: <strong className="text-gray-200">{Math.round(envelope.sustain * 100)}%</strong></span>
-          <span>R: <strong className="text-gray-200">{formatTime(envelope.release)}</strong></span>
+          <span>A: <strong className={activeHoverPhase === 'attack' || activeHandle === 'attack' ? 'text-white underline' : 'text-gray-200'}>{formatTime(envelope.attack)}</strong></span>
+          <span>D: <strong className={activeHoverPhase === 'decay' || activeHandle === 'decay' ? 'text-white underline' : 'text-gray-200'}>{formatTime(envelope.decay)}</strong></span>
+          <span>S: <strong className={activeHoverPhase === 'sustain' || activeHandle === 'sustain' ? 'text-white underline' : 'text-gray-200'}>{Math.round(envelope.sustain * 100)}%</strong></span>
+          <span>R: <strong className={activeHoverPhase === 'release' || activeHandle === 'release' ? 'text-white underline' : 'text-gray-200'}>{formatTime(envelope.release)}</strong></span>
           {amount !== undefined && (
             <span>INT: <strong className="text-gray-200">{Math.round(amount)}</strong></span>
           )}
         </div>
       </div>
 
-      {/* Dragging / Hover Value Tooltip */}
+      {/* Floating HUD Tooltip when Dragging or Hovering */}
       {activeHandle && (
         <div
-          className="absolute pointer-events-none z-30 px-2 py-0.5 rounded text-[9px] font-mono-lcd shadow-lg uppercase"
+          className="absolute pointer-events-none z-30 px-2 py-0.5 rounded-xs text-[8px] font-mono-lcd shadow-lg uppercase backdrop-blur-sm"
           style={{
-            left: activeHandle === 'attack' ? `${(points.xA / 1000) * 100}%` :
-                  activeHandle === 'decay' || activeHandle === 'sustain' ? `${(points.xD / 1000) * 100}%` :
-                  `${(points.xR / 1000) * 100}%`,
-            top: '20%',
-            transform: 'translate(-50%, -100%)',
+            left: activeHandle === 'attack' ? `${Math.max(45, Math.min(dimensions.width - 45, points.xA))}px` :
+                  activeHandle === 'decay' || activeHandle === 'sustain' ? `${Math.max(55, Math.min(dimensions.width - 55, points.xD))}px` :
+                  `${Math.max(45, Math.min(dimensions.width - 45, points.xR))}px`,
+            top: '24px',
+            transform: 'translate(-50%, 0)',
             background: 'var(--oled-bg)',
             border: `1px solid ${theme.stroke}`,
             color: theme.stroke,
-            boxShadow: `0 4px 12px rgba(0,0,0,0.8), 0 0 10px ${theme.glow}`
+            boxShadow: `0 4px 12px rgba(0,0,0,0.8), 0 0 8px ${theme.halo}`
           }}
         >
           {activeHandle === 'attack' && `ATTACK: ${formatTime(envelope.attack)}`}

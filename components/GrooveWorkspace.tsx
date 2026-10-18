@@ -17,8 +17,14 @@ import { DRUM_TRACKS, DEFAULT_DRUM_TRACK_LENGTHS, DEFAULT_DRUM_TRACK_RATCHETS } 
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
 
 interface GrooveWorkspaceProps {
-  isPlaying: boolean;
-  onPlayToggle: () => void;
+  isPlaying?: boolean;
+  onPlayToggle?: () => void;
+  isDrumPlaying?: boolean;
+  isDrumQueued?: boolean;
+  onDrumPlayToggle?: () => void;
+  isSeqPlaying?: boolean;
+  isSeqQueued?: boolean;
+  onSeqPlayToggle?: () => void;
   bpm: number;
   onBpmChange: (bpm: number) => void;
   swing: number;
@@ -102,8 +108,14 @@ const TRACK_CONFIG: Record<DrumTrackName, {
 };
 
 export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
-  isPlaying,
-  onPlayToggle,
+  isPlaying = false,
+  onPlayToggle = () => {},
+  isDrumPlaying,
+  isDrumQueued = false,
+  onDrumPlayToggle,
+  isSeqPlaying = false,
+  isSeqQueued = false,
+  onSeqPlayToggle,
   bpm,
   onBpmChange,
   swing,
@@ -462,15 +474,25 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
       >
 
         {/* Left: Master Transport & Clock */}
-        <div className="flex items-center gap-3 pl-1 sm:pl-2">
+        <div className="flex items-center gap-2 pl-1 sm:pl-2">
           <LEDButton
-            label={isPlaying ? 'STOP BEAT' : 'START BEAT'}
-            active={isPlaying}
-            onClick={onPlayToggle}
-            color={isPlaying ? 'emerald' : 'cyan'}
+            label={isDrumQueued ? 'SYNCING...' : (isDrumPlaying ?? isPlaying) ? 'STOP DRUMS' : 'START DRUMS'}
+            active={isDrumPlaying ?? isPlaying}
+            onClick={onDrumPlayToggle || onPlayToggle}
+            color={isDrumQueued ? 'amber' : (isDrumPlaying ?? isPlaying) ? 'emerald' : 'cyan'}
             size="md"
-            className="px-3 py-1.5 text-xs font-bold font-mono tracking-wider shrink-0"
+            className={`px-3 py-1.5 text-xs font-bold font-mono tracking-wider shrink-0 ${isDrumQueued ? 'animate-pulse' : ''}`}
           />
+          {onSeqPlayToggle && (
+            <LEDButton
+              label={isSeqQueued ? 'SYNCING...' : isSeqPlaying ? 'STOP SEQ' : 'START SEQ'}
+              active={isSeqPlaying}
+              onClick={onSeqPlayToggle}
+              color={isSeqQueued ? 'amber' : isSeqPlaying ? 'cyan' : 'emerald'}
+              size="md"
+              className={`px-3 py-1.5 text-xs font-bold font-mono tracking-wider shrink-0 ${isSeqQueued ? 'animate-pulse' : ''}`}
+            />
+          )}
 
           <Knob
             label="Tempo"
@@ -715,7 +737,6 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                         value={trackLengths[track] || 16}
                         min={1}
                         max={16}
-                        step={1}
                         size={25}
                         onChange={(v) => handleTrackLengthChange(track, v)}
                         unit="st"

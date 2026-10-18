@@ -3,22 +3,28 @@ import { Waveform } from '../types';
 
 interface WaveformDisplayProps {
   waveform?: Waveform;
+  enabled?: boolean;
   isPlaying?: boolean;
   color?: string;
   amplitudeScale?: number;
   analyser?: AnalyserNode | null;
   stereoAnalysers?: { left: AnalyserNode | null; right: AnalyserNode | null } | null;
   mode?: 'oscilloscope' | 'spectrum' | 'lissajous';
+  onModeChange?: (mode: 'oscilloscope' | 'spectrum' | 'lissajous') => void;
+  showBezelControls?: boolean;
 }
 
 export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   waveform = 'sawtooth',
+  enabled = true,
   isPlaying = true,
   color = '#10b981',
   amplitudeScale = 1,
   analyser = null,
   stereoAnalysers = null,
   mode = 'oscilloscope',
+  onModeChange,
+  showBezelControls = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -36,6 +42,8 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   colorRef.current = color;
   const waveformRef = useRef(waveform);
   waveformRef.current = waveform;
+  const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
   const isPlayingRef = useRef(isPlaying);
   isPlayingRef.current = isPlaying;
   const modeRef = useRef(mode);
@@ -94,7 +102,8 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
       const currentMode = modeRef.current;
       const themeColor = colorRef.current || '#10b981';
       const ampScale = Math.max(0.1, amplitudeScaleRef.current);
-      const activePlay = isPlayingRef.current;
+      const isEnabled = enabledRef.current;
+      const activePlay = isPlayingRef.current && isEnabled;
 
       // ── Build / Update Static CRT Reticle Grid ──
       if (
@@ -201,11 +210,11 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           ctx.stroke(path);
           ctx.restore();
         } else {
-          // Organic resting Lissajous orbit
-          const t = phaseRef.current;
+          // Resting Lissajous CRT point/orbit at center (does not spin when at rest, glows if on)
           const path = new Path2D();
           const scale = Math.min(width, height) * (activePlay ? 0.36 : 0.26);
           const steps = 140;
+          const t = activePlay ? phaseRef.current : 0;
 
           for (let i = 0; i <= steps; i++) {
             const angle = (i / steps) * Math.PI * 2;
@@ -216,21 +225,30 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           }
 
           ctx.save();
-          ctx.shadowColor = themeColor;
-          ctx.shadowBlur = 8 * dpr;
-          ctx.globalAlpha = activePlay ? 0.45 : 0.25;
-          ctx.strokeStyle = themeColor;
-          ctx.lineWidth = 3.5 * dpr;
-          ctx.stroke(path);
+          if (isEnabled) {
+            ctx.shadowColor = themeColor;
+            ctx.shadowBlur = (activePlay ? 9 : 6) * dpr;
+            ctx.globalAlpha = activePlay ? 0.45 : 0.30;
+            ctx.strokeStyle = themeColor;
+            ctx.lineWidth = 3.5 * dpr;
+            ctx.stroke(path);
 
-          ctx.shadowBlur = 0;
-          ctx.globalAlpha = activePlay ? 0.95 : 0.55;
-          ctx.lineWidth = 1.4 * dpr;
-          ctx.strokeStyle = '#ffffff';
-          ctx.stroke(path);
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = activePlay ? 0.95 : 0.75;
+            ctx.lineWidth = 1.4 * dpr;
+            ctx.strokeStyle = activePlay ? '#ffffff' : themeColor;
+            ctx.stroke(path);
+          } else {
+            ctx.globalAlpha = 0.15;
+            ctx.strokeStyle = 'rgba(100, 116, 139, 0.4)';
+            ctx.lineWidth = 1 * dpr;
+            ctx.stroke(path);
+          }
           ctx.restore();
 
-          phaseRef.current += 0.02;
+          if (activePlay) {
+            phaseRef.current += 0.02;
+          }
         }
       }
 
@@ -285,21 +303,23 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
             }
           }
         } else {
-          // Synthetic ambient spectrum floor
-          const t = phaseRef.current;
+          // Static ambient spectrum floor (resting baseline with phosphor glow)
+          const t = activePlay ? phaseRef.current : 0;
           for (let b = 0; b < numBands; b++) {
             const decay = Math.exp(-b / 16);
             const ripple = (Math.sin(b * 0.45 + t) + 1) * 0.5;
-            const barH = (decay * 0.65 + ripple * 0.25) * height * 0.5 * ampScale;
+            const barH = (decay * 0.65 + (activePlay ? ripple * 0.25 : 0.05)) * height * 0.45 * ampScale;
             const bx = b * barWidth;
             const by = height - barH;
 
             ctx.fillStyle = themeColor;
-            ctx.globalAlpha = 0.3;
+            ctx.globalAlpha = isEnabled ? (activePlay ? 0.45 : 0.30) : 0.10;
             ctx.fillRect(bx + 0.5, by, Math.max(1, barWidth - 1.2 * dpr), barH);
             ctx.globalAlpha = 1.0;
           }
-          phaseRef.current += 0.03;
+          if (activePlay) {
+            phaseRef.current += 0.03;
+          }
         }
       }
 
@@ -355,56 +375,63 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           ctx.restore();
 
         } else if (analyser && !activePlay) {
-          // Idle analog CRT baseline with gentle organic harmonic drift
-          const t = phaseRef.current;
+          // Resting analog CRT zero-crossing baseline (stationary horizontal beam with phosphor glow)
           const path = new Path2D();
-          const amp = height * 0.04;
-
-          for (let px = 0; px <= width; px += 2) {
-            const normX = px / width;
-            const y = centerY + (Math.sin(normX * Math.PI * 4 + t) * 0.6 + Math.sin(normX * Math.PI * 8 - t * 1.5) * 0.4) * amp;
-            if (px === 0) path.moveTo(px, y);
-            else path.lineTo(px, y);
-          }
+          path.moveTo(0, centerY);
+          path.lineTo(width, centerY);
 
           ctx.save();
-          ctx.shadowColor = themeColor;
-          ctx.shadowBlur = 6 * dpr;
-          ctx.globalAlpha = 0.35;
-          ctx.strokeStyle = themeColor;
-          ctx.lineWidth = 3 * dpr;
-          ctx.stroke(path);
+          if (isEnabled) {
+            ctx.shadowColor = themeColor;
+            ctx.shadowBlur = 8 * dpr;
+            ctx.globalAlpha = 0.45;
+            ctx.strokeStyle = themeColor;
+            ctx.lineWidth = 3 * dpr;
+            ctx.stroke(path);
 
-          ctx.shadowBlur = 0;
-          ctx.globalAlpha = 0.85;
-          ctx.lineWidth = 1.2 * dpr;
-          ctx.strokeStyle = '#ffffff';
-          ctx.stroke(path);
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 0.85;
+            ctx.lineWidth = 1.2 * dpr;
+            ctx.strokeStyle = '#ffffff';
+            ctx.stroke(path);
+          } else {
+            ctx.globalAlpha = 0.15;
+            ctx.strokeStyle = 'rgba(100, 116, 139, 0.4)';
+            ctx.lineWidth = 1 * dpr;
+            ctx.stroke(path);
+          }
           ctx.restore();
-
-          phaseRef.current += 0.04;
 
         } else {
           // ── High-Fidelity Synthetic Analog Waveform Engine (OSC / LFO Previews) ──
           const amplitude = height * 0.38 * ampScale;
           const cycles = 2.2;
           const currentWaveform = waveformRef.current || 'sawtooth';
-          const phase = phaseRef.current;
+          // At rest: fixed phase = 0 (completely stationary!), When playing: animated phase
+          const phase = activePlay ? phaseRef.current : 0;
 
-          // Continuous anti-aliased mathematical waveform evaluators
+          // Continuous mathematical waveform evaluators modeled on vintage Moog / analog gear
           const sample = (tNorm: number): number => {
             const p = ((tNorm % 1) + 1) % 1; // 0 to 1
             switch (currentWaveform) {
-              case 'sine':
-                return Math.sin(p * Math.PI * 2);
+              case 'sine': {
+                // Moog Voyager saturated analog sine: soft-saturating peaks
+                const raw = Math.sin(p * Math.PI * 2);
+                return Math.tanh(raw * 1.32) * 1.08;
+              }
 
-              case 'triangle':
-                return p < 0.25 ? p * 4 : p < 0.75 ? 2 - p * 4 : p * 4 - 4;
+              case 'triangle': {
+                // Moog Voyager "Sharktooth" Triangle: asymmetric soft apex & warm body
+                const tri = p < 0.25 ? p * 4 : p < 0.75 ? 2 - p * 4 : p * 4 - 4;
+                return tri * 0.85 + Math.sin(p * Math.PI * 2) * 0.16;
+              }
 
               case 'sawtooth': {
-                // Anti-aliased ramp with smooth flyback slope (true analog ramp)
+                // Moog Transistor Core Saw: exponential curvature on ramp + rapid flyback
                 if (p < 0.94) {
-                  return 1 - (p / 0.94) * 2;
+                  const norm = p / 0.94; // 0 to 1
+                  const curved = (Math.exp(norm * 1.25) - 1) / (Math.exp(1.25) - 1);
+                  return 1 - curved * 2;
                 } else {
                   const flyback = (p - 0.94) / 0.06;
                   return -1 + flyback * 2;
@@ -412,16 +439,17 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
               }
 
               case 'square': {
-                // Anti-aliased pulse with smooth vertical transitions
-                const edgeWidth = 0.03;
-                if (p < 0.5 - edgeWidth) return 1;
-                if (p < 0.5 + edgeWidth) {
-                  const trans = (p - (0.5 - edgeWidth)) / (edgeWidth * 2);
-                  return 1 - trans * 2;
+                // Vintage Roland / Moog Analog Pulse (51/49% duty asymmetry & inductive soft corners)
+                const duty = 0.51;
+                const edgeWidth = 0.035;
+                if (p < duty - edgeWidth) return 0.98;
+                if (p < duty + edgeWidth) {
+                  const trans = (p - (duty - edgeWidth)) / (edgeWidth * 2);
+                  return 0.98 - trans * 1.96;
                 }
-                if (p < 1 - edgeWidth) return -1;
+                if (p < 1 - edgeWidth) return -0.98;
                 const trans = (p - (1 - edgeWidth)) / (edgeWidth * 2);
-                return -1 + trans * 2;
+                return -0.98 + trans * 1.96;
               }
 
               default:
@@ -432,33 +460,48 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           const path = new Path2D();
           const stepSize = Math.max(1, Math.floor(dpr));
 
-          for (let px = 0; px <= width; px += stepSize) {
-            const tNorm = (px / width) * cycles + phase;
-            const y = centerY - sample(tNorm) * amplitude;
+          if (isEnabled) {
+            for (let px = 0; px <= width; px += stepSize) {
+              const tNorm = (px / width) * cycles + phase;
+              const y = centerY - sample(tNorm) * amplitude;
 
-            if (px === 0) path.moveTo(px, y);
-            else path.lineTo(px, y);
-          }
+              if (px === 0) path.moveTo(px, y);
+              else path.lineTo(px, y);
+            }
 
-          // Ambient Glow Pass
-          ctx.save();
-          ctx.globalAlpha = activePlay ? 0.35 : 0.15;
-          ctx.strokeStyle = themeColor;
-          ctx.lineWidth = 3.5 * dpr;
-          ctx.lineJoin = 'round';
-          ctx.lineCap = 'round';
-          ctx.stroke(path);
+            // Outer Ambient Phosphor Glow Pass (ALWAYS GLOWS WHEN ON, even at rest!)
+            ctx.save();
+            ctx.shadowColor = themeColor;
+            ctx.shadowBlur = (activePlay ? 9 : 6) * dpr;
+            ctx.globalAlpha = activePlay ? 0.45 : 0.35;
+            ctx.strokeStyle = themeColor;
+            ctx.lineWidth = 3.5 * dpr;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.stroke(path);
 
-          // Sharp Core Beam Pass
-          ctx.globalAlpha = activePlay ? 1.0 : 0.45;
-          ctx.lineWidth = 1.4 * dpr;
-          ctx.strokeStyle = activePlay ? '#ffffff' : themeColor;
-          ctx.stroke(path);
-          ctx.restore();
+            // Sharp Core Beam Pass
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = activePlay ? 1.0 : 0.90;
+            ctx.lineWidth = 1.4 * dpr;
+            ctx.strokeStyle = activePlay ? '#ffffff' : themeColor;
+            ctx.stroke(path);
+            ctx.restore();
 
-          // Increment animated phase if playing
-          if (activePlay) {
-            phaseRef.current += 0.045;
+            // Increment animated phase ONLY if playing!
+            if (activePlay) {
+              phaseRef.current += 0.045;
+            }
+          } else {
+            // Unpowered Oscillator Standby (faint flatline, no glow)
+            path.moveTo(0, centerY);
+            path.lineTo(width, centerY);
+            ctx.save();
+            ctx.globalAlpha = 0.18;
+            ctx.strokeStyle = 'rgba(100, 116, 139, 0.4)';
+            ctx.lineWidth = 1 * dpr;
+            ctx.stroke(path);
+            ctx.restore();
           }
         }
       }
@@ -489,6 +532,29 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           boxShadow: 'inset 0 0 12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.10)',
         }}
       />
+      {/* Interactive CRT Bezel Mode Buttons */}
+      {showBezelControls && onModeChange && (
+        <div className="absolute top-1 right-1 flex items-center gap-0.5 z-20 bg-black/60 backdrop-blur-xs p-0.5 rounded border border-white/10">
+          {(['oscilloscope', 'spectrum', 'lissajous'] as const).map((m) => {
+            const isSel = mode === m;
+            const label = m === 'oscilloscope' ? 'SCOPE' : m === 'spectrum' ? 'FFT' : 'PHASE';
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onModeChange(m)}
+                className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded-xs transition-all ${
+                  isSel
+                    ? 'bg-[#10b981] text-black shadow-[0_0_5px_#10b981]'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 });

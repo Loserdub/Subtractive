@@ -22,9 +22,13 @@ interface PerformWorkspaceProps {
   onToggleKeyboardMode: () => void;
   keyboardLayout: 'daw' | 'classic';
   onChangeKeyboardLayout: (layout: 'daw' | 'classic') => void;
-  // Beat Launcher
+  // Dual Beat Transports
   isDrumPlaying: boolean;
+  isDrumQueued?: boolean;
   onDrumPlayToggle: () => void;
+  isSeqPlaying?: boolean;
+  isSeqQueued?: boolean;
+  onSeqPlayToggle?: () => void;
   bpm: number;
   onBpmChange: (bpm: number) => void;
   currentBank: number;
@@ -52,7 +56,11 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   keyboardLayout,
   onChangeKeyboardLayout,
   isDrumPlaying,
+  isDrumQueued = false,
   onDrumPlayToggle,
+  isSeqPlaying = false,
+  isSeqQueued = false,
+  onSeqPlayToggle,
   bpm,
   onBpmChange,
   currentBank,
@@ -75,16 +83,6 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   const [isDubActive, setIsDubActive] = useState(false);
   const [isFilterDropActive, setIsFilterDropActive] = useState(false);
 
-  // ── Drum Sequencer Active Step Runner ─────────────────────────────────────
-  const [activeStep, setActiveStep] = useState<number | null>(null);
-  useEffect(() => {
-    if (drumEngine) {
-      const unsub = drumEngine.subscribeStep((step) => {
-        setActiveStep(step);
-      });
-      return unsub;
-    }
-  }, [drumEngine]);
 
   const pendingPatchRef = useRef<Partial<SynthParameters> | null>(null);
   const rafSyncRef = useRef<number | null>(null);
@@ -372,35 +370,13 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => onSwitchWorkspace('synth')}
-            className="text-[8px] font-mono text-gray-400 hover:text-white px-2 py-1 rounded border border-[#26334a] bg-[#121824]"
-          >
-            SYNTH LAB ↗
-          </button>
-          <button
-            type="button"
-            onClick={() => onSwitchWorkspace('arp')}
-            className="text-[8px] font-mono text-[#00e5ff] hover:text-white px-2 py-1 rounded border border-[#00e5ff]/30 bg-[#0c1618]"
-          >
-            ARP ↗
-          </button>
-          <button
-            type="button"
-            onClick={() => onSwitchWorkspace('seq')}
-            className="text-[8px] font-mono text-[#00ff66] hover:text-white px-2 py-1 rounded border border-[#00ff66]/30 bg-[#0c1618]"
-          >
-            SEQ ↗
-          </button>
-          <button
-            type="button"
-            onClick={() => onSwitchWorkspace('groove')}
-            className="text-[8px] font-mono text-[#ffaa00] hover:text-white px-2 py-1 rounded border border-[#ffaa00]/30 bg-[#16120c]"
-          >
-            GROOVE ↗
-          </button>
+        <div className="flex items-center gap-2">
+          <span className="text-[7.5px] font-mono uppercase text-[#00ff66] bg-[#00ff66]/10 px-2 py-0.5 rounded border border-[#00ff66]/30">
+            EXPRESSION ENGINE ACTIVE
+          </span>
+          <span className="text-[7.5px] font-mono uppercase text-gray-400 hidden sm:inline">
+            VECTOR XY + 4 PRO MACROS
+          </span>
         </div>
       </div>
 
@@ -634,67 +610,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
 
       </div>
 
-      {/* ── Mid Section: Live Beat Launcher Strip ── */}
-      <div 
-        className="synth-panel rounded-sm px-3 py-1.5 flex items-center justify-between gap-3 shrink-0"
-        style={{ background: 'var(--panel-bg-alt)', border: '1px solid var(--panel-border)' }}
-      >
-        <div className="flex items-center gap-3">
-          <LEDButton
-            label={isDrumPlaying ? 'STOP BEAT' : 'START BEAT'}
-            active={isDrumPlaying}
-            onClick={onDrumPlayToggle}
-            color={isDrumPlaying ? 'emerald' : 'cyan'}
-            size="sm"
-            className="px-2.5 py-1 text-[9px] font-mono tracking-wider shrink-0"
-          />
 
-          <Knob
-            label="Tempo"
-            value={bpm}
-            min={60}
-            max={200}
-            size={28}
-            onChange={onBpmChange}
-            unit="BPM"
-            color="amber"
-          />
-
-          {/* Bank Quick Switch */}
-          <div className="flex items-center gap-1 pl-2 border-l border-[#202c3e]">
-            <span className="text-[7px] font-mono uppercase text-gray-400">BANK</span>
-            {[0, 1, 2, 3].map((bankIndex) => (
-              <button
-                key={bankIndex}
-                onClick={() => onBankSelect(bankIndex)}
-                className={`w-5 h-5 rounded text-[8px] font-mono font-bold transition-all ${
-                  currentBank === bankIndex
-                    ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                    : 'bg-[#121824] text-gray-400 hover:text-white border border-[#202c3e]'
-                }`}
-              >
-                {String.fromCharCode(65 + bankIndex)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 16-Step Running Ticker */}
-        <div className="flex items-center gap-1">
-          {Array.from({ length: 16 }).map((_, idx) => (
-            <div
-              key={idx}
-              className={`w-2.5 h-3 rounded-xs transition-all ${
-                activeStep === idx
-                  ? 'bg-white shadow-[0_0_8px_white] scale-110'
-                  : idx % 4 === 0
-                  ? 'bg-[#2b374c]'
-                  : 'bg-[#141b27]'
-              }`}
-            />
-          ))}
-        </div>
-      </div>
 
       {/* ── Lower Section: Playable Keyboard with Mod/Pitch Wheels ── */}
       <div className="shrink-0">
