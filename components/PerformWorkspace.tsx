@@ -5,6 +5,7 @@ import { Keyboard } from './Keyboard';
 import { SynthParameters, WorkspaceMode } from '../types';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
 import { AudioEngine } from '../services/AudioEngine';
+import { useSynthStore } from '../stores/useSynthStore';
 
 interface PerformWorkspaceProps {
   synthParams: SynthParameters;
@@ -141,6 +142,9 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   const handlePadPointerDown = (e: React.PointerEvent) => {
     e.preventDefault();
     if (!padRef.current) return;
+    try {
+      useSynthStore.getState().pushSnapshot();
+    } catch {}
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     setIsXyDragging(true);
 

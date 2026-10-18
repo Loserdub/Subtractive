@@ -81,6 +81,14 @@ export const Synth: React.FC = () => {
   // Centralized Zustand Store Subscriptions
   const params = useSynthStore(s => s.params);
   const setParams = useSynthStore(s => s.setParams);
+  const undo = useSynthStore(s => s.undo);
+  const redo = useSynthStore(s => s.redo);
+  const canUndo = useSynthStore(s => s.canUndo);
+  const canRedo = useSynthStore(s => s.canRedo);
+  const patchSlot = useSynthStore(s => s.patchSlot);
+  const togglePatchSlot = useSynthStore(s => s.togglePatchSlot);
+  const copyActiveToOtherSlot = useSynthStore(s => s.copyActiveToOtherSlot);
+  const pushSnapshot = useSynthStore(s => s.pushSnapshot);
   const selectedPresetName = useSynthStore(s => s.selectedPresetName);
   const setSelectedPresetName = useSynthStore(s => s.setSelectedPresetName);
   const midiStatus = useSynthStore(s => s.midiStatus);
@@ -519,6 +527,7 @@ export const Synth: React.FC = () => {
     const all = [...SYNTH_PRESETS, ...savedUserPresets, ...userPresets];
     const preset = all.find(p => p.name === presetName);
     if (preset) {
+      pushSnapshot();
       setParams(patchParams(DEFAULT_SYNTH_PARAMS, preset.params));
       setSelectedPresetName(preset.name);
     }
@@ -757,6 +766,24 @@ export const Synth: React.FC = () => {
       // Ignore when Preset Browser modal is open
       if (isPresetBrowserOpen) return;
 
+      // Undo / Redo Global Shortcuts: Ctrl+Z / Cmd+Z, Ctrl+Y / Cmd+Shift+Z
+      if ((e.ctrlKey || e.metaKey) && !e.altKey) {
+        if (e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            redo();
+          } else {
+            undo();
+          }
+          return;
+        }
+        if (e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          redo();
+          return;
+        }
+      }
+
       // Workspace Mode shortcuts (Alt+1..6 or 1..6 in DAW layout)
       if (e.altKey && (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '4' || e.key === '5' || e.key === '6')) {
         e.preventDefault();
@@ -878,7 +905,7 @@ export const Synth: React.FC = () => {
       activeKeysMapRef.current.forEach(note => handleNoteOff(note));
       activeKeysMapRef.current.clear();
     };
-  }, [isKeyboardMode, keyboardLayout, octaveOffset, isPresetBrowserOpen, handleNoteOn, handleNoteOff, handlePlayToggle]);
+  }, [isKeyboardMode, keyboardLayout, octaveOffset, isPresetBrowserOpen, handleNoteOn, handleNoteOff, handlePlayToggle, undo, redo]);
 
   const setOscWaveform = (osc: 'osc1' | 'osc2' | 'osc3' | 'osc4', waveform: Waveform) => {
     setParams(p => patchParams(p, { [osc]: { waveform } }));
@@ -1291,6 +1318,42 @@ export const Synth: React.FC = () => {
                   </option>
                 ))}
               </select>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={undo}
+                  disabled={!canUndo}
+                  title="Undo (Ctrl+Z)"
+                  className={`px-1 py-0.5 rounded text-[8px] font-mono font-bold ${
+                    canUndo ? 'text-[#00f0ff]' : 'text-gray-600 opacity-30'
+                  }`}
+                >
+                  ↶
+                </button>
+                <button
+                  type="button"
+                  onClick={redo}
+                  disabled={!canRedo}
+                  title="Redo (Ctrl+Y)"
+                  className={`px-1 py-0.5 rounded text-[8px] font-mono font-bold ${
+                    canRedo ? 'text-[#00f0ff]' : 'text-gray-600 opacity-30'
+                  }`}
+                >
+                  ↷
+                </button>
+                <button
+                  type="button"
+                  onClick={togglePatchSlot}
+                  title={`A/B Slot: ${patchSlot}`}
+                  className={`px-1 py-0.5 rounded text-[7.5px] font-mono font-bold border ${
+                    patchSlot === 'A'
+                      ? 'bg-[#10b981]/25 text-[#10b981] border-[#10b981]/60'
+                      : 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00]/60'
+                  }`}
+                >
+                  {patchSlot}
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsPresetBrowserOpen(true)}
@@ -1432,13 +1495,65 @@ export const Synth: React.FC = () => {
             <div className="flex flex-col">
               <div className="flex items-center justify-between gap-2">
                 <span className="text-[7px] font-mono text-gray-400 uppercase">Patch</span>
-                <button
-                  type="button"
-                  onClick={() => setIsPresetBrowserOpen(true)}
-                  className="text-[8px] font-mono font-bold text-[#10b981] hover:underline"
-                >
-                  [BROWSE ALL]
-                </button>
+                <div className="flex items-center gap-1">
+                  {/* Undo Button */}
+                  <button
+                    type="button"
+                    onClick={undo}
+                    disabled={!canUndo}
+                    title="Undo Parameter Change (Ctrl+Z)"
+                    className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold transition-all ${
+                      canUndo 
+                        ? 'text-[#00f0ff] hover:bg-[#00f0ff]/10 hover:text-white cursor-pointer' 
+                        : 'text-gray-600 cursor-not-allowed opacity-30'
+                    }`}
+                  >
+                    ↶
+                  </button>
+                  {/* Redo Button */}
+                  <button
+                    type="button"
+                    onClick={redo}
+                    disabled={!canRedo}
+                    title="Redo Parameter Change (Ctrl+Y / Cmd+Shift+Z)"
+                    className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold transition-all ${
+                      canRedo 
+                        ? 'text-[#00f0ff] hover:bg-[#00f0ff]/10 hover:text-white cursor-pointer' 
+                        : 'text-gray-600 cursor-not-allowed opacity-30'
+                    }`}
+                  >
+                    ↷
+                  </button>
+                  {/* A/B Comparison Toggle */}
+                  <button
+                    type="button"
+                    onClick={togglePatchSlot}
+                    title={`A/B Sound Comparison (Active: Slot ${patchSlot}) — Click to toggle variation`}
+                    className={`px-1.5 py-0.2 rounded text-[8px] font-mono font-black border transition-all flex items-center gap-0.5 ${
+                      patchSlot === 'A'
+                        ? 'bg-[#10b981]/25 text-[#10b981] border-[#10b981]/70 shadow-[0_0_6px_rgba(16,185,129,0.3)]'
+                        : 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00]/70 shadow-[0_0_6px_rgba(255,170,0,0.3)]'
+                    }`}
+                  >
+                    <span>SLOT {patchSlot}</span>
+                  </button>
+                  {/* Copy A->B or B->A */}
+                  <button
+                    type="button"
+                    onClick={copyActiveToOtherSlot}
+                    title={`Copy Slot ${patchSlot} parameters to alternate slot`}
+                    className="px-1 py-0.2 rounded text-[7.5px] font-mono text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-gray-600 transition-all"
+                  >
+                    {patchSlot === 'A' ? 'A➔B' : 'B➔A'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsPresetBrowserOpen(true)}
+                    className="text-[8px] font-mono font-bold text-[#10b981] hover:underline ml-1"
+                  >
+                    [BROWSE]
+                  </button>
+                </div>
               </div>
               <select
                 value={selectedPresetName}

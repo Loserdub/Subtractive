@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Waveform } from '../types';
+import { useSynthStore } from '../stores/useSynthStore';
 
 interface KnobProps {
   label: string;
@@ -7,6 +8,8 @@ interface KnobProps {
   min: number;
   max: number;
   onChange: (value: number) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
   defaultValue?: number;
   size?: number;
   logarithmic?: boolean;
@@ -29,6 +32,8 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   min,
   max,
   onChange,
+  onDragStart,
+  onDragEnd,
   defaultValue,
   size = 56,
   logarithmic = false,
@@ -103,6 +108,11 @@ export const Knob: React.FC<KnobProps> = React.memo(({
     e.preventDefault();
     if (!knobRef.current) return;
     
+    try {
+      useSynthStore.getState().pushSnapshot();
+    } catch {}
+    onDragStart?.();
+
     knobRef.current.setPointerCapture(e.pointerId);
     dragStartRef.current = { y: e.clientY, x: e.clientX, value: value };
     lastDispatchedValRef.current = value;
@@ -138,10 +148,16 @@ export const Knob: React.FC<KnobProps> = React.memo(({
       knobRef.current.releasePointerCapture(e.pointerId);
     }
     setIsDragging(false);
+    onDragEnd?.();
   };
 
   const handleDoubleClick = () => {
+    try {
+      useSynthStore.getState().pushSnapshot();
+    } catch {}
+    onDragStart?.();
     onChangeRef.current(defaultValRef.current);
+    onDragEnd?.();
   };
 
   // Base value percent & rotation

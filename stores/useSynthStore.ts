@@ -121,6 +121,20 @@ export interface SynthStoreState {
     isDrumMachinePlaying?: boolean;
   }) => void;
   setQuantizeMode: (quantizeMode: TransportQuantizeMode) => void;
+
+  // History & A/B Comparison Slices
+  undoStack: SynthParameters[];
+  redoStack: SynthParameters[];
+  canUndo: boolean;
+  canRedo: boolean;
+  patchSlot: 'A' | 'B';
+  patchA: SynthParameters;
+  patchB: SynthParameters;
+  pushSnapshot: () => void;
+  undo: () => void;
+  redo: () => void;
+  togglePatchSlot: () => void;
+  copyActiveToOtherSlot: () => void;
 }
 
 const getInitialWorkspaceMode = (): WorkspaceMode => {
@@ -361,5 +375,93 @@ export const useSynthStore = create<SynthStoreState>((set) => ({
       };
     }),
 
-  setQuantizeMode: (quantizeMode) => set({ quantizeMode })
+  setQuantizeMode: (quantizeMode) => set({ quantizeMode }),
+
+  // History & A/B Comparison Slices
+  undoStack: [],
+  redoStack: [],
+  canUndo: false,
+  canRedo: false,
+  patchSlot: 'A',
+  patchA: JSON.parse(JSON.stringify(DEFAULT_SYNTH_PARAMS)),
+  patchB: JSON.parse(JSON.stringify(DEFAULT_SYNTH_PARAMS)),
+
+  pushSnapshot: () =>
+    set((state) => {
+      const cloned = JSON.parse(JSON.stringify(state.params));
+      const nextUndo = [...state.undoStack, cloned];
+      if (nextUndo.length > 50) nextUndo.shift();
+      return {
+        undoStack: nextUndo,
+        redoStack: [],
+        canUndo: true,
+        canRedo: false,
+        patchA: state.patchSlot === 'A' ? cloned : state.patchA,
+        patchB: state.patchSlot === 'B' ? cloned : state.patchB,
+      };
+    }),
+
+  undo: () =>
+    set((state) => {
+      if (state.undoStack.length === 0) return state;
+      const nextUndo = [...state.undoStack];
+      const targetParams = nextUndo.pop()!;
+      const currentCloned = JSON.parse(JSON.stringify(state.params));
+      const nextRedo = [...state.redoStack, currentCloned];
+      return {
+        undoStack: nextUndo,
+        redoStack: nextRedo,
+        params: targetParams,
+        canUndo: nextUndo.length > 0,
+        canRedo: true,
+        patchA: state.patchSlot === 'A' ? targetParams : state.patchA,
+        patchB: state.patchSlot === 'B' ? targetParams : state.patchB,
+      };
+    }),
+
+  redo: () =>
+    set((state) => {
+      if (state.redoStack.length === 0) return state;
+      const nextRedo = [...state.redoStack];
+      const targetParams = nextRedo.pop()!;
+      const currentCloned = JSON.parse(JSON.stringify(state.params));
+      const nextUndo = [...state.undoStack, currentCloned];
+      return {
+        undoStack: nextUndo,
+        redoStack: nextRedo,
+        params: targetParams,
+        canUndo: true,
+        canRedo: nextRedo.length > 0,
+        patchA: state.patchSlot === 'A' ? targetParams : state.patchA,
+        patchB: state.patchSlot === 'B' ? targetParams : state.patchB,
+      };
+    }),
+
+  togglePatchSlot: () =>
+    set((state) => {
+      const nextSlot = state.patchSlot === 'A' ? 'B' : 'A';
+      const currentParams = JSON.parse(JSON.stringify(state.params));
+      const updatedA = state.patchSlot === 'A' ? currentParams : state.patchA;
+      const updatedB = state.patchSlot === 'B' ? currentParams : state.patchB;
+      const targetParams = nextSlot === 'A' ? updatedA : updatedB;
+      return {
+        patchSlot: nextSlot,
+        patchA: updatedA,
+        patchB: updatedB,
+        params: targetParams,
+        undoStack: [],
+        redoStack: [],
+        canUndo: false,
+        canRedo: false,
+      };
+    }),
+
+  copyActiveToOtherSlot: () =>
+    set((state) => {
+      const current = JSON.parse(JSON.stringify(state.params));
+      return {
+        patchA: current,
+        patchB: current,
+      };
+    })
 }));
