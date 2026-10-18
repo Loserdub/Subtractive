@@ -382,11 +382,13 @@
   .mobile-section-active {
     opacity: 1;
     pointer-events: auto;
+    visibility: visible;
     z-index: 1;
   }
   .mobile-section-hidden {
     opacity: 0;
     pointer-events: none;
+    visibility: hidden;
     z-index: 0;
   }
 }

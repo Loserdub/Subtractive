@@ -63,6 +63,20 @@ export const DEFAULT_DRUM_TRACK_SETTINGS: Record<DrumTrackName, DrumTrackSetting
   crash: { volume: 0.6, pan: -0.2, decay: 1.0, pitch: 0 },
 };
 
+export const DEFAULT_DRUM_TRACK_LENGTHS: Record<DrumTrackName, number> = {
+  kick: 16,
+  snare: 16,
+  hihat: 16,
+  crash: 16,
+};
+
+export const DEFAULT_DRUM_TRACK_RATCHETS: Record<DrumTrackName, number[]> = {
+  kick: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  snare: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  hihat: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+  crash: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+};
+
 export type DrumMachinePatternName = 'Techno' | 'House' | 'Hip-Hop';
 
 // Computer Keyboard Musical Typing (DAW Standard: Ableton / Logic / FL Studio style)

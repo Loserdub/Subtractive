@@ -85,6 +85,12 @@ export const DEFAULT_SYNTH_PARAMS: SynthParameters = {
     mode: 'up',
     octaves: 1,
     division: '1/16',
+    timingType: 'straight',
+    latch: false,
+    retrig: true,
     gate: 0.8,
+    swing: 50,
+    ratchet: 1,
+    stepPattern: [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true],
   },
 };

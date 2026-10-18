@@ -140,12 +140,18 @@ export class AudioEngine {
 
   // Arpeggiator State
   private arpHeldNotes: { note: number; velocity: number }[] = [];
+  private arpPhysicalKeys: number[] = [];
   private arpIndex = 0;
   private arpDirection = 1;
   private arpTimerId: number | null = null;
-  private lastArpNote: number | null = null;
+  private lastArpNotes: number[] = [];
   private arpStepCount = 0;
   private arpRatchetTimers: number[] = [];
+  private arpStepCallback: ((step: number, note: number | null) => void) | null = null;
+
+  public setArpStepCallback(cb: ((step: number, note: number | null) => void) | null) {
+    this.arpStepCallback = cb;
+  }
 
   constructor(initialParams: SynthParameters) {
     this.params = initialParams;
@@ -819,6 +825,16 @@ export class AudioEngine {
       }
     }
 
+    // Arpeggiator enable/latch transitions
+    if (prev && prev.arpeggiator.enabled && !newParams.arpeggiator.enabled) {
+      this.stopArpeggiator();
+      this.arpHeldNotes = [];
+      this.arpPhysicalKeys = [];
+    } else if (prev && prev.arpeggiator.latch && !newParams.arpeggiator.latch && this.arpPhysicalKeys.length === 0) {
+      this.stopArpeggiator();
+      this.arpHeldNotes = [];
+    }
+
     this.prevParams = newParams;
   }
 
@@ -938,6 +954,24 @@ export class AudioEngine {
 
     // Handle Arpeggiator Interception
     if (this.params.arpeggiator.enabled) {
+      const isLatched = this.params.arpeggiator.latch ?? false;
+      const shouldRetrig = this.params.arpeggiator.retrig ?? true;
+
+      // If latch is enabled and no keys were physically held, a new keypress begins a fresh chord
+      if (isLatched && this.arpPhysicalKeys.length === 0) {
+        this.arpHeldNotes = [];
+        if (shouldRetrig) {
+          this.arpIndex = 0;
+          this.arpStepCount = 0;
+        }
+      } else if (!isLatched && this.arpHeldNotes.length === 0 && shouldRetrig) {
+        this.arpIndex = 0;
+        this.arpStepCount = 0;
+      }
+
+      if (!this.arpPhysicalKeys.includes(note)) {
+        this.arpPhysicalKeys.push(note);
+      }
       if (!this.arpHeldNotes.some((n) => n.note === note)) {
         this.arpHeldNotes.push({ note, velocity });
       }
@@ -1505,9 +1539,13 @@ export class AudioEngine {
     if (!this.audioContext) return;
 
     if (this.params.arpeggiator.enabled) {
-      this.arpHeldNotes = this.arpHeldNotes.filter((n) => n.note !== note);
-      if (this.arpHeldNotes.length === 0) {
-        this.stopArpeggiator();
+      this.arpPhysicalKeys = this.arpPhysicalKeys.filter((n) => n !== note);
+      const isLatched = this.params.arpeggiator.latch ?? false;
+      if (!isLatched) {
+        this.arpHeldNotes = this.arpHeldNotes.filter((n) => n.note !== note);
+        if (this.arpHeldNotes.length === 0) {
+          this.stopArpeggiator();
+        }
       }
       return;
     }
@@ -1606,10 +1644,11 @@ export class AudioEngine {
       this.arpTimerId = null;
     }
     this.clearRatchetTimers();
-    if (this.lastArpNote !== null) {
-      this.noteOffDirect(this.lastArpNote);
-      this.lastArpNote = null;
+    for (const note of this.lastArpNotes) {
+      this.noteOffDirect(note);
     }
+    this.lastArpNotes = [];
+    this.arpStepCallback?.(-1, null);
   }
 
   private getArpIntervalMs(): number {
@@ -1619,7 +1658,13 @@ export class AudioEngine {
       '1/8': 0.5,
       '1/4': 1.0,
     };
-    const mult = divMap[this.params.arpeggiator.division] || 0.25;
+    let mult = divMap[this.params.arpeggiator.division] || 0.25;
+    const timingType = this.params.arpeggiator.timingType ?? 'straight';
+    if (timingType === 'triplet') {
+      mult *= (2 / 3);
+    } else if (timingType === 'dotted') {
+      mult *= 1.5;
+    }
     return (60000 / this.bpm) * mult;
   }
 
@@ -1654,42 +1699,59 @@ export class AudioEngine {
 
     this.clearRatchetTimers();
 
-    if (this.lastArpNote !== null) {
-      this.noteOffDirect(this.lastArpNote);
-      this.lastArpNote = null;
+    for (const note of this.lastArpNotes) {
+      this.noteOffDirect(note);
     }
+    this.lastArpNotes = [];
 
-    const sorted = [...this.arpHeldNotes].sort((a, b) => a.note - b.note);
+    const mode = this.params.arpeggiator.mode;
+    const octaves = Math.max(1, Math.min(4, this.params.arpeggiator.octaves ?? 1));
     const sequence: { note: number; velocity: number }[] = [];
 
-    for (let oct = 0; oct < this.params.arpeggiator.octaves; oct++) {
-      sorted.forEach((n) => {
-        sequence.push({ note: n.note + oct * 12, velocity: n.velocity });
-      });
+    if (mode === 'asplayed') {
+      // Chronological order notes were pressed
+      for (let oct = 0; oct < octaves; oct++) {
+        this.arpHeldNotes.forEach((n) => {
+          sequence.push({ note: n.note + oct * 12, velocity: n.velocity });
+        });
+      }
+    } else {
+      const sorted = [...this.arpHeldNotes].sort((a, b) => a.note - b.note);
+      for (let oct = 0; oct < octaves; oct++) {
+        sorted.forEach((n) => {
+          sequence.push({ note: n.note + oct * 12, velocity: n.velocity });
+        });
+      }
     }
 
     if (sequence.length === 0) return;
 
-    let target: { note: number; velocity: number };
-    const mode = this.params.arpeggiator.mode;
+    let targets: { note: number; velocity: number }[] = [];
 
-    if (mode === 'random') {
-      target = sequence[Math.floor(Math.random() * sequence.length)];
+    if (mode === 'chord') {
+      targets = sequence;
+    } else if (mode === 'random') {
+      targets = [sequence[Math.floor(Math.random() * sequence.length)]];
     } else if (mode === 'updown') {
-      if (this.arpIndex >= sequence.length) {
-        this.arpIndex = Math.max(0, sequence.length - 2);
-        this.arpDirection = -1;
-      } else if (this.arpIndex < 0) {
-        this.arpIndex = Math.min(sequence.length - 1, 1);
-        this.arpDirection = 1;
+      if (sequence.length === 1) {
+        targets = [sequence[0]];
+      } else {
+        if (this.arpIndex >= sequence.length) {
+          this.arpIndex = Math.max(0, sequence.length - 2);
+          this.arpDirection = -1;
+        } else if (this.arpIndex < 0) {
+          this.arpIndex = Math.min(sequence.length - 1, 1);
+          this.arpDirection = 1;
+        }
+        targets = [sequence[this.arpIndex]];
+        this.arpIndex += this.arpDirection;
       }
-      target = sequence[this.arpIndex];
-      this.arpIndex += this.arpDirection;
     } else if (mode === 'down') {
-      this.arpIndex = (this.arpIndex - 1 + sequence.length) % sequence.length;
-      target = sequence[this.arpIndex];
+      const reversed = [...sequence].reverse();
+      this.arpIndex = this.arpIndex % reversed.length;
+      targets = [reversed[this.arpIndex]];
+      this.arpIndex++;
     } else if (mode === 'converge') {
-      // Outside-in converge: min, max, min+1, max-1...
       const len = sequence.length;
       const convList: { note: number; velocity: number }[] = [];
       let l = 0, r = len - 1;
@@ -1698,10 +1760,9 @@ export class AudioEngine {
         if (l <= r) convList.push(sequence[r--]);
       }
       this.arpIndex = this.arpIndex % convList.length;
-      target = convList[this.arpIndex];
+      targets = [convList[this.arpIndex]];
       this.arpIndex++;
     } else if (mode === 'diverge') {
-      // Inside-out diverge: center outward
       const len = sequence.length;
       const divList: { note: number; velocity: number }[] = [];
       const mid = Math.floor(len / 2);
@@ -1711,26 +1772,42 @@ export class AudioEngine {
         if (l >= 0) divList.push(sequence[l--]);
       }
       this.arpIndex = this.arpIndex % divList.length;
-      target = divList[this.arpIndex];
+      targets = [divList[this.arpIndex]];
       this.arpIndex++;
     } else {
-      // 'up'
+      // 'up' or 'asplayed'
       this.arpIndex = this.arpIndex % sequence.length;
-      target = sequence[this.arpIndex];
+      targets = [sequence[this.arpIndex]];
       this.arpIndex++;
+    }
+
+    const currentStep16 = this.arpStepCount % 16;
+    const stepPattern = this.params.arpeggiator.stepPattern;
+    const isStepActive = !stepPattern || stepPattern[currentStep16] !== false;
+
+    // Report active step & note to UI callback for real-time visualization
+    this.arpStepCallback?.(currentStep16, isStepActive && targets.length > 0 ? targets[0].note : null);
+
+    if (!isStepActive) {
+      // Step is muted / rest
+      return;
     }
 
     const gate = Math.max(0.1, Math.min(1.0, this.params.arpeggiator.gate ?? 0.8));
     const ratchet = Math.max(1, Math.min(4, this.params.arpeggiator.ratchet ?? 1));
 
     if (ratchet <= 1) {
-      this.playNoteDirect(target.note, target.velocity);
-      this.lastArpNote = target.note;
+      for (const t of targets) {
+        this.playNoteDirect(t.note, t.velocity);
+        this.lastArpNotes.push(t.note);
+      }
 
       const noteDuration = stepDurationMs * gate;
       const tId = window.setTimeout(() => {
-        this.noteOffDirect(target.note);
-        if (this.lastArpNote === target.note) this.lastArpNote = null;
+        for (const t of targets) {
+          this.noteOffDirect(t.note);
+          this.lastArpNotes = this.lastArpNotes.filter(n => n !== t.note);
+        }
       }, noteDuration);
       this.arpRatchetTimers.push(tId);
     } else {
@@ -1741,12 +1818,16 @@ export class AudioEngine {
       for (let r = 0; r < ratchet; r++) {
         const trigTime = r * subInterval;
         const noteTrigId = window.setTimeout(() => {
-          this.playNoteDirect(target.note, Math.max(20, Math.round(target.velocity * (1 - r * 0.1))));
-          this.lastArpNote = target.note;
+          for (const t of targets) {
+            this.playNoteDirect(t.note, Math.max(20, Math.round(t.velocity * (1 - r * 0.1))));
+            this.lastArpNotes.push(t.note);
+          }
 
           const offId = window.setTimeout(() => {
-            this.noteOffDirect(target.note);
-            if (this.lastArpNote === target.note) this.lastArpNote = null;
+            for (const t of targets) {
+              this.noteOffDirect(t.note);
+              this.lastArpNotes = this.lastArpNotes.filter(n => n !== t.note);
+            }
           }, subGateDuration);
           this.arpRatchetTimers.push(offId);
         }, trigTime);

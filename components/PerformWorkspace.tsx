@@ -372,7 +372,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => onSwitchWorkspace('synth')}
@@ -382,10 +382,24 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
           </button>
           <button
             type="button"
-            onClick={() => onSwitchWorkspace('groove')}
-            className="text-[8px] font-mono text-gray-400 hover:text-white px-2 py-1 rounded border border-[#26334a] bg-[#121824]"
+            onClick={() => onSwitchWorkspace('arp')}
+            className="text-[8px] font-mono text-[#00e5ff] hover:text-white px-2 py-1 rounded border border-[#00e5ff]/30 bg-[#0c1618]"
           >
-            GROOVE MATRIX ↗
+            ARP ↗
+          </button>
+          <button
+            type="button"
+            onClick={() => onSwitchWorkspace('seq')}
+            className="text-[8px] font-mono text-[#00ff66] hover:text-white px-2 py-1 rounded border border-[#00ff66]/30 bg-[#0c1618]"
+          >
+            SEQ ↗
+          </button>
+          <button
+            type="button"
+            onClick={() => onSwitchWorkspace('groove')}
+            className="text-[8px] font-mono text-[#ffaa00] hover:text-white px-2 py-1 rounded border border-[#ffaa00]/30 bg-[#16120c]"
+          >
+            GROOVE ↗
           </button>
         </div>
       </div>

@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Knob } from './Knob';
 import { LEDButton } from './Switch';
-import { ArpeggiatorPanel } from './ArpeggiatorPanel';
-import { MelodicSequencer } from './MelodicSequencer';
+import { LedMeter } from './LedMeter';
 import { 
   StepSequencePattern, 
   DrumTrackName, 
@@ -11,8 +10,10 @@ import {
   SynthParameters,
   WorkspaceMode,
   MelodicSequencerPattern,
+  DrumTrackLengths,
+  DrumTrackRatchets,
 } from '../types';
-import { DRUM_TRACKS } from '../constants';
+import { DRUM_TRACKS, DEFAULT_DRUM_TRACK_LENGTHS, DEFAULT_DRUM_TRACK_RATCHETS } from '../constants';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
 
 interface GrooveWorkspaceProps {
@@ -28,15 +29,18 @@ interface GrooveWorkspaceProps {
   onStepToggle: (track: DrumTrackName, stepIndex: number) => void;
   trackSettings: Record<DrumTrackName, DrumTrackSettings>;
   onTrackSettingsChange: (track: DrumTrackName, settings: Partial<DrumTrackSettings>) => void;
+  trackLengths?: DrumTrackLengths;
+  onTrackLengthsChange?: (lengths: DrumTrackLengths) => void;
+  trackRatchets?: DrumTrackRatchets;
+  onTrackRatchetsChange?: (ratchets: DrumTrackRatchets) => void;
   engine: DrumMachineEngine | null;
   onPatternChange: (newPattern: StepSequencePattern) => void;
-  // Melodic Motion Sequencer
-  melodicPattern: MelodicSequencerPattern;
-  onMelodicPatternChange: (newPattern: MelodicSequencerPattern) => void;
+  // Optional for backwards compatibility
+  melodicPattern?: MelodicSequencerPattern;
+  onMelodicPatternChange?: (newPattern: MelodicSequencerPattern) => void;
   onAuditionNote?: (note: number, velocity?: number) => void;
-  // Arpeggiator
-  arpParams: ArpeggiatorParams;
-  onArpChange: (arp: ArpeggiatorParams) => void;
+  arpParams?: ArpeggiatorParams;
+  onArpChange?: (arp: ArpeggiatorParams) => void;
   // Synth Tone Monitor Bar
   synthParams: SynthParameters;
   onSynthParamChange: (patch: Partial<SynthParameters>) => void;
@@ -97,8 +101,6 @@ const TRACK_CONFIG: Record<DrumTrackName, {
   },
 };
 
-type GrooveViewTab = 'all' | 'synth' | 'drums' | 'arp';
-
 export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
   isPlaying,
   onPlayToggle,
@@ -112,26 +114,23 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
   onStepToggle,
   trackSettings,
   onTrackSettingsChange,
+  trackLengths = DEFAULT_DRUM_TRACK_LENGTHS,
+  onTrackLengthsChange,
+  trackRatchets = DEFAULT_DRUM_TRACK_RATCHETS,
+  onTrackRatchetsChange,
   engine,
   onPatternChange,
   melodicPattern,
   onMelodicPatternChange,
-  onAuditionNote,
-  arpParams,
-  onArpChange,
   synthParams,
   onSynthParamChange,
   selectedPresetName,
   onOpenPresetBrowser,
   onSwitchWorkspace,
-  onMidiLearn,
-  learningParamId,
-  mappedCCs,
 }) => {
   const [activeStep, setActiveStep] = useState<number | null>(null);
   const [mutedTracks, setMutedTracks] = useState<Set<DrumTrackName>>(new Set());
   const [soloTracks, setSoloTracks] = useState<Set<DrumTrackName>>(new Set());
-  const [viewTab, setViewTab] = useState<GrooveViewTab>('all');
 
   // Subscribe to real-time step runner clock from engine
   useEffect(() => {
@@ -143,11 +142,37 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
     }
   }, [engine]);
 
+  // Handle per-track loop length change (Polyrhythms)
+  const handleTrackLengthChange = useCallback((track: DrumTrackName, length: number) => {
+    const nextLengths = { ...trackLengths, [track]: Math.min(16, Math.max(1, Math.round(length))) };
+    if (onTrackLengthsChange) {
+      onTrackLengthsChange(nextLengths);
+    }
+    if (engine) {
+      engine.setTrackLengths(nextLengths);
+    }
+  }, [trackLengths, onTrackLengthsChange, engine]);
+
+  // Handle step micro-ratchet toggle (1x -> 2x -> 3x -> 4x -> 1x)
+  const handleRatchetToggle = useCallback((track: DrumTrackName, stepIndex: number) => {
+    const currentList = trackRatchets[track] || new Array(16).fill(1);
+    const nextList = [...currentList];
+    const currentRatchet = nextList[stepIndex] || 1;
+    nextList[stepIndex] = currentRatchet >= 4 ? 1 : currentRatchet + 1;
+    const nextRatchets = { ...trackRatchets, [track]: nextList };
+    if (onTrackRatchetsChange) {
+      onTrackRatchetsChange(nextRatchets);
+    }
+    if (engine) {
+      engine.setTrackRatchets(nextRatchets);
+    }
+  }, [trackRatchets, onTrackRatchetsChange, engine]);
+
   // Handle live motion recording when quick-tweak knob changes
   const handleQuickSynthParamChange = useCallback((patch: Partial<SynthParameters>) => {
     onSynthParamChange(patch);
 
-    if (melodicPattern.motionRecording && isPlaying && activeStep !== null) {
+    if (melodicPattern?.motionRecording && isPlaying && activeStep !== null && onMelodicPatternChange) {
       const stepIdx = activeStep % (melodicPattern.length || melodicPattern.steps.length || 16);
       const step = melodicPattern.steps[stepIdx];
       if (step) {
@@ -258,6 +283,76 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
     onPatternChange({ ...pattern, [track]: newSteps });
   }, [pattern, onPatternChange]);
 
+  // Clear all tracks
+  const handleClearAll = useCallback(() => {
+    onPatternChange({
+      kick: new Array(16).fill(0),
+      snare: new Array(16).fill(0),
+      hihat: new Array(16).fill(0),
+      crash: new Array(16).fill(0),
+    });
+  }, [onPatternChange]);
+
+  // Preset: Classic 4-on-the-Floor (House / Techno)
+  const handlePresetFourOnFloor = useCallback(() => {
+    onPatternChange({
+      kick: [2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0],
+      snare: [0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0],
+      hihat: [1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0, 1, 0, 2, 0],
+      crash: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    });
+  }, [onPatternChange]);
+
+  // Preset: Syncopated Breakbeat / Funk
+  const handlePresetBreakbeat = useCallback(() => {
+    onPatternChange({
+      kick: [2, 0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+      snare: [0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1],
+      hihat: [2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1],
+      crash: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    });
+  }, [onPatternChange]);
+
+  // Preset: Modern Trap / Half-Time Beat
+  const handlePresetTrap = useCallback(() => {
+    onPatternChange({
+      kick: [2, 0, 0, 0, 0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0],
+      snare: [0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0],
+      hihat: [2, 1, 2, 1, 2, 2, 1, 2, 1, 2, 1, 2, 2, 1, 2, 1],
+      crash: [2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    });
+  }, [onPatternChange]);
+
+  // Preset: Randomize All Tracks Musically
+  const handlePresetRandomizeAll = useCallback(() => {
+    const newPattern: StepSequencePattern = {
+      kick: new Array(16).fill(0),
+      snare: new Array(16).fill(0),
+      hihat: new Array(16).fill(0),
+      crash: new Array(16).fill(0),
+    };
+    [0, 4, 8, 12].forEach(s => { newPattern.kick[s] = 2; });
+    if (Math.random() > 0.4) newPattern.kick[10] = 1;
+    if (Math.random() > 0.5) newPattern.kick[14] = 1;
+    if (Math.random() > 0.7) newPattern.kick[6] = 1;
+
+    newPattern.snare[4] = 2;
+    newPattern.snare[12] = 2;
+    if (Math.random() > 0.4) newPattern.snare[15] = 1;
+    if (Math.random() > 0.6) newPattern.snare[7] = 1;
+    if (Math.random() > 0.8) newPattern.snare[10] = 1;
+
+    for (let i = 0; i < 16; i++) {
+      if (i % 2 === 0) newPattern.hihat[i] = i % 4 === 0 ? 2 : 1;
+      else if (Math.random() > 0.3) newPattern.hihat[i] = 1;
+    }
+
+    newPattern.crash[0] = 2;
+    if (Math.random() > 0.7) newPattern.crash[8] = 1;
+
+    onPatternChange(newPattern);
+  }, [onPatternChange]);
+
   // Audition tap sound
   const handleAudition = useCallback((track: DrumTrackName) => {
     if (engine) {
@@ -294,6 +389,24 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             className="text-[8px] font-mono text-gray-400 hover:text-white px-2 py-0.5 rounded border border-[#26334a] bg-[#121824] flex items-center gap-1"
           >
             <span>FULL LAB</span>
+            <span>↗</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSwitchWorkspace('arp')}
+            className="text-[8px] font-mono text-[#00e5ff] hover:text-white px-2 py-0.5 rounded border border-[#00e5ff]/30 bg-[#0c1618] flex items-center gap-1 transition-all"
+          >
+            <span>ARP</span>
+            <span>↗</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSwitchWorkspace('seq')}
+            className="text-[8px] font-mono text-[#00ff66] hover:text-white px-2 py-0.5 rounded border border-[#00ff66]/30 bg-[#0c1618] flex items-center gap-1 transition-all"
+          >
+            <span>MELODIC SEQ</span>
             <span>↗</span>
           </button>
         </div>
@@ -402,53 +515,49 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
           </div>
         </div>
 
-        {/* Right: View Mode Tab Selector (Mobile & Desktop Ergonomics) */}
-        <div className="flex items-center gap-2 pr-1 sm:pr-2">
-          
-          <div className="flex items-center p-0.5 rounded bg-[#0a0f18] border border-[#20293d]">
+        {/* Right: Beat Pattern Presets & Real-Time Step Display */}
+        <div className="flex items-center gap-2 pr-1 sm:pr-2 flex-wrap sm:flex-nowrap">
+          <div className="flex items-center p-0.5 rounded bg-[#0a0f18] border border-[#20293d] gap-1">
+            <span className="text-[7px] font-mono text-gray-500 uppercase px-1 hidden lg:inline">BEAT PRESETS:</span>
             <button
               type="button"
-              onClick={() => setViewTab('all')}
-              className={`px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase transition-all ${
-                viewTab === 'all'
-                  ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              onClick={handlePresetFourOnFloor}
+              title="Classic 4-on-the-Floor (House / Techno)"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-[#10b981] hover:bg-[#1a2436] border border-[#10b981]/30 transition-all"
             >
-              ALL LANES
+              4-FLOOR
             </button>
             <button
               type="button"
-              onClick={() => setViewTab('synth')}
-              className={`px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase transition-all ${
-                viewTab === 'synth'
-                  ? 'bg-[#a855f7] text-black shadow-[0_0_6px_#a855f7]'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              onClick={handlePresetBreakbeat}
+              title="Syncopated Breakbeat Groove"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-[#00ff66] hover:bg-[#1a2436] border border-[#00ff66]/30 transition-all"
             >
-              SYNTH MOTION
+              BREAKS
             </button>
             <button
               type="button"
-              onClick={() => setViewTab('drums')}
-              className={`px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase transition-all ${
-                viewTab === 'drums'
-                  ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              onClick={handlePresetTrap}
+              title="Modern Half-Time Trap / Hip-Hop Beat"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-[#ffaa00] hover:bg-[#1a2436] border border-[#ffaa00]/30 transition-all"
             >
-              DRUMS (4-TRACK)
+              TRAP
             </button>
             <button
               type="button"
-              onClick={() => setViewTab('arp')}
-              className={`px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase transition-all ${
-                viewTab === 'arp'
-                  ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                  : 'text-gray-400 hover:text-white'
-              }`}
+              onClick={handlePresetRandomizeAll}
+              title="Randomize All Drum Tracks"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-cyan-300 hover:bg-[#1a2436] border border-cyan-500/30 transition-all"
             >
-              ARPEGGIATOR
+              RANDOM
+            </button>
+            <button
+              type="button"
+              onClick={handleClearAll}
+              title="Clear All Tracks"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-red-400 hover:bg-[#201018] border border-red-500/30 transition-all"
+            >
+              CLR ALL
             </button>
           </div>
 
@@ -467,27 +576,8 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
         </div>
       </div>
 
-      {/* ── Melodic Synthesizer Motion Sequencer Lane ── */}
-      {(viewTab === 'all' || viewTab === 'synth') && (
-        <div className="shrink-0">
-          <MelodicSequencer
-            pattern={melodicPattern}
-            onChange={onMelodicPatternChange}
-            activeStep={activeStep}
-            isPlaying={isPlaying}
-            bpm={bpm}
-            drumPattern={pattern}
-            onAuditionNote={onAuditionNote}
-            onMidiLearn={onMidiLearn}
-            learningParamId={learningParamId}
-            mappedCCs={mappedCCs}
-          />
-        </div>
-      )}
-
-      {/* ── Simultaneous 4-Track Roland TR-808/909 Multi-Lane Sequencer Grid ── */}
-      {(viewTab === 'all' || viewTab === 'drums') && (
-        <div className="synth-panel rounded p-2.5 flex flex-col gap-2 flex-1 min-h-0 relative">
+      {/* ── 4-Track Roland TR-808/909 Drum Matrix (Sole Focus of Groove Workspace) ── */}
+      <div className="synth-panel rounded p-2.5 flex flex-col gap-2 flex-1 min-h-0 relative">
 
           <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[#202b3d]">
             <div className="flex items-center gap-2">
@@ -497,7 +587,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
               </span>
             </div>
             <span className="text-[8px] font-mono text-gray-400">
-              Click Step: OFF → NORMAL → ACCENT (●)
+              Click: OFF → NORM → ACC (●) • Alt/Right-Click: RATCHET (2x–4x) • LEN: Polyrhythm
             </span>
           </div>
 
@@ -515,8 +605,8 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                     isMuted ? 'opacity-40 border-[#222c3c] bg-[#0c1018]' : 'border-[#1e2a3c] bg-[#0d131f] hover:border-[#2a3c56]'
                   }`}
                 >
-                  {/* Track Channel Strip (Header + Mute/Solo + Knobs) */}
-                  <div className="w-64 shrink-0 flex items-center justify-between pr-2 border-r border-[#202b3d]">
+                  {/* Track Channel Strip (Header + Mute/Solo + Knobs + VU Meter) */}
+                  <div className="w-80 shrink-0 flex items-center justify-between pr-2 border-r border-[#202b3d] gap-2">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-1.5">
                         <button
@@ -580,14 +670,14 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                       </div>
                     </div>
 
-                    {/* Channel Strip Knobs */}
+                    {/* Channel Strip Knobs & Real-Time Peak Meter */}
                     <div className="flex items-center gap-1.5">
                       <Knob
                         label="Vol"
                         value={settings.volume}
                         min={0}
                         max={1}
-                        size={26}
+                        size={25}
                         onChange={(v) => onTrackSettingsChange(track, { volume: v })}
                         unit="%"
                         color="cyan"
@@ -597,7 +687,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                         value={settings.decay}
                         min={0.2}
                         max={3.0}
-                        size={26}
+                        size={25}
                         onChange={(v) => onTrackSettingsChange(track, { decay: v })}
                         color="amber"
                       />
@@ -606,7 +696,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                         value={settings.pitch}
                         min={-12}
                         max={12}
-                        size={26}
+                        size={25}
                         onChange={(v) => onTrackSettingsChange(track, { pitch: v })}
                         unit="st"
                         color="red"
@@ -616,24 +706,47 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                         value={settings.pan}
                         min={-1}
                         max={1}
-                        size={26}
+                        size={25}
                         onChange={(v) => onTrackSettingsChange(track, { pan: v })}
                         color="emerald"
+                      />
+                      <Knob
+                        label="Len"
+                        value={trackLengths[track] || 16}
+                        min={1}
+                        max={16}
+                        step={1}
+                        size={25}
+                        onChange={(v) => handleTrackLengthChange(track, v)}
+                        unit="st"
+                        color="cyan"
+                      />
+                      <LedMeter
+                        getLevel={() => engine?.getTrackLevel(track) || 0}
+                        height={46}
+                        width={7}
+                        className="ml-0.5"
                       />
                     </div>
                   </div>
 
-                  {/* 16 Step Buttons with 4-beat visual groupings */}
+                  {/* 16 Step Buttons with 4-beat visual groupings & Polyrhythm/Ratchet support */}
                   <div className="flex-1 flex items-center justify-between gap-1 min-w-max px-2">
                     {pattern[track].map((stepVal, index) => {
+                      const trackLen = trackLengths[track] || 16;
+                      const trackActiveStep = activeStep !== null ? activeStep % trackLen : null;
                       const isNormal = stepVal === 1;
                       const isAccent = stepVal === 2;
-                      const isCurrentStep = index === activeStep && isPlaying;
+                      const isCurrentStep = index === trackActiveStep && isPlaying;
+                      const isBeyondLength = index >= trackLen;
+                      const ratchet = trackRatchets[track]?.[index] || 1;
                       const isDownbeat = index % 4 === 0;
                       const stepGroup = Math.floor(index / 4);
 
                       let btnStyle = 'bg-[#101520] border-[#1e273a] text-gray-500';
-                      if (isAccent) {
+                      if (isBeyondLength) {
+                        btnStyle = 'opacity-25 bg-[#090d15] border-dashed border-[#1a2336] text-gray-700';
+                      } else if (isAccent) {
                         btnStyle = isCurrentStep 
                           ? 'bg-white text-black border-white shadow-[0_0_12px_white]' 
                           : config.accentBg;
@@ -650,26 +763,48 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                       return (
                         <button
                           key={`${track}-${index}`}
-                          onClick={() => onStepToggle(track, index)}
+                          onClick={(e) => {
+                            if (e.altKey) {
+                              handleRatchetToggle(track, index);
+                              return;
+                            }
+                            if (isBeyondLength) {
+                              handleTrackLengthChange(track, index + 1);
+                            }
+                            onStepToggle(track, index);
+                          }}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            handleRatchetToggle(track, index);
+                          }}
                           className={`h-11 sm:h-12 flex-1 min-w-[28px] max-w-[50px] rounded-sm transition-all duration-75 relative border flex flex-col items-center justify-between p-1 select-none ${btnStyle} ${
-                            isDownbeat ? 'border-l-2' : ''
+                            isDownbeat && !isBeyondLength ? 'border-l-2' : ''
                           }`}
-                          title={`${config.label} - Step ${index + 1} (${isAccent ? 'Accent' : isNormal ? 'Normal' : 'Off'})`}
+                          title={`${config.label} - Step ${index + 1} (${isBeyondLength ? 'Outside Loop' : isAccent ? 'Accent' : isNormal ? 'Normal' : 'Off'}${ratchet > 1 ? ` • ${ratchet}x Ratchet` : ''}) - Right-Click or Alt+Click for Ratchet`}
                         >
                           {/* Status LED Dot */}
                           <div 
                             className={`w-2.5 h-1 rounded-full transition-all ${
-                              isAccent
-                                ? 'bg-white shadow-[0_0_8px_white]'
-                                : isNormal 
-                                  ? 'bg-white/80 shadow-[0_0_5px_white]' 
-                                  : 'bg-black/50'
+                              isBeyondLength
+                                ? 'bg-black/30'
+                                : isAccent
+                                  ? 'bg-white shadow-[0_0_8px_white]'
+                                  : isNormal 
+                                    ? 'bg-white/80 shadow-[0_0_5px_white]' 
+                                    : 'bg-black/50'
                             }`} 
                           />
 
+                          {/* Ratchet Sub-burst Badge */}
+                          {ratchet > 1 && !isBeyondLength && (
+                            <span className="px-1 py-0.2 rounded-2xs font-mono font-black text-[6.5px] leading-tight bg-[#00ffff] text-black shadow-[0_0_6px_#00ffff]">
+                              {ratchet}x
+                            </span>
+                          )}
+
                           {/* Step Label */}
                           <span className="text-[8px] font-mono font-bold tracking-tight">
-                            {isAccent ? 'ACC' : isDownbeat ? `${index + 1}` : '·'}
+                            {isBeyondLength ? '·' : isAccent ? 'ACC' : isDownbeat ? `${index + 1}` : '·'}
                           </span>
                         </button>
                       );
@@ -681,20 +816,6 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             })}
           </div>
         </div>
-      )}
-
-      {/* ── Lower Section: Integrated Arpeggiator Studio Bay ── */}
-      {(viewTab === 'all' || viewTab === 'arp') && (
-        <div className="shrink-0">
-          <ArpeggiatorPanel
-            arp={arpParams}
-            onChange={onArpChange}
-            onMidiLearn={onMidiLearn}
-            learningParamId={learningParamId}
-            mappedCCs={mappedCCs}
-          />
-        </div>
-      )}
 
     </div>
   );

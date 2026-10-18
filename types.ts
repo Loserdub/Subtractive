@@ -2,7 +2,7 @@
 export type Waveform = 'sine' | 'square' | 'sawtooth' | 'triangle';
 export type FilterType = 'lowpass' | 'highpass' | 'bandpass' | 'notch';
 export type VoiceMode = 'poly' | 'mono' | 'legato';
-export type ArpMode = 'up' | 'down' | 'updown' | 'converge' | 'diverge' | 'random';
+export type ArpMode = 'up' | 'down' | 'updown' | 'asplayed' | 'chord' | 'converge' | 'diverge' | 'random';
 
 export interface ADSR {
   attack: number;
@@ -121,12 +121,16 @@ export interface MasterFXParams {
 export interface ArpeggiatorParams {
   enabled: boolean;
   mode: ArpMode;
-  octaves: number; // 1 to 3
+  octaves: number; // 1 to 4
   division: string; // e.g. '1/16', '1/8', '1/4', '1/32'
+  timingType?: 'straight' | 'triplet' | 'dotted';
+  latch?: boolean;
+  retrig?: boolean;
   rate?: number;
   gate: number; // 0.1 to 1
   swing?: number; // 50 to 75 (%)
   ratchet?: number; // 1, 2, 3, 4 (flam / roll burst)
+  stepPattern?: boolean[]; // 16-step active/rest pattern
 }
 
 export type PresetCategory = 'Bass' | 'Lead' | 'Pad' | 'Pluck' | 'Keys' | 'Arp' | 'FX' | 'User' | string;
@@ -168,6 +172,8 @@ export interface SynthParameters {
 export type DrumTrackName = 'kick' | 'snare' | 'hihat' | 'crash';
 export type DrumPattern = number[]; // Array of 0s (off), 1s (normal), 2s (accent) for 16 steps
 export type StepSequencePattern = Record<DrumTrackName, DrumPattern>;
+export type DrumTrackLengths = Record<DrumTrackName, number>;
+export type DrumTrackRatchets = Record<DrumTrackName, number[]>;
 
 export interface DrumTrackSettings {
   volume: number; // 0 to 1
@@ -210,7 +216,7 @@ export interface MelodicSequencerPattern {
   motionRecording: boolean; // Live knob motion capture active
 }
 
-export type WorkspaceMode = 'synth' | 'fx' | 'arp' | 'groove' | 'perform';
+export type WorkspaceMode = 'synth' | 'fx' | 'arp' | 'seq' | 'groove' | 'perform';
 
 
 

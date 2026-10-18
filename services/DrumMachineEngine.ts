@@ -4,6 +4,8 @@ import { DEFAULT_DRUM_TRACK_SETTINGS } from '../constants';
 interface TrackChannelStrip {
   gain: GainNode;
   panner: StereoPannerNode | null;
+  analyser: AnalyserNode;
+  meterBuffer: Uint8Array;
 }
 
 export class DrumMachineEngine {
@@ -21,6 +23,13 @@ export class DrumMachineEngine {
   
   private swing = 0; // 0 to 100
   private trackSettings: Record<DrumTrackName, DrumTrackSettings> = JSON.parse(JSON.stringify(DEFAULT_DRUM_TRACK_SETTINGS));
+  private trackLengths: Record<DrumTrackName, number> = { kick: 16, snare: 16, hihat: 16, crash: 16 };
+  private trackRatchets: Record<DrumTrackName, number[]> = {
+    kick: new Array(16).fill(1),
+    snare: new Array(16).fill(1),
+    hihat: new Array(16).fill(1),
+    crash: new Array(16).fill(1),
+  };
   private outputNode: AudioNode | null = null;
   private channelStrips: Record<DrumTrackName, TrackChannelStrip> | null = null;
   private melodicPattern: MelodicSequencerPattern | null = null;
@@ -51,6 +60,12 @@ export class DrumMachineEngine {
       const gainNode = this.audioContext.createGain();
       gainNode.gain.setValueAtTime(settings.volume, this.audioContext.currentTime);
 
+      const analyserNode = this.audioContext.createAnalyser();
+      analyserNode.fftSize = 128;
+      analyserNode.smoothingTimeConstant = 0.2;
+      const meterBuffer = new Uint8Array(analyserNode.frequencyBinCount);
+      gainNode.connect(analyserNode);
+
       let pannerNode: StereoPannerNode | null = null;
       if (this.audioContext.createStereoPanner) {
         pannerNode = this.audioContext.createStereoPanner();
@@ -61,7 +76,7 @@ export class DrumMachineEngine {
         gainNode.connect(destination);
       }
 
-      strips[track] = { gain: gainNode, panner: pannerNode };
+      strips[track] = { gain: gainNode, panner: pannerNode, analyser: analyserNode, meterBuffer };
     }
     this.channelStrips = strips as Record<DrumTrackName, TrackChannelStrip>;
   }
@@ -131,6 +146,44 @@ export class DrumMachineEngine {
 
   public getTrackSettings(track: DrumTrackName): DrumTrackSettings {
     return this.trackSettings[track];
+  }
+
+  public setTrackLengths(lengths: Record<DrumTrackName, number>) {
+    this.trackLengths = { ...this.trackLengths, ...lengths };
+  }
+
+  public getTrackLengths(): Record<DrumTrackName, number> {
+    return { ...this.trackLengths };
+  }
+
+  public setTrackRatchets(ratchets: Record<DrumTrackName, number[]>) {
+    this.trackRatchets = { ...this.trackRatchets, ...ratchets };
+  }
+
+  public getTrackRatchets(): Record<DrumTrackName, number[]> {
+    return { ...this.trackRatchets };
+  }
+
+  public getTrackLevel(track: DrumTrackName): number {
+    const strip = this.channelStrips?.[track];
+    if (!strip || !strip.analyser) return 0;
+    strip.analyser.getByteTimeDomainData(strip.meterBuffer);
+    let max = 0;
+    const len = strip.meterBuffer.length;
+    for (let i = 0; i < len; i++) {
+      const dev = Math.abs(strip.meterBuffer[i] - 128);
+      if (dev > max) max = dev;
+    }
+    return Math.min(1.0, (max / 128.0) * 1.5);
+  }
+
+  public getTrackLevels(): Record<DrumTrackName, number> {
+    return {
+      kick: this.getTrackLevel('kick'),
+      snare: this.getTrackLevel('snare'),
+      hihat: this.getTrackLevel('hihat'),
+      crash: this.getTrackLevel('crash'),
+    };
   }
 
   private getRate(track: DrumTrackName): number {
@@ -307,15 +360,27 @@ export class DrumMachineEngine {
     const playTime = this.nextNoteTime + swingDelay;
     const stepToNotify = this.currentStep;
 
-    const kickVal = this.pattern.kick[this.currentStep];
-    const snareVal = this.pattern.snare[this.currentStep];
-    const hihatVal = this.pattern.hihat[this.currentStep];
-    const crashVal = this.pattern.crash[this.currentStep];
+    const tracks: DrumTrackName[] = ['kick', 'snare', 'hihat', 'crash'];
+    for (const track of tracks) {
+      const len = this.trackLengths[track] || 16;
+      const stepIdx = this.currentStep % len;
+      const stepVal = this.pattern[track][stepIdx];
+      const ratchet = Math.min(4, Math.max(1, this.trackRatchets[track]?.[stepIdx] || 1));
 
-    if (kickVal > 0) this.createKick(playTime, kickVal);
-    if (snareVal > 0) this.createSnare(playTime, snareVal);
-    if (hihatVal > 0) this.createHihat(playTime, hihatVal);
-    if (crashVal > 0) this.createCrash(playTime, crashVal);
+      if (stepVal > 0) {
+        const subInterval = secondsPer16thNote / ratchet;
+        for (let r = 0; r < ratchet; r++) {
+          const hitTime = playTime + r * subInterval;
+          const hitVel = r === 0 ? stepVal : (stepVal === 2 ? 1.4 : 0.85);
+          switch(track) {
+            case 'kick': this.createKick(hitTime, hitVel); break;
+            case 'snare': this.createSnare(hitTime, hitVel); break;
+            case 'hihat': this.createHihat(hitTime, hitVel); break;
+            case 'crash': this.createCrash(hitTime, hitVel); break;
+          }
+        }
+      }
+    }
 
     // Melodic Synth Sequencer scheduling
     if (this.melodicPattern && this.melodicPattern.enabled && this.onScheduleMelodicStep) {
@@ -341,7 +406,7 @@ export class DrumMachineEngine {
     }, timeUntilNote * 1000);
   
     this.nextNoteTime += secondsPer16thNote;
-    this.currentStep = (this.currentStep + 1) % 16;
+    this.currentStep = (this.currentStep + 1) % 720720;
   }
 
   private scheduler() {

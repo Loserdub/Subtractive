@@ -137,12 +137,21 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           gctx.arc(centerX, centerY, height * 0.38, 0, Math.PI * 2);
 
           gctx.stroke();
+
+          // Authentic CRT Sub-Pixel Horizontal Scanline Raster
+          gctx.fillStyle = 'rgba(0, 0, 0, 0.20)';
+          for (let y = 0; y < height; y += Math.max(2, Math.round(3 * dpr))) {
+            gctx.fillRect(0, y, width, 1.2 * dpr);
+          }
         }
         gridCanvasRef.current = gridCanvas;
       }
 
-      // ── Analog CRT Phosphor Persistence Wash ──
-      ctx.fillStyle = 'rgba(5, 8, 14, 0.28)';
+      // ── Analog CRT Phosphor Persistence Wash with Color-Matched Afterglow ──
+      const phosphorWash = themeColor.startsWith('#ff')
+        ? 'rgba(18, 12, 4, 0.24)'
+        : 'rgba(4, 18, 12, 0.22)';
+      ctx.fillStyle = phosphorWash;
       ctx.fillRect(0, 0, width, height);
 
       // Graticule grid overlay
@@ -207,13 +216,17 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           }
 
           ctx.save();
-          ctx.globalAlpha = activePlay ? 0.35 : 0.2;
+          ctx.shadowColor = themeColor;
+          ctx.shadowBlur = 8 * dpr;
+          ctx.globalAlpha = activePlay ? 0.45 : 0.25;
           ctx.strokeStyle = themeColor;
-          ctx.lineWidth = 3 * dpr;
+          ctx.lineWidth = 3.5 * dpr;
           ctx.stroke(path);
 
-          ctx.globalAlpha = activePlay ? 0.85 : 0.45;
-          ctx.lineWidth = 1.2 * dpr;
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = activePlay ? 0.95 : 0.55;
+          ctx.lineWidth = 1.4 * dpr;
+          ctx.strokeStyle = '#ffffff';
           ctx.stroke(path);
           ctx.restore();
 
@@ -322,18 +335,21 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
             x += sliceWidth;
           }
 
-          // Glow Halo
+          // Outer Phosphor Bloom
           ctx.save();
-          ctx.globalAlpha = 0.35;
+          ctx.shadowColor = themeColor;
+          ctx.shadowBlur = 10 * dpr;
+          ctx.globalAlpha = 0.55;
           ctx.strokeStyle = themeColor;
-          ctx.lineWidth = 4 * dpr;
+          ctx.lineWidth = 4.5 * dpr;
           ctx.lineJoin = 'round';
           ctx.lineCap = 'round';
           ctx.stroke(path);
 
-          // Core Beam
-          ctx.globalAlpha = 1.0;
-          ctx.lineWidth = 1.5 * dpr;
+          // Searing Hot-White Core Beam
+          ctx.shadowBlur = 2 * dpr;
+          ctx.globalAlpha = 0.95;
+          ctx.lineWidth = 1.6 * dpr;
           ctx.strokeStyle = '#ffffff';
           ctx.stroke(path);
           ctx.restore();
@@ -352,14 +368,17 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
           }
 
           ctx.save();
-          ctx.globalAlpha = 0.25;
+          ctx.shadowColor = themeColor;
+          ctx.shadowBlur = 6 * dpr;
+          ctx.globalAlpha = 0.35;
           ctx.strokeStyle = themeColor;
           ctx.lineWidth = 3 * dpr;
           ctx.stroke(path);
 
-          ctx.globalAlpha = 0.75;
-          ctx.lineWidth = 1 * dpr;
-          ctx.strokeStyle = themeColor;
+          ctx.shadowBlur = 0;
+          ctx.globalAlpha = 0.85;
+          ctx.lineWidth = 1.2 * dpr;
+          ctx.strokeStyle = '#ffffff';
           ctx.stroke(path);
           ctx.restore();
 
@@ -457,10 +476,18 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   }, [analyser, stereoAnalysers]);
 
   return (
-    <div ref={containerRef} className="w-full h-full min-w-0 min-h-0 relative overflow-hidden">
+    <div ref={containerRef} className="w-full h-full min-w-0 min-h-0 relative overflow-hidden rounded-sm">
       <canvas 
         ref={canvasRef} 
         className="w-full h-full rounded-sm border border-[#1a2838] block" 
+      />
+      {/* CRT Glass Reflection & Curvature Vignette Overlay */}
+      <div 
+        className="pointer-events-none absolute inset-0 rounded-sm"
+        style={{
+          background: 'radial-gradient(ellipse at center, transparent 65%, rgba(0, 0, 0, 0.45) 100%)',
+          boxShadow: 'inset 0 0 12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.10)',
+        }}
       />
     </div>
   );

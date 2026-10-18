@@ -5,7 +5,7 @@ import { patchParams } from '../utils/patchParams';
 const b = DEFAULT_SYNTH_PARAMS;
 
 /**
- * 108 World-Class Factory Presets categorized for production use.
+ * 128 World-Class Factory Presets categorized for production use.
  * Every patch is merged against DEFAULT_SYNTH_PARAMS to guarantee no missing fields.
  */
 export const RAW_FACTORY_PRESETS: PresetPatch[] = [
@@ -2113,6 +2113,396 @@ export const RAW_FACTORY_PRESETS: PresetPatch[] = [
       ampEnvelope: { attack: 0.001, decay: 0.5, sustain: 0.05, release: 0.35 },
       filterEnvelope: { attack: 0.001, decay: 0.25, sustain: 0.02, release: 0.35, amount: 6500 },
       fx: { drive: { enabled: true, amount: 0.5 }, delay: { enabled: true, time: 0.15, feedback: 0.4, mix: 0.3, pingPong: true, sync: false, division: '1/16' }, reverb: { enabled: true, decay: 2.5, mix: 0.35 } }
+    })
+  },
+  // ══════════════════════════════════════════════════════════════════════
+  // EXPANSION PACK — 20 NEW SIGNATURE SOUNDS
+  // ══════════════════════════════════════════════════════════════════════
+  {
+    id: 'bass-acid-screamer',
+    name: '303 Acid Screamer',
+    category: 'Bass',
+    author: 'Subtractive Soundlab',
+    tags: ['acid', '303', 'screamer', 'resonance', 'techno'],
+    description: 'High-resonance bandpass 303 squelch with aggressive overdrive saturation and snappy filter envelope.',
+    params: patchParams(b, {
+      voiceMode: 'mono',
+      glide: 0.05,
+      osc1: { waveform: 'sawtooth', detune: 0, enabled: true, gain: 0.85 },
+      osc2: { waveform: 'square', detune: -1200, enabled: true, gain: 0.4 },
+      filter: { cutoff: 1800, resonance: 28, type: 'bandpass' },
+      ampEnvelope: { attack: 0.005, decay: 0.35, sustain: 0.2, release: 0.15 },
+      filterEnvelope: { attack: 0.008, decay: 0.28, sustain: 0.05, release: 0.15, amount: 6500 },
+      fx: { drive: { enabled: true, amount: 0.65 }, delay: { enabled: true, time: 0.25, feedback: 0.35, mix: 0.18, pingPong: true, sync: true, division: '1/16' }, reverb: { enabled: false, decay: 1.0, mix: 0 } }
+    })
+  },
+  {
+    id: 'bass-future-garage',
+    name: 'Future Garage Wobble',
+    category: 'Bass',
+    author: 'Subtractive Soundlab',
+    tags: ['futuregarage', 'dubstep', 'wobble', 'sub', 'burial'],
+    description: 'Warm low-frequency sync LFO modulated bass with smooth analog lowpass filter and subtle space.',
+    params: patchParams(b, {
+      voiceMode: 'legato',
+      glide: 0.09,
+      osc1: { waveform: 'triangle', detune: 0, enabled: true, gain: 0.9 },
+      osc2: { waveform: 'sine', detune: -1200, enabled: true, gain: 0.75 },
+      osc3: { waveform: 'square', detune: 5, enabled: true, gain: 0.2 },
+      subGain: 0.6,
+      filter: { cutoff: 450, resonance: 5, type: 'lowpass' },
+      ampEnvelope: { attack: 0.02, decay: 0.6, sustain: 0.6, release: 0.3 },
+      filterEnvelope: { attack: 0.05, decay: 0.4, sustain: 0.2, release: 0.3, amount: 1200 },
+      lfo: { waveform: 'sine', rate: 2, depth: 0.45, target: 'filter', sync: true, division: '1/8', delay: 0, fade: 0.1, retrigger: true },
+      fx: { drive: { enabled: true, amount: 0.28 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 1.5, mix: 0.12 } }
+    })
+  },
+  {
+    id: 'bass-analog-donk',
+    name: '90s Rave Donk',
+    category: 'Bass',
+    author: 'Subtractive Soundlab',
+    tags: ['rave', 'donk', 'bounce', 'house', 'punchy'],
+    description: 'Punchy percussive rubber bass with instant transient attack, FM harmonics, and tight punch.',
+    params: patchParams(b, {
+      voiceMode: 'mono',
+      glide: 0.02,
+      osc1: { waveform: 'square', detune: 0, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'triangle', detune: 1200, enabled: true, gain: 0.6 },
+      osc3: { waveform: 'sine', detune: -1200, enabled: true, gain: 0.5 },
+      subGain: 0.4,
+      filter: { cutoff: 800, resonance: 14, type: 'lowpass' },
+      ampEnvelope: { attack: 0.002, decay: 0.22, sustain: 0.05, release: 0.12 },
+      filterEnvelope: { attack: 0.002, decay: 0.15, sustain: 0.02, release: 0.1, amount: 4800 },
+      fx: { drive: { enabled: true, amount: 0.4 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: false, decay: 1.0, mix: 0 } }
+    })
+  },
+  {
+    id: 'lead-hyperpop-saw',
+    name: 'Hyperpop Neon Lead',
+    category: 'Lead',
+    author: 'Subtractive Soundlab',
+    tags: ['hyperpop', 'neon', 'supersaw', 'bright', 'futuristic'],
+    description: 'Ultra-bright multi-oscillator detuned saw lead with shimmering drive and wide ping-pong stereo slap.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0.04,
+      osc1: { waveform: 'sawtooth', detune: -18, enabled: true, gain: 0.7 },
+      osc2: { waveform: 'sawtooth', detune: 18, enabled: true, gain: 0.7 },
+      osc3: { waveform: 'square', detune: 1200, enabled: true, gain: 0.35 },
+      osc4: { waveform: 'triangle', detune: 700, enabled: true, gain: 0.3 },
+      filter: { cutoff: 8500, resonance: 6, type: 'lowpass' },
+      ampEnvelope: { attack: 0.005, decay: 0.3, sustain: 0.85, release: 0.4 },
+      filterEnvelope: { attack: 0.01, decay: 0.4, sustain: 0.5, release: 0.3, amount: 4000 },
+      fx: { drive: { enabled: true, amount: 0.35 }, delay: { enabled: true, time: 0.25, feedback: 0.45, mix: 0.25, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.2, mix: 0.22 } }
+    })
+  },
+  {
+    id: 'lead-synthwave-84',
+    name: 'Miami Vice 1984',
+    category: 'Lead',
+    author: 'Subtractive Soundlab',
+    tags: ['synthwave', '80s', 'outrun', 'oberheim', 'retro'],
+    description: 'Classic 1984 analog brassy lead with rich chorus space, warm glide, and vintage analog vibe.',
+    params: patchParams(b, {
+      voiceMode: 'legato',
+      glide: 0.07,
+      osc1: { waveform: 'sawtooth', detune: -9, enabled: true, gain: 0.75 },
+      osc2: { waveform: 'square', detune: 9, enabled: true, gain: 0.65 },
+      subGain: 0.25,
+      filter: { cutoff: 3200, resonance: 7, type: 'lowpass' },
+      ampEnvelope: { attack: 0.02, decay: 0.4, sustain: 0.7, release: 0.5 },
+      filterEnvelope: { attack: 0.04, decay: 0.5, sustain: 0.4, release: 0.4, amount: 3500 },
+      lfo: { waveform: 'sine', rate: 4.8, depth: 0.08, target: 'pitch', delay: 0.25, fade: 0.3, retrigger: true, sync: false, division: '1/4' },
+      fx: { drive: { enabled: true, amount: 0.2 }, delay: { enabled: true, time: 0.32, feedback: 0.4, mix: 0.28, pingPong: true, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 2.8, mix: 0.3 } }
+    })
+  },
+  {
+    id: 'lead-flute-whistle',
+    name: 'Chiff Melodic Whistle',
+    category: 'Lead',
+    author: 'Subtractive Soundlab',
+    tags: ['flute', 'whistle', 'organic', 'breath', 'ambient'],
+    description: 'Expressive wooden flute lead with breathy transient noise chiff, gentle vibrato, and lush hall reflections.',
+    params: patchParams(b, {
+      voiceMode: 'legato',
+      glide: 0.08,
+      osc1: { waveform: 'triangle', detune: 0, enabled: true, gain: 0.85 },
+      osc2: { waveform: 'sine', detune: 1200, enabled: true, gain: 0.4 },
+      noiseGain: 0.08,
+      filter: { cutoff: 2800, resonance: 4, type: 'lowpass' },
+      ampEnvelope: { attack: 0.04, decay: 0.5, sustain: 0.75, release: 0.45 },
+      filterEnvelope: { attack: 0.01, decay: 0.15, sustain: 0.2, release: 0.3, amount: 1800 },
+      lfo: { waveform: 'sine', rate: 5.2, depth: 0.12, target: 'pitch', delay: 0.35, fade: 0.4, retrigger: true, sync: false, division: '1/8' },
+      fx: { drive: { enabled: false, amount: 0.1 }, delay: { enabled: true, time: 0.35, feedback: 0.35, mix: 0.22, pingPong: true, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 3.2, mix: 0.35 } }
+    })
+  },
+  {
+    id: 'lead-cyberpunk-shred',
+    name: 'Cyberpunk 2099',
+    category: 'Lead',
+    author: 'Subtractive Soundlab',
+    tags: ['cyberpunk', 'industrial', 'darksynth', 'distortion', 'aggressive'],
+    description: 'Heavily overdriven cutting industrial lead with aggressive feedback delay and high-resonance bite.',
+    params: patchParams(b, {
+      voiceMode: 'mono',
+      glide: 0.04,
+      osc1: { waveform: 'sawtooth', detune: -12, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'square', detune: 12, enabled: true, gain: 0.8 },
+      osc3: { waveform: 'sawtooth', detune: -1200, enabled: true, gain: 0.5 },
+      filter: { cutoff: 4200, resonance: 16, type: 'lowpass' },
+      ampEnvelope: { attack: 0.005, decay: 0.3, sustain: 0.9, release: 0.25 },
+      filterEnvelope: { attack: 0.01, decay: 0.3, sustain: 0.4, release: 0.2, amount: 4500 },
+      fx: { drive: { enabled: true, amount: 0.72 }, delay: { enabled: true, time: 0.18, feedback: 0.45, mix: 0.24, pingPong: true, sync: false, division: '1/16' }, reverb: { enabled: true, decay: 1.8, mix: 0.18 } }
+    })
+  },
+  {
+    id: 'pad-blade-runner-cs80',
+    name: 'CS-80 Vangelis Brass',
+    category: 'Pad',
+    author: 'Subtractive Soundlab',
+    tags: ['cs80', 'vangelis', 'bladerunner', 'cinematic', 'epic'],
+    description: 'Legendary CS-80 expressive cinematic brass pad with slow majestic filter swell and delayed vibrato.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      glide: 0.06,
+      osc1: { waveform: 'sawtooth', detune: -10, enabled: true, gain: 0.75 },
+      osc2: { waveform: 'sawtooth', detune: 10, enabled: true, gain: 0.75 },
+      osc3: { waveform: 'square', detune: -1200, enabled: true, gain: 0.35 },
+      subGain: 0.3,
+      filter: { cutoff: 1400, resonance: 9, type: 'lowpass' },
+      ampEnvelope: { attack: 0.35, decay: 0.8, sustain: 0.85, release: 1.2 },
+      filterEnvelope: { attack: 0.6, decay: 1.0, sustain: 0.65, release: 1.4, amount: 4200 },
+      lfo: { waveform: 'sine', rate: 4.5, depth: 0.14, target: 'pitch', delay: 0.8, fade: 0.6, retrigger: true, sync: false, division: '1/4' },
+      fx: { drive: { enabled: true, amount: 0.2 }, delay: { enabled: true, time: 0.38, feedback: 0.5, mix: 0.3, pingPong: true, sync: false, division: '1/4' }, reverb: { enabled: true, decay: 4.5, mix: 0.45 } }
+    })
+  },
+  {
+    id: 'pad-aurora-borealis',
+    name: 'Aurora Shimmer',
+    category: 'Pad',
+    author: 'Subtractive Soundlab',
+    tags: ['aurora', 'shimmer', 'ethereal', 'ambient', 'space'],
+    description: 'Glistening celestial ambient pad with stacked fifth overtone, slow gentle attack, and deep space reverb.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'sine', detune: -6, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'triangle', detune: 6, enabled: true, gain: 0.75 },
+      osc3: { waveform: 'sine', detune: 700, enabled: true, gain: 0.45 },
+      osc4: { waveform: 'sawtooth', detune: 1200, enabled: true, gain: 0.25 },
+      filter: { cutoff: 2200, resonance: 5, type: 'lowpass' },
+      ampEnvelope: { attack: 0.55, decay: 1.2, sustain: 0.8, release: 1.6 },
+      filterEnvelope: { attack: 0.8, decay: 1.4, sustain: 0.7, release: 1.8, amount: 2600 },
+      lfo: { waveform: 'triangle', rate: 0.3, depth: 0.25, target: 'filter', retrigger: false, sync: false, division: '1/1' },
+      fx: { drive: { enabled: false, amount: 0.1 }, delay: { enabled: true, time: 0.45, feedback: 0.55, mix: 0.35, pingPong: true, sync: false, division: '1/4' }, reverb: { enabled: true, decay: 5.0, mix: 0.5 } }
+    })
+  },
+  {
+    id: 'pad-lofi-nostalgia',
+    name: 'VHS Tape Nostalgia',
+    category: 'Pad',
+    author: 'Subtractive Soundlab',
+    tags: ['lofi', 'vhs', 'nostalgia', 'chillhop', 'warm'],
+    description: 'Dusty lo-fi cassette tape pad with gentle wow/flutter pitch drift and warm muffled high-cut filtering.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'triangle', detune: -7, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'sawtooth', detune: 7, enabled: true, gain: 0.5 },
+      noiseGain: 0.05,
+      filter: { cutoff: 1100, resonance: 3, type: 'lowpass' },
+      ampEnvelope: { attack: 0.15, decay: 0.6, sustain: 0.85, release: 0.8 },
+      filterEnvelope: { attack: 0.2, decay: 0.8, sustain: 0.6, release: 0.9, amount: 1200 },
+      lfo: { waveform: 'triangle', rate: 0.9, depth: 0.09, target: 'pitch', retrigger: false, sync: false, division: '1/2' },
+      fx: { drive: { enabled: true, amount: 0.32 }, delay: { enabled: true, time: 0.28, feedback: 0.3, mix: 0.2, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 2.2, mix: 0.28 } }
+    })
+  },
+  {
+    id: 'pad-dark-matter',
+    name: 'Dark Matter Drone',
+    category: 'Pad',
+    author: 'Subtractive Soundlab',
+    tags: ['drone', 'dark', 'cinematic', 'tension', 'sub'],
+    description: 'Sub-heavy ominous sci-fi tension drone with slow sweeping bandpass resonance and brooding warmth.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'sawtooth', detune: -15, enabled: true, gain: 0.7 },
+      osc2: { waveform: 'sawtooth', detune: 15, enabled: true, gain: 0.7 },
+      osc3: { waveform: 'square', detune: -1200, enabled: true, gain: 0.6 },
+      subGain: 0.55,
+      filter: { cutoff: 950, resonance: 15, type: 'bandpass' },
+      ampEnvelope: { attack: 0.4, decay: 1.0, sustain: 0.9, release: 1.5 },
+      filterEnvelope: { attack: 0.9, decay: 1.5, sustain: 0.5, release: 1.5, amount: 2200 },
+      lfo: { waveform: 'sine', rate: 0.2, depth: 0.4, target: 'filter', retrigger: false, sync: false, division: '1/1' },
+      fx: { drive: { enabled: true, amount: 0.38 }, delay: { enabled: false, time: 0.3, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 4.2, mix: 0.4 } }
+    })
+  },
+  {
+    id: 'pluck-crystal-kalimba',
+    name: 'Crystal Kalimba',
+    category: 'Pluck',
+    author: 'Subtractive Soundlab',
+    tags: ['kalimba', 'crystal', 'percussive', 'bell', 'pluck'],
+    description: 'Metallic glassy kalimba tine pluck with fast decay, high harmonic ringing, and stereo delay bounces.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'sine', detune: 0, enabled: true, gain: 0.9 },
+      osc2: { waveform: 'triangle', detune: 2400, enabled: true, gain: 0.5 },
+      osc3: { waveform: 'square', detune: 3600, enabled: true, gain: 0.2 },
+      filter: { cutoff: 4500, resonance: 12, type: 'lowpass' },
+      ampEnvelope: { attack: 0.001, decay: 0.45, sustain: 0.05, release: 0.3 },
+      filterEnvelope: { attack: 0.001, decay: 0.25, sustain: 0.02, release: 0.25, amount: 5500 },
+      fx: { drive: { enabled: false, amount: 0.1 }, delay: { enabled: true, time: 0.22, feedback: 0.45, mix: 0.32, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.8, mix: 0.3 } }
+    })
+  },
+  {
+    id: 'keys-rhodes-electric',
+    name: 'Neo-Soul Dyno Tines',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['rhodes', 'neosoul', 'electricpiano', 'dyno', 'jazz'],
+    description: 'Warm expressive Dyno-My-Piano style bell tines with gentle stereo chorus spread and warm amp touch.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'sine', detune: 0, enabled: true, gain: 0.85 },
+      osc2: { waveform: 'triangle', detune: 1200, enabled: true, gain: 0.55 },
+      osc3: { waveform: 'sine', detune: 2400, enabled: true, gain: 0.25 },
+      filter: { cutoff: 2600, resonance: 5, type: 'lowpass' },
+      ampEnvelope: { attack: 0.005, decay: 0.8, sustain: 0.45, release: 0.5 },
+      filterEnvelope: { attack: 0.005, decay: 0.35, sustain: 0.2, release: 0.3, amount: 2200 },
+      lfo: { waveform: 'sine', rate: 3.5, depth: 0.12, target: 'amp', retrigger: true, sync: false, division: '1/8' },
+      fx: { drive: { enabled: true, amount: 0.15 }, delay: { enabled: true, time: 0.3, feedback: 0.25, mix: 0.15, pingPong: true, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 2.0, mix: 0.25 } }
+    })
+  },
+  {
+    id: 'pluck-pizzicato-strings',
+    name: 'Analog Pizzicato',
+    category: 'Pluck',
+    author: 'Subtractive Soundlab',
+    tags: ['pizzicato', 'strings', 'orchestral', 'short', 'acoustic'],
+    description: 'Tight orchestral pizzicato string pluck with authentic wooden resonance and snappy attack.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'sawtooth', detune: -6, enabled: true, gain: 0.7 },
+      osc2: { waveform: 'triangle', detune: 6, enabled: true, gain: 0.75 },
+      filter: { cutoff: 3800, resonance: 9, type: 'lowpass' },
+      ampEnvelope: { attack: 0.003, decay: 0.28, sustain: 0.02, release: 0.2 },
+      filterEnvelope: { attack: 0.003, decay: 0.18, sustain: 0.01, release: 0.18, amount: 4800 },
+      fx: { drive: { enabled: false, amount: 0.1 }, delay: { enabled: false, time: 0.2, feedback: 0, mix: 0, pingPong: false, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 1.8, mix: 0.22 } }
+    })
+  },
+  {
+    id: 'keys-vaporwave-ep',
+    name: 'Vaporwave DX Tine',
+    category: 'Keys',
+    author: 'Subtractive Soundlab',
+    tags: ['vaporwave', 'dx7', '80s', 'tines', 'lofi'],
+    description: 'Dreamy 1988 FM digital tine electric piano bathed in warm tape saturation and ethereal reverb.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'sine', detune: -5, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'triangle', detune: 5, enabled: true, gain: 0.7 },
+      osc3: { waveform: 'sine', detune: 1900, enabled: true, gain: 0.3 },
+      filter: { cutoff: 3400, resonance: 6, type: 'lowpass' },
+      ampEnvelope: { attack: 0.01, decay: 0.9, sustain: 0.5, release: 0.6 },
+      filterEnvelope: { attack: 0.01, decay: 0.45, sustain: 0.25, release: 0.4, amount: 2800 },
+      lfo: { waveform: 'sine', rate: 1.2, depth: 0.1, target: 'pitch', retrigger: false, sync: false, division: '1/4' },
+      fx: { drive: { enabled: true, amount: 0.22 }, delay: { enabled: true, time: 0.35, feedback: 0.38, mix: 0.25, pingPong: true, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 3.5, mix: 0.38 } }
+    })
+  },
+  {
+    id: 'arp-berlin-school',
+    name: 'Tangerine Dream Seq',
+    category: 'Arp',
+    author: 'Subtractive Soundlab',
+    tags: ['berlinschool', 'tangerinedream', 'krautrock', 'analog', '70s'],
+    description: 'Hypnotic 1970s Berlin School sequence with 1/16th rhythmic delay bounces and classic Moog filter bite.',
+    params: patchParams(b, {
+      voiceMode: 'mono',
+      osc1: { waveform: 'sawtooth', detune: -7, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'square', detune: 7, enabled: true, gain: 0.6 },
+      subGain: 0.4,
+      filter: { cutoff: 1900, resonance: 14, type: 'lowpass' },
+      ampEnvelope: { attack: 0.005, decay: 0.22, sustain: 0.15, release: 0.15 },
+      filterEnvelope: { attack: 0.005, decay: 0.18, sustain: 0.08, release: 0.15, amount: 4200 },
+      arpeggiator: { enabled: true, mode: 'up-down', octaves: 2, division: '1/16', gate: 0.65 },
+      fx: { drive: { enabled: true, amount: 0.3 }, delay: { enabled: true, time: 0.25, feedback: 0.5, mix: 0.35, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 2.2, mix: 0.25 } }
+    })
+  },
+  {
+    id: 'arp-trance-gate',
+    name: 'Euro Trance Gate',
+    category: 'Arp',
+    author: 'Subtractive Soundlab',
+    tags: ['trance', 'euro', 'gate', 'supersaw', 'anthem'],
+    description: 'Anthemic 2000s euphoric trance arpeggio with high-energy supersaws and shimmering stadium reverb.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'sawtooth', detune: -22, enabled: true, gain: 0.75 },
+      osc2: { waveform: 'sawtooth', detune: 22, enabled: true, gain: 0.75 },
+      osc3: { waveform: 'square', detune: 0, enabled: true, gain: 0.4 },
+      filter: { cutoff: 6200, resonance: 8, type: 'lowpass' },
+      ampEnvelope: { attack: 0.005, decay: 0.25, sustain: 0.3, release: 0.25 },
+      filterEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.15, release: 0.2, amount: 3800 },
+      arpeggiator: { enabled: true, mode: 'up', octaves: 2, division: '1/16', gate: 0.75 },
+      fx: { drive: { enabled: true, amount: 0.25 }, delay: { enabled: true, time: 0.25, feedback: 0.4, mix: 0.3, pingPong: true, sync: true, division: '1/16' }, reverb: { enabled: true, decay: 3.2, mix: 0.35 } }
+    })
+  },
+  {
+    id: 'arp-cyber-pulse',
+    name: 'Industrial Cyber Arp',
+    category: 'Arp',
+    author: 'Subtractive Soundlab',
+    tags: ['industrial', 'cyber', 'modular', 'pulse', 'dark'],
+    description: 'Driving aggressive modular square-wave sequencer with dirty overdrive and cutting bandpass emphasis.',
+    params: patchParams(b, {
+      voiceMode: 'mono',
+      osc1: { waveform: 'square', detune: -8, enabled: true, gain: 0.85 },
+      osc2: { waveform: 'square', detune: 8, enabled: true, gain: 0.8 },
+      subGain: 0.5,
+      filter: { cutoff: 2400, resonance: 18, type: 'bandpass' },
+      ampEnvelope: { attack: 0.002, decay: 0.18, sustain: 0.1, release: 0.12 },
+      filterEnvelope: { attack: 0.002, decay: 0.14, sustain: 0.05, release: 0.1, amount: 5200 },
+      arpeggiator: { enabled: true, mode: 'random', octaves: 2, division: '1/16', gate: 0.55 },
+      fx: { drive: { enabled: true, amount: 0.55 }, delay: { enabled: true, time: 0.2, feedback: 0.38, mix: 0.25, pingPong: true, sync: true, division: '1/8' }, reverb: { enabled: true, decay: 1.6, mix: 0.18 } }
+    })
+  },
+  {
+    id: 'fx-supernova-riser',
+    name: 'Supernova EDM Riser',
+    category: 'FX',
+    author: 'Subtractive Soundlab',
+    tags: ['riser', 'build', 'tension', 'edm', 'transition'],
+    description: 'Ascending chromatic pitch riser with white noise whoosh and expansive delay wash for peak transitions.',
+    params: patchParams(b, {
+      voiceMode: 'mono',
+      osc1: { waveform: 'sawtooth', detune: 0, enabled: true, gain: 0.7 },
+      osc2: { waveform: 'square', detune: 1200, enabled: true, gain: 0.5 },
+      noiseGain: 0.35,
+      filter: { cutoff: 2200, resonance: 12, type: 'bandpass' },
+      ampEnvelope: { attack: 1.2, decay: 1.5, sustain: 0.8, release: 0.8 },
+      filterEnvelope: { attack: 1.5, decay: 1.0, sustain: 0.9, release: 0.8, amount: 7000 },
+      lfo: { waveform: 'sawtooth', rate: 0.3, depth: 0.75, target: 'pitch', retrigger: true, sync: false, division: '1/1' },
+      fx: { drive: { enabled: true, amount: 0.45 }, delay: { enabled: true, time: 0.35, feedback: 0.65, mix: 0.4, pingPong: true, sync: false, division: '1/8' }, reverb: { enabled: true, decay: 4.5, mix: 0.45 } }
+    })
+  },
+  {
+    id: 'fx-deep-space-comet',
+    name: 'Interstellar Radiance',
+    category: 'FX',
+    author: 'Subtractive Soundlab',
+    tags: ['cinematic', 'space', 'comet', 'scifi', 'sweep'],
+    description: 'Cosmic cinematic deep space pass-by with descending resonant sweep, stereo ping-pong echoes, and endless tail.',
+    params: patchParams(b, {
+      voiceMode: 'poly',
+      osc1: { waveform: 'sine', detune: 0, enabled: true, gain: 0.8 },
+      osc2: { waveform: 'triangle', detune: 700, enabled: true, gain: 0.6 },
+      osc3: { waveform: 'sawtooth', detune: 1900, enabled: true, gain: 0.3 },
+      noiseGain: 0.08,
+      filter: { cutoff: 4200, resonance: 22, type: 'bandpass' },
+      ampEnvelope: { attack: 0.4, decay: 1.8, sustain: 0.3, release: 2.0 },
+      filterEnvelope: { attack: 0.1, decay: 2.2, sustain: 0.1, release: 2.0, amount: -3800 },
+      lfo: { waveform: 'sine', rate: 0.4, depth: 0.35, target: 'filter', retrigger: true, sync: false, division: '1/1' },
+      fx: { drive: { enabled: true, amount: 0.25 }, delay: { enabled: true, time: 0.4, feedback: 0.6, mix: 0.45, pingPong: true, sync: false, division: '1/4' }, reverb: { enabled: true, decay: 6.0, mix: 0.55 } }
     })
   }
 ];
