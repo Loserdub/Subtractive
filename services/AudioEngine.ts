@@ -1875,11 +1875,12 @@ export class AudioEngine {
     } else if (timingType === 'dotted') {
       mult *= 1.5;
     }
-    return (60000 / this.bpm) * mult;
+    const safeBpm = Math.max(20, Math.min(300, this.bpm || 120));
+    return (60000 / safeBpm) * mult;
   }
 
   private scheduleNextArpStep() {
-    if (this.arpHeldNotes.length === 0) {
+    if (!this.params.arpeggiator.enabled || this.arpHeldNotes.length === 0) {
       this.stopArpeggiator();
       return;
     }
@@ -1889,9 +1890,10 @@ export class AudioEngine {
     
     // Musical groove swing: even steps are lengthened, odd steps shortened
     const isEvenStep = this.arpStepCount % 2 === 0;
-    const currentStepDuration = isEvenStep
+    const rawStepDuration = isEvenStep
       ? baseMs * (swingPercent / 50)
       : baseMs * ((100 - swingPercent) / 50);
+    const currentStepDuration = Math.max(15, rawStepDuration || 50);
 
     this.tickArp(currentStepDuration);
     this.arpStepCount++;

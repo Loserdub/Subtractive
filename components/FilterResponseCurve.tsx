@@ -17,6 +17,7 @@ interface FilterResponseCurveProps {
   envelopeAmount?: number;
   filterEnvelope?: { attack: number; decay: number; sustain: number; release: number };
   activeNotesCount?: number;
+  analyser?: AnalyserNode | null;
 }
 
 const MIN_FREQ = 20;
@@ -66,12 +67,19 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
   envelopeAmount = 0,
   filterEnvelope,
   activeNotesCount = 0,
+  analyser = null,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+
+  // Spectrum frequency bins and peak hold state
+  const numSpectrumBands = 72;
+  const smoothedSpectrumRef = useRef<Float32Array>(new Float32Array(numSpectrumBands));
+  const peakHoldSpectrumRef = useRef<Float32Array>(new Float32Array(numSpectrumBands));
 
   // Responsive pixel dimensions
   const [dimensions, setDimensions] = useState<{ width: number; height: number }>({
@@ -170,45 +178,61 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
     }
 
     let animId: number;
+    let lastTime = 0;
+    let lastModCutoff: number | null = null;
     const startTime = performance.now() / 1000;
 
     const updateMod = () => {
-      const now = performance.now() / 1000;
-      let totalOctaveOffset = 0;
-
-      // 1. LFO Sweep Contribution
-      if (isLfoModulating) {
-        const t = (now - startTime) * lfoRate;
-        let lfoVal = 0;
-        if (lfoWaveform === 'triangle') {
-          lfoVal = Math.asin(Math.sin(2 * Math.PI * t)) * (2 / Math.PI);
-        } else if (lfoWaveform === 'square') {
-          lfoVal = Math.sin(2 * Math.PI * t) >= 0 ? 1 : -1;
-        } else if (lfoWaveform === 'sawtooth') {
-          lfoVal = 2 * (t % 1) - 1;
-        } else {
-          lfoVal = Math.sin(2 * Math.PI * t);
-        }
-        totalOctaveOffset += lfoVal * modDepth * 2.2;
+      // Skip updates if element is hidden in the DOM (e.g. desktop vs mobile view switch)
+      if (containerRef.current && containerRef.current.offsetParent === null) {
+        animId = requestAnimationFrame(updateMod);
+        return;
       }
 
-      // 2. Filter Envelope Sweep Contribution
-      if (isEnvModulating && filterEnvelope) {
-        const elapsed = (now - startTime) % (filterEnvelope.attack + filterEnvelope.decay + 1.0);
-        let envVal = 0;
-        if (elapsed < filterEnvelope.attack) {
-          envVal = elapsed / Math.max(0.001, filterEnvelope.attack);
-        } else if (elapsed < filterEnvelope.attack + filterEnvelope.decay) {
-          const decayProgress = (elapsed - filterEnvelope.attack) / Math.max(0.001, filterEnvelope.decay);
-          envVal = 1.0 - decayProgress * (1.0 - filterEnvelope.sustain);
-        } else {
-          envVal = filterEnvelope.sustain;
-        }
-        totalOctaveOffset += envVal * (envelopeAmount / 100) * 3.5;
-      }
+      const nowMs = performance.now();
+      // Throttle state updates to ~35fps (~28ms) to avoid locking up React reconciliation with heavy SVG math
+      if (nowMs - lastTime >= 28) {
+        lastTime = nowMs;
+        const now = nowMs / 1000;
+        let totalOctaveOffset = 0;
 
-      const modulated = Math.max(MIN_FREQ, Math.min(MAX_FREQ, cutoff * Math.pow(2, totalOctaveOffset)));
-      setDynamicModCutoff(modulated);
+        // 1. LFO Sweep Contribution
+        if (isLfoModulating) {
+          const t = (now - startTime) * lfoRate;
+          let lfoVal = 0;
+          if (lfoWaveform === 'triangle') {
+            lfoVal = Math.asin(Math.sin(2 * Math.PI * t)) * (2 / Math.PI);
+          } else if (lfoWaveform === 'square') {
+            lfoVal = Math.sin(2 * Math.PI * t) >= 0 ? 1 : -1;
+          } else if (lfoWaveform === 'sawtooth') {
+            lfoVal = 2 * (t % 1) - 1;
+          } else {
+            lfoVal = Math.sin(2 * Math.PI * t);
+          }
+          totalOctaveOffset += lfoVal * modDepth * 2.2;
+        }
+
+        // 2. Filter Envelope Sweep Contribution
+        if (isEnvModulating && filterEnvelope) {
+          const elapsed = (now - startTime) % (filterEnvelope.attack + filterEnvelope.decay + 1.0);
+          let envVal = 0;
+          if (elapsed < filterEnvelope.attack) {
+            envVal = elapsed / Math.max(0.001, filterEnvelope.attack);
+          } else if (elapsed < filterEnvelope.attack + filterEnvelope.decay) {
+            const decayProgress = (elapsed - filterEnvelope.attack) / Math.max(0.001, filterEnvelope.decay);
+            envVal = 1.0 - decayProgress * (1.0 - filterEnvelope.sustain);
+          } else {
+            envVal = filterEnvelope.sustain;
+          }
+          totalOctaveOffset += envVal * (envelopeAmount / 100) * 3.5;
+        }
+
+        const modulated = Math.max(MIN_FREQ, Math.min(MAX_FREQ, cutoff * Math.pow(2, totalOctaveOffset)));
+        if (lastModCutoff === null || Math.abs(modulated - lastModCutoff) > 2) {
+          lastModCutoff = modulated;
+          setDynamicModCutoff(modulated);
+        }
+      }
 
       animId = requestAnimationFrame(updateMod);
     };
@@ -216,6 +240,155 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
     animId = requestAnimationFrame(updateMod);
     return () => cancelAnimationFrame(animId);
   }, [modActive, modDepth, lfoRate, lfoWaveform, envelopeAmount, filterEnvelope, activeNotesCount, cutoff]);
+
+  // Real-time FFT Harmonic Spectrum Underlay Loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId: number;
+    let isRunning = true;
+    const numBands = numSpectrumBands;
+    const smoothed = smoothedSpectrumRef.current;
+    const peaks = peakHoldSpectrumRef.current;
+    const dataArray = analyser ? new Uint8Array(analyser.frequencyBinCount) : null;
+
+    const renderSpectrum = () => {
+      if (!isRunning) return;
+
+      // Skip rendering if element is hidden in the DOM
+      if (containerRef.current && containerRef.current.offsetParent === null) {
+        animId = requestAnimationFrame(renderSpectrum);
+        return;
+      }
+
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const targetW = Math.round(dimensions.width * dpr);
+      const targetH = Math.round(dimensions.height * dpr);
+
+      if (canvas.width !== targetW || canvas.height !== targetH) {
+        canvas.width = targetW;
+        canvas.height = targetH;
+      }
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, dimensions.width, dimensions.height);
+
+      const P_LEFT = 26;
+      const P_RIGHT = 14;
+      const P_TOP = 16;
+      const P_BOTTOM = 20;
+      const pW = Math.max(80, dimensions.width - P_LEFT - P_RIGHT);
+      const pH = Math.max(30, dimensions.height - P_TOP - P_BOTTOM);
+      const pBottom = dimensions.height - P_BOTTOM;
+
+      if (analyser && dataArray) {
+        analyser.getByteFrequencyData(dataArray);
+        const sampleRate = analyser.context.sampleRate || 44100;
+        const binHz = (sampleRate / 2) / dataArray.length;
+
+        for (let b = 0; b < numBands; b++) {
+          const normPrev = Math.max(0, (b - 0.5) / (numBands - 1));
+          const normNext = Math.min(1, (b + 0.5) / (numBands - 1));
+          const fStart = 20 * Math.pow(20000 / 20, normPrev);
+          const fEnd = 20 * Math.pow(20000 / 20, normNext);
+
+          const startBin = Math.max(0, Math.floor(fStart / binHz));
+          const endBin = Math.min(dataArray.length - 1, Math.max(startBin, Math.ceil(fEnd / binHz)));
+
+          let maxVal = 0;
+          for (let bin = startBin; bin <= endBin; bin++) {
+            if (dataArray[bin] > maxVal) maxVal = dataArray[bin];
+          }
+
+          const rawNorm = maxVal / 255.0;
+
+          // Attack / decay smoothing
+          if (rawNorm > smoothed[b]) {
+            smoothed[b] = smoothed[b] * 0.45 + rawNorm * 0.55;
+          } else {
+            smoothed[b] = Math.max(0, smoothed[b] * 0.88 - 0.005);
+          }
+
+          // Peak hold with subtle gravity decay
+          if (smoothed[b] > peaks[b]) {
+            peaks[b] = smoothed[b];
+          } else {
+            peaks[b] = Math.max(0, peaks[b] - 0.008);
+          }
+        }
+      } else {
+        // Smoothly decay existing peaks when idle
+        for (let b = 0; b < numBands; b++) {
+          smoothed[b] = Math.max(0, smoothed[b] * 0.85 - 0.01);
+          peaks[b] = Math.max(0, peaks[b] - 0.01);
+        }
+      }
+
+      let maxDecay = 0;
+      for (let b = 0; b < numBands; b++) {
+        if (smoothed[b] > maxDecay) maxDecay = smoothed[b];
+      }
+
+      if (maxDecay > 0.008) {
+        // 1. Subtle warm amber/gold area fill (no cyan, no magenta)
+        const grad = ctx.createLinearGradient(0, P_TOP, 0, pBottom);
+        grad.addColorStop(0, 'rgba(245, 158, 11, 0.18)');
+        grad.addColorStop(0.4, 'rgba(217, 119, 6, 0.08)');
+        grad.addColorStop(1, 'rgba(180, 83, 9, 0.00)');
+
+        ctx.beginPath();
+        ctx.moveTo(P_LEFT, pBottom);
+        for (let b = 0; b < numBands; b++) {
+          const x = P_LEFT + (b / (numBands - 1)) * pW;
+          const y = pBottom - Math.min(1, smoothed[b] * 1.1) * pH;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(P_LEFT + pW, pBottom);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // 2. Subtle upper harmonic crest line (soft warm gold, subtle glow, no cyan/magenta)
+        ctx.beginPath();
+        for (let b = 0; b < numBands; b++) {
+          const x = P_LEFT + (b / (numBands - 1)) * pW;
+          const y = pBottom - Math.min(1, smoothed[b] * 1.1) * pH;
+          if (b === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.45)';
+        ctx.lineWidth = 1;
+        ctx.shadowColor = 'rgba(245, 158, 11, 0.25)';
+        ctx.shadowBlur = 3;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // 3. Peak-hold reticle dots (pale amber-gold, delicate)
+        for (let b = 0; b < numBands; b += 2) {
+          const peakVal = Math.min(1, peaks[b] * 1.1);
+          if (peakVal > 0.06) {
+            const px = P_LEFT + (b / (numBands - 1)) * pW;
+            const py = pBottom - peakVal * pH;
+            ctx.fillStyle = 'rgba(254, 243, 199, 0.55)';
+            ctx.fillRect(px - 0.75, py - 0.75, 1.5, 1.5);
+          }
+        }
+      }
+
+      ctx.restore();
+      animId = requestAnimationFrame(renderSpectrum);
+    };
+
+    animId = requestAnimationFrame(renderSpectrum);
+    return () => {
+      isRunning = false;
+      cancelAnimationFrame(animId);
+    };
+  }, [analyser, dimensions.width, dimensions.height]);
 
   // High-precision Biquad Transfer Curve Generator (240 sample points)
   const generateCurve = useCallback((activeCutoff: number) => {
@@ -379,6 +552,12 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setHoverPos(null); }}
     >
+      {/* Real-Time FFT Harmonic Spectrum Underlay */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 pointer-events-none w-full h-full"
+      />
+
       <svg
         ref={svgRef}
         viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}

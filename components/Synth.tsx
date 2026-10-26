@@ -76,6 +76,46 @@ const WORKSPACE_TABS: Array<{
   { id: 'perform', idx: '06', label: 'PERFORM', sublabel: 'LIVE DECK',   icon: '🎚️', color: '#38bdf8', glow: 'rgba(56, 189, 248, 0.45)',  hotkey: '6' },
 ];
 
+const TransportClockDisplay: React.FC = React.memo(() => {
+  const runningStep = useSynthStore(s => s.runningStep);
+  return (
+    <div className="oled-screen px-2.5 py-0.5 rounded-xs flex items-center gap-2 border border-[#1e2a3c]">
+      <span className="text-[7px] font-mono text-gray-400 uppercase tracking-widest">CLOCK</span>
+      <span className="font-mono-lcd text-xs font-bold text-[#00ff66] whitespace-nowrap">
+        {runningStep !== null 
+          ? `BAR 01 : STEP ${String((runningStep % 16) + 1).padStart(2, '0')}`
+          : 'STOPPED'}
+      </span>
+    </div>
+  );
+});
+
+const TransportStepLeds: React.FC<{ isDrumPlaying: boolean; isSeqPlaying: boolean }> = React.memo(({ isDrumPlaying, isSeqPlaying }) => {
+  const runningStep = useSynthStore(s => s.runningStep);
+  return (
+    <div className="hidden xl:flex items-center gap-1 pl-1">
+      {Array.from({ length: 16 }).map((_, idx) => (
+        <div
+          key={idx}
+          className={`w-2 h-2.5 rounded-xs transition-all ${
+            runningStep !== null && runningStep % 16 === idx
+              ? isDrumPlaying && isSeqPlaying
+                ? 'bg-[#00ff66] shadow-[0_0_8px_#00ff66]'
+                : isDrumPlaying
+                ? 'bg-[#10b981] shadow-[0_0_8px_#10b981]'
+                : isSeqPlaying
+                ? 'bg-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
+                : 'bg-white shadow-[0_0_8px_#ffffff]'
+              : idx % 4 === 0
+              ? 'bg-[#1a2333] border border-[#2b3a54]'
+              : 'bg-[#0e1420]'
+          }`}
+        />
+      ))}
+    </div>
+  );
+});
+
 export const Synth: React.FC = () => {
   const { theme, setTheme } = useTheme();
   // Centralized Zustand Store Subscriptions
@@ -117,7 +157,6 @@ export const Synth: React.FC = () => {
   const userPresets = useSynthStore(s => s.userPresets);
   const setUserPresets = useSynthStore(s => s.setUserPresets);
 
-  const runningStep = useSynthStore(s => s.runningStep);
   const setRunningStep = useSynthStore(s => s.setRunningStep);
   const arpActiveStep = useSynthStore(s => s.arpActiveStep);
   const setArpActiveStep = useSynthStore(s => s.setArpActiveStep);
@@ -1755,14 +1794,7 @@ export const Synth: React.FC = () => {
 
         {/* Center: Live Clock & Bar Counter + Quantize Mode */}
         <div className="flex items-center gap-2.5 shrink-0">
-          <div className="oled-screen px-2.5 py-0.5 rounded-xs flex items-center gap-2 border border-[#1e2a3c]">
-            <span className="text-[7px] font-mono text-gray-400 uppercase tracking-widest">CLOCK</span>
-            <span className="font-mono-lcd text-xs font-bold text-[#00ff66] whitespace-nowrap">
-              {runningStep !== null 
-                ? `BAR 01 : STEP ${String((runningStep % 16) + 1).padStart(2, '0')}`
-                : 'STOPPED'}
-            </span>
-          </div>
+          <TransportClockDisplay />
 
           {/* Quantize Sync Mode Selector */}
           <div className="flex items-center gap-0.5 bg-[#0a0f18] p-0.5 rounded border border-[#1e2a3c]">
@@ -1785,26 +1817,7 @@ export const Synth: React.FC = () => {
           </div>
 
           {/* 16-step running LED indicators */}
-          <div className="hidden xl:flex items-center gap-1 pl-1">
-            {Array.from({ length: 16 }).map((_, idx) => (
-              <div
-                key={idx}
-                className={`w-2 h-2.5 rounded-xs transition-all ${
-                  runningStep !== null && runningStep % 16 === idx
-                    ? isDrumPlaying && isSeqPlaying
-                      ? 'bg-[#00ff66] shadow-[0_0_8px_#00ff66]'
-                      : isDrumPlaying
-                      ? 'bg-[#10b981] shadow-[0_0_8px_#10b981]'
-                      : isSeqPlaying
-                      ? 'bg-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
-                      : 'bg-white shadow-[0_0_8px_#ffffff]'
-                    : idx % 4 === 0
-                    ? 'bg-[#1a2333] border border-[#2b3a54]'
-                    : 'bg-[#0e1420]'
-                }`}
-              />
-            ))}
-          </div>
+          <TransportStepLeds isDrumPlaying={isDrumPlaying} isSeqPlaying={isSeqPlaying} />
         </div>
 
         {/* Right: Master Tempo, Swing & Banks */}
@@ -2113,7 +2126,6 @@ export const Synth: React.FC = () => {
                   <MelodicSequencer
                     pattern={melodicPattern}
                     onChange={handleMelodicPatternChange}
-                    activeStep={runningStep}
                     isPlaying={isSeqPlaying}
                     bpm={bpm}
                     drumPattern={drumPattern}
@@ -2435,6 +2447,7 @@ export const Synth: React.FC = () => {
                           envelopeAmount={params.filterEnvelope.amount}
                           filterEnvelope={params.filterEnvelope}
                           activeNotesCount={activeNotes.size}
+                          analyser={audioEngine.current?.getAnalyser() || null}
                         />
                       </div>
 
@@ -2681,7 +2694,8 @@ export const Synth: React.FC = () => {
         <div className="md:hidden relative flex-1 min-h-0 overflow-hidden">
 
           {/* VCO Tab */}
-          <div className={`mobile-section-panel ${activeTab === 'vco' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+          {activeTab === 'vco' && (
+          <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1">
               <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="flex flex-col justify-between">
                 <div className="flex flex-wrap items-center justify-between gap-2 w-full p-2 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
@@ -2791,9 +2805,11 @@ export const Synth: React.FC = () => {
               </Panel>
             </div>
           </div>
+          )}
 
           {/* VCF Tab */}
-          <div className={`mobile-section-panel ${activeTab === 'vcf' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+          {activeTab === 'vcf' && (
+          <div className="mobile-section-panel mobile-section-active">
             <div className="flex flex-col gap-3.5 pt-1">
               <div className="oled-screen p-1.5 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
                 <div className="flex items-center justify-between px-1 mb-1">
@@ -2841,6 +2857,7 @@ export const Synth: React.FC = () => {
                         envelopeAmount={params.filterEnvelope.amount}
                         filterEnvelope={params.filterEnvelope}
                         activeNotesCount={activeNotes.size}
+                        analyser={audioEngine.current?.getAnalyser() || null}
                       />
                     </div>
 
@@ -2914,9 +2931,11 @@ export const Synth: React.FC = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* ENV Tab */}
-          <div className={`mobile-section-panel ${activeTab === 'env' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+          {activeTab === 'env' && (
+          <div className="mobile-section-panel mobile-section-active">
             <div className="flex flex-col gap-2 pt-1">
               <Panel title="LFO — MODULATION" badgeColor="emerald" className="flex flex-col justify-between">
                 <div className="flex flex-col gap-2 w-full justify-between">
@@ -3067,9 +3086,11 @@ export const Synth: React.FC = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* FX Tab */}
-          <div className={`mobile-section-panel ${activeTab === 'fx' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+          {activeTab === 'fx' && (
+          <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1">
               <MasterFXPanel 
                 fx={params.fx} 
@@ -3080,9 +3101,11 @@ export const Synth: React.FC = () => {
               />
             </div>
           </div>
+          )}
 
           {/* ARP Tab — Dedicated Polyphonic Arpeggiator */}
-          <div className={`mobile-section-panel ${activeTab === 'arp' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+          {activeTab === 'arp' && (
+          <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1 flex flex-col gap-2">
               <ArpeggiatorPanel 
                 arp={params.arpeggiator} 
@@ -3095,9 +3118,11 @@ export const Synth: React.FC = () => {
               />
             </div>
           </div>
+          )}
 
           {/* SEQ Tab — 16-Step Melodic Motion Sequencer & P-Locks */}
-          <div className={`mobile-section-panel ${activeTab === 'seq' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+          {activeTab === 'seq' && (
+          <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1 flex flex-col min-h-0 synth-panel rounded p-2">
               <div className="w-full flex items-center justify-between px-2 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
                 <span className="font-mono text-[9px] font-bold tracking-[0.12em] uppercase" style={{ color: 'var(--text-primary)' }}>
@@ -3108,7 +3133,6 @@ export const Synth: React.FC = () => {
               <MelodicSequencer
                 pattern={melodicPattern}
                 onChange={handleMelodicPatternChange}
-                activeStep={runningStep}
                 isPlaying={isDrumMachinePlaying}
                 bpm={bpm}
                 drumPattern={drumPattern}
@@ -3119,9 +3143,11 @@ export const Synth: React.FC = () => {
               />
             </div>
           </div>
+          )}
 
           {/* DRUMS Tab — 4-Track Roland TR-808/909 Drum Workstation */}
-          <div className={`mobile-section-panel ${activeTab === 'drums' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+          {activeTab === 'drums' && (
+          <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1 flex flex-col min-h-0">
               <GrooveWorkspace
                 isPlaying={isDrumMachinePlaying}
@@ -3159,10 +3185,11 @@ export const Synth: React.FC = () => {
               />
             </div>
           </div>
-
+          )}
 
           {/* KEYS Tab */}
-          <div className={`mobile-section-panel ${activeTab === 'keys' ? 'mobile-section-active' : 'mobile-section-hidden'}`}>
+          {activeTab === 'keys' && (
+          <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1">
               <Keyboard 
                 onNoteOn={handleNoteOn} 
@@ -3179,6 +3206,7 @@ export const Synth: React.FC = () => {
               />
             </div>
           </div>
+          )}
 
         </div>
 

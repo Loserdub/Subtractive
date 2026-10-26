@@ -55,6 +55,20 @@ export class DrumMachineEngine {
   private channelStrips: Record<DrumTrackName, TrackChannelStrip> | null = null;
   private melodicPattern: MelodicSequencerPattern | null = null;
   private onScheduleMelodicStep?: (time: number, stepIndex: number, step: MelodicStep, stepDuration: number) => void;
+  private noiseBuffer: AudioBuffer | null = null;
+
+  private getNoiseBuffer(): AudioBuffer {
+    if (!this.noiseBuffer) {
+      const sampleRate = this.audioContext.sampleRate;
+      const bufferSize = Math.floor(sampleRate * 2.0); // 2-second looped white noise buffer
+      this.noiseBuffer = this.audioContext.createBuffer(1, bufferSize, sampleRate);
+      const data = this.noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+    }
+    return this.noiseBuffer;
+  }
 
   constructor(audioContext: AudioContext, onStepChange?: (step: number) => void, outputNode?: AudioNode | null) {
     this.audioContext = audioContext;
@@ -270,6 +284,13 @@ export class DrumMachineEngine {
     osc.connect(gain);
     gain.connect(outputGain);
 
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch {}
+    };
+
     osc.start(time);
     osc.stop(time + decayDuration + 0.05);
   }
@@ -282,13 +303,9 @@ export class DrumMachineEngine {
 
     const outputGain = this.getTrackInput('snare');
     const noiseDuration = 0.2 * settings.decay;
-    const buffer = this.audioContext.createBuffer(1, Math.floor(this.audioContext.sampleRate * noiseDuration), this.audioContext.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
     const noise = this.audioContext.createBufferSource();
-    noise.buffer = buffer;
+    noise.buffer = this.getNoiseBuffer();
+    noise.loop = true;
 
     const noiseFilter = this.audioContext.createBiquadFilter();
     noiseFilter.type = 'highpass';
@@ -314,6 +331,20 @@ export class DrumMachineEngine {
     
     osc.connect(oscGain).connect(outputGain);
     
+    noise.onended = () => {
+      try {
+        noise.disconnect();
+        noiseFilter.disconnect();
+        noiseGain.disconnect();
+      } catch {}
+    };
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        oscGain.disconnect();
+      } catch {}
+    };
+
     noise.start(time);
     osc.start(time);
     noise.stop(time + noiseDuration);
@@ -328,13 +359,9 @@ export class DrumMachineEngine {
 
     const outputGain = this.getTrackInput('hihat');
     const duration = 0.1 * settings.decay;
-    const buffer = this.audioContext.createBuffer(1, Math.floor(this.audioContext.sampleRate * duration), this.audioContext.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
     const noise = this.audioContext.createBufferSource();
-    noise.buffer = buffer;
+    noise.buffer = this.getNoiseBuffer();
+    noise.loop = true;
 
     const bandpass = this.audioContext.createBiquadFilter();
     bandpass.type = 'bandpass';
@@ -348,6 +375,14 @@ export class DrumMachineEngine {
 
     noise.connect(bandpass).connect(noiseGain).connect(outputGain);
 
+    noise.onended = () => {
+      try {
+        noise.disconnect();
+        bandpass.disconnect();
+        noiseGain.disconnect();
+      } catch {}
+    };
+
     noise.start(time);
     noise.stop(time + duration);
   }
@@ -360,14 +395,9 @@ export class DrumMachineEngine {
 
     const outputGain = this.getTrackInput('crash');
     const duration = 1.5 * settings.decay;
-    const bufferSize = Math.floor(this.audioContext.sampleRate * duration);
-    const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
     const noise = this.audioContext.createBufferSource();
-    noise.buffer = buffer;
+    noise.buffer = this.getNoiseBuffer();
+    noise.loop = true;
 
     const filter = this.audioContext.createBiquadFilter();
     filter.type = 'bandpass';
@@ -380,6 +410,14 @@ export class DrumMachineEngine {
     gain.gain.exponentialRampToValueAtTime(0.001, time + duration * 0.8);
 
     noise.connect(filter).connect(gain).connect(outputGain);
+
+    noise.onended = () => {
+      try {
+        noise.disconnect();
+        filter.disconnect();
+        gain.disconnect();
+      } catch {}
+    };
 
     noise.start(time);
     noise.stop(time + duration);
@@ -396,8 +434,9 @@ export class DrumMachineEngine {
   }
 
   private scheduleNextNote() {
-    if (!this.pattern) return;
-    const secondsPerBeat = 60.0 / this.bpm;
+    if (!this.isPlaying || !this.pattern) return;
+    const safeBpm = Math.max(20, Math.min(300, this.bpm || 120));
+    const secondsPerBeat = 60.0 / safeBpm;
     const secondsPer16thNote = secondsPerBeat / 4;
 
     // Check quantized transitions at boundaries (e.g. step 0 of bar, or step % 4 of beat)
@@ -494,7 +533,14 @@ export class DrumMachineEngine {
   }
 
   private scheduler() {
-    while (this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
+    if (!this.isPlaying) return;
+
+    // Prevent clock lag spiral / lockup if tab was throttled or machine slept
+    if (this.nextNoteTime < this.audioContext.currentTime) {
+      this.nextNoteTime = this.audioContext.currentTime;
+    }
+
+    while (this.isPlaying && this.nextNoteTime < this.audioContext.currentTime + this.scheduleAheadTime) {
       this.scheduleNextNote();
     }
   }

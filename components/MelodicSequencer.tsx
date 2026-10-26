@@ -16,11 +16,12 @@ import {
 } from '../utils/musicUtils';
 import { exportPatternToMidiBlob, downloadMidiFile } from '../utils/midiExport';
 import { DEFAULT_MELODIC_PATTERN } from '../constants';
+import { useSynthStore } from '../stores/useSynthStore';
 
 interface MelodicSequencerProps {
   pattern: MelodicSequencerPattern;
   onChange: (pattern: MelodicSequencerPattern) => void;
-  activeStep: number | null;
+  activeStep?: number | null;
   isPlaying: boolean;
   bpm: number;
   drumPattern?: StepSequencePattern;
@@ -39,6 +40,8 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
   drumPattern,
   onAuditionNote,
 }) => {
+  const storeRunningStep = useSynthStore(s => s.runningStep);
+  const currentStep = activeStep !== undefined ? activeStep : storeRunningStep;
   const [selectedStepIndex, setSelectedStepIndex] = useState<number>(0);
   const [isInspectorOpen, setIsInspectorOpen] = useState<boolean>(true);
 
@@ -388,7 +391,7 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
       <div className="w-full overflow-x-auto pb-1">
         <div className="flex items-center justify-between gap-1 min-w-[640px] px-0.5">
           {pattern.steps.map((step, index) => {
-            const isCurrentStep = index === activeStep && isPlaying;
+            const isCurrentStep = index === currentStep && isPlaying;
             const isSelected = index === selectedStepIndex;
             const isDownbeat = index % 4 === 0;
             const stepGroup = Math.floor(index / 4);
