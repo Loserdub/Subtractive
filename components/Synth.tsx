@@ -572,6 +572,34 @@ export const Synth: React.FC = () => {
     }
   };
 
+  const handlePrevPreset = useCallback(() => {
+    let savedUserPresets: PresetPatch[] = [];
+    try {
+      const saved = localStorage.getItem('subtractive_user_presets');
+      if (saved) savedUserPresets = JSON.parse(saved);
+    } catch {}
+    const all = [...SYNTH_PRESETS, ...savedUserPresets, ...userPresets];
+    const currentIndex = all.findIndex(p => p.name === selectedPresetName);
+    const prevIndex = (currentIndex - 1 + all.length) % all.length;
+    if (all[prevIndex]) {
+      loadPreset(all[prevIndex].name);
+    }
+  }, [selectedPresetName, userPresets]);
+
+  const handleNextPreset = useCallback(() => {
+    let savedUserPresets: PresetPatch[] = [];
+    try {
+      const saved = localStorage.getItem('subtractive_user_presets');
+      if (saved) savedUserPresets = JSON.parse(saved);
+    } catch {}
+    const all = [...SYNTH_PRESETS, ...savedUserPresets, ...userPresets];
+    const currentIndex = all.findIndex(p => p.name === selectedPresetName);
+    const nextIndex = (currentIndex + 1) % all.length;
+    if (all[nextIndex]) {
+      loadPreset(all[nextIndex].name);
+    }
+  }, [selectedPresetName, userPresets]);
+
   const handleSaveUserPreset = useCallback((newPatch: PresetPatch) => {
     setUserPresets(prev => {
       const updated = [...prev.filter(p => p.name !== newPatch.name), newPatch];
@@ -1530,84 +1558,55 @@ export const Synth: React.FC = () => {
             })}
           </nav>
 
-          <div className="oled-screen px-3 py-1.5 rounded-sm flex items-center gap-4 flex-1 md:flex-initial justify-between shadow-inner">
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-[7px] font-mono text-gray-400 uppercase">Patch</span>
-                <div className="flex items-center gap-1">
-                  {/* Undo Button */}
-                  <button
-                    type="button"
-                    onClick={undo}
-                    disabled={!canUndo}
-                    title="Undo Parameter Change (Ctrl+Z)"
-                    className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold transition-all ${
-                      canUndo 
-                        ? 'text-[#00f0ff] hover:bg-[#00f0ff]/10 hover:text-white cursor-pointer' 
-                        : 'text-gray-600 cursor-not-allowed opacity-30'
-                    }`}
-                  >
-                    ↶
-                  </button>
-                  {/* Redo Button */}
-                  <button
-                    type="button"
-                    onClick={redo}
-                    disabled={!canRedo}
-                    title="Redo Parameter Change (Ctrl+Y / Cmd+Shift+Z)"
-                    className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold transition-all ${
-                      canRedo 
-                        ? 'text-[#00f0ff] hover:bg-[#00f0ff]/10 hover:text-white cursor-pointer' 
-                        : 'text-gray-600 cursor-not-allowed opacity-30'
-                    }`}
-                  >
-                    ↷
-                  </button>
-                  {/* A/B Comparison Toggle */}
-                  <button
-                    type="button"
-                    onClick={togglePatchSlot}
-                    title={`A/B Sound Comparison (Active: Slot ${patchSlot}) — Click to toggle variation`}
-                    className={`px-1.5 py-0.2 rounded text-[8px] font-mono font-black border transition-all flex items-center gap-0.5 ${
-                      patchSlot === 'A'
-                        ? 'bg-[#10b981]/25 text-[#10b981] border-[#10b981]/70 shadow-[0_0_6px_rgba(16,185,129,0.3)]'
-                        : 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00]/70 shadow-[0_0_6px_rgba(255,170,0,0.3)]'
-                    }`}
-                  >
-                    <span>SLOT {patchSlot}</span>
-                  </button>
-                  {/* Copy A->B or B->A */}
-                  <button
-                    type="button"
-                    onClick={copyActiveToOtherSlot}
-                    title={`Copy Slot ${patchSlot} parameters to alternate slot`}
-                    className="px-1 py-0.2 rounded text-[7.5px] font-mono text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-gray-600 transition-all"
-                  >
-                    {patchSlot === 'A' ? 'A➔B' : 'B➔A'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsPresetBrowserOpen(true)}
-                    className="text-[8px] font-mono font-bold text-[#10b981] hover:underline ml-1"
-                  >
-                    [BROWSE]
-                  </button>
-                </div>
-              </div>
-              <select
-                value={selectedPresetName}
-                onChange={(e) => {
-                  loadPreset(e.target.value);
-                  e.currentTarget.blur();
-                }}
-                className="bg-transparent text-[#10b981] font-mono-lcd text-xs focus:outline-none cursor-pointer"
+          <div className="hidden xl:flex oled-screen px-3 py-1.5 rounded-sm items-center gap-3.5 flex-1 min-w-0 justify-between shadow-inner">
+            {/* Patch History & Sound Compare */}
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={undo}
+                disabled={!canUndo}
+                title="Undo Parameter Change (Ctrl+Z)"
+                className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all ${
+                  canUndo 
+                    ? 'text-[#00f0ff] hover:bg-[#00f0ff]/10 hover:text-white cursor-pointer' 
+                    : 'text-gray-600 cursor-not-allowed opacity-30'
+                }`}
               >
-                {[...SYNTH_PRESETS, ...userPresets].map(p => (
-                  <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#10b981]">
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+                ↶
+              </button>
+              <button
+                type="button"
+                onClick={redo}
+                disabled={!canRedo}
+                title="Redo Parameter Change (Ctrl+Y / Cmd+Shift+Z)"
+                className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all ${
+                  canRedo 
+                    ? 'text-[#00f0ff] hover:bg-[#00f0ff]/10 hover:text-white cursor-pointer' 
+                    : 'text-gray-600 cursor-not-allowed opacity-30'
+                }`}
+              >
+                ↷
+              </button>
+              <button
+                type="button"
+                onClick={togglePatchSlot}
+                title={`A/B Sound Comparison (Active: Slot ${patchSlot}) — Click to toggle variation`}
+                className={`px-1.5 py-0.5 rounded text-[8px] font-mono font-black border transition-all flex items-center gap-0.5 ${
+                  patchSlot === 'A'
+                    ? 'bg-[#10b981]/25 text-[#10b981] border-[#10b981]/70 shadow-[0_0_6px_rgba(16,185,129,0.3)]'
+                    : 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00]/70 shadow-[0_0_6px_rgba(255,170,0,0.3)]'
+                }`}
+              >
+                <span>SLOT {patchSlot}</span>
+              </button>
+              <button
+                type="button"
+                onClick={copyActiveToOtherSlot}
+                title={`Copy Slot ${patchSlot} parameters to alternate slot`}
+                className="px-1 py-0.5 rounded text-[7.5px] font-mono text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-gray-600 transition-all"
+              >
+                {patchSlot === 'A' ? 'A➔B' : 'B➔A'}
+              </button>
             </div>
             <div className="flex flex-col">
               <span className="text-[7px] font-mono text-gray-400 uppercase">Mode / Cutoff</span>
@@ -1739,7 +1738,7 @@ export const Synth: React.FC = () => {
         className="shrink-0 flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-sm border shadow-sm transition-all"
         style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
       >
-        {/* Left: Dual Independent Transports with Quantized Sync Feedback */}
+        {/* Left: Dual Independent Transports + Preset Dropdown in Open Space */}
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Drum Transport */}
           <button
@@ -1790,6 +1789,51 @@ export const Synth: React.FC = () => {
               STOP ALL
             </button>
           )}
+
+          {/* Preset / Patch Dropdown & Browser (To the right of the drum player) */}
+          <div className="flex items-center gap-1.5 pl-2 ml-1 border-l border-[#1e2a3c] bg-[#070b13] px-2 py-0.5 rounded-xs border border-[#1a273b]">
+            <span className="text-[7.5px] font-mono uppercase text-gray-400 font-bold tracking-wider">PATCH</span>
+            <select
+              value={selectedPresetName}
+              onChange={(e) => {
+                loadPreset(e.target.value);
+                e.currentTarget.blur();
+              }}
+              className="bg-transparent text-[#10b981] font-mono-lcd text-xs focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[160px] truncate"
+            >
+              {[...SYNTH_PRESETS, ...userPresets].map(p => (
+                <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#10b981]">
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <div className="flex items-center gap-0.5 border-l border-[#1e2a3c] pl-1">
+              <button
+                type="button"
+                onClick={handlePrevPreset}
+                title="Previous Preset"
+                className="px-1 py-0.5 rounded text-[8px] font-mono text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                ◀
+              </button>
+              <button
+                type="button"
+                onClick={handleNextPreset}
+                title="Next Preset"
+                className="px-1 py-0.5 rounded text-[8px] font-mono text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                ▶
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPresetBrowserOpen(true)}
+              title="Open Preset Browser"
+              className="px-1.5 py-0.5 rounded font-mono text-[7.5px] font-bold tracking-wider text-[#10b981] hover:bg-[#10b981]/15 border border-[#10b981]/40 ml-0.5 transition-all shrink-0"
+            >
+              BROWSE
+            </button>
+          </div>
         </div>
 
         {/* Center: Live Clock & Bar Counter + Quantize Mode */}
