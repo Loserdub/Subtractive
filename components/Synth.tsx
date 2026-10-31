@@ -738,8 +738,11 @@ export const Synth: React.FC = () => {
   const auditionTimerRef = useRef<number | null>(null);
   const lastAuditionNoteRef = useRef<number | null>(null);
 
-  const handleAuditionNote = useCallback((note: number, velocity: number = 100, durationMs: number = 300) => {
-    if (!isStarted || !audioEngine.current) return;
+  const handleAuditionNote = useCallback(async (note: number, velocity: number = 100, durationMs: number = 300) => {
+    if (!isStarted) {
+      await handleStart();
+    }
+    if (!audioEngine.current) return;
 
     if (auditionTimerRef.current !== null) {
       window.clearTimeout(auditionTimerRef.current);
@@ -750,17 +753,9 @@ export const Synth: React.FC = () => {
       lastAuditionNoteRef.current = null;
     }
 
-    audioEngine.current.noteOn(note, velocity);
-    lastAuditionNoteRef.current = note;
-
-    auditionTimerRef.current = window.setTimeout(() => {
-      audioEngine.current?.noteOff(note);
-      if (lastAuditionNoteRef.current === note) {
-        lastAuditionNoteRef.current = null;
-      }
-      auditionTimerRef.current = null;
-    }, durationMs);
-  }, [isStarted]);
+    const durationSeconds = Math.max(0.08, durationMs / 1000);
+    audioEngine.current.auditionNote(note, velocity, durationSeconds);
+  }, [isStarted, handleStart]);
 
   useEffect(() => {
     return () => {
@@ -2209,10 +2204,10 @@ export const Synth: React.FC = () => {
                 </div>
 
                 {/* Real-Time Synth Sound Shaping & Quick Tweak Console */}
-                <div className="mt-2 p-2 rounded-sm border flex flex-col xl:flex-row items-center justify-between gap-3 shrink-0" style={{ background: 'var(--panel-bg-alt)', borderColor: 'var(--panel-border)' }}>
+                <div className="mt-2 p-2 rounded-sm border flex flex-wrap items-center justify-center xl:justify-between gap-2.5 shrink-0" style={{ background: 'var(--panel-bg-alt)', borderColor: 'var(--panel-border)' }}>
                   
                   {/* Left: Quick Filter & Tone Shaping */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#090d16] border border-[#1e2a3c] shrink-0">
                     <div className="flex flex-col pr-1">
                       <span className="text-[7.5px] font-mono uppercase font-bold text-gray-400">VCF TONE</span>
                       <span className="text-[9px] font-mono font-bold text-[#ffaa00] uppercase">{params.filter.type || 'LP'}</span>
@@ -2222,7 +2217,7 @@ export const Synth: React.FC = () => {
                       value={params.filter.cutoff}
                       min={20}
                       max={20000}
-                      size={32}
+                      size={28}
                       onChange={(v) => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
                       color="amber"
                       unit="Hz"
@@ -2232,7 +2227,7 @@ export const Synth: React.FC = () => {
                       value={params.filter.resonance}
                       min={0.1}
                       max={25}
-                      size={32}
+                      size={28}
                       onChange={(v) => setParams(p => patchParams(p, { filter: { resonance: v } }))}
                       color="amber"
                     />
@@ -2241,7 +2236,7 @@ export const Synth: React.FC = () => {
                       value={params.filter.filterFM ?? 0}
                       min={0}
                       max={1}
-                      size={32}
+                      size={28}
                       onChange={(v) => {
                         setParams(p => patchParams(p, { filter: { filterFM: v } }));
                         audioEngine.current?.setFilterFM(v);
@@ -2252,7 +2247,7 @@ export const Synth: React.FC = () => {
                   </div>
 
                   {/* Center: Envelope Dynamics */}
-                  <div className="flex items-center gap-1.5 px-2 border-x border-[#1e2a3c]">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#090d16] border border-[#1e2a3c] shrink-0">
                     <div className="flex flex-col pr-1">
                       <span className="text-[7.5px] font-mono uppercase font-bold text-gray-400">AMP ADSR</span>
                       <span className="text-[9px] font-mono font-bold text-[#00f0ff] uppercase">ENV</span>
@@ -2300,7 +2295,7 @@ export const Synth: React.FC = () => {
                   </div>
 
                   {/* Right: Master FX & Quick Navigation */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#090d16] border border-[#1e2a3c] shrink-0">
                     <Knob
                       label="Drive"
                       value={params.fx?.drive?.enabled ? params.fx.drive.amount : 0}
@@ -3205,7 +3200,7 @@ export const Synth: React.FC = () => {
               <MelodicSequencer
                 pattern={melodicPattern}
                 onChange={handleMelodicPatternChange}
-                isPlaying={isDrumMachinePlaying}
+                isPlaying={isSeqPlaying}
                 bpm={bpm}
                 drumPattern={drumPattern}
                 onAuditionNote={handleAuditionNote}

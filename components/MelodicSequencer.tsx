@@ -573,51 +573,53 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
             </div>
 
             {/* Core Step Modifiers: Gate, Velocity, Slide, Ratchet, Probability */}
-            <div className="flex items-center flex-wrap gap-2.5 p-1.5 rounded bg-[#080b13] border border-[#1c2438]">
-              <Knob
-                label="Velocity"
-                value={selectedStep.velocity || 100}
-                min={1}
-                max={127}
-                size={30}
-                onChange={(v) => handleUpdateSelectedStep({ velocity: Math.round(v) })}
-                color="cyan"
-              />
-              <Knob
-                label="Gate Length"
-                value={selectedStep.gate || 0.8}
-                min={0.1}
-                max={1.5}
-                size={30}
-                onChange={(v) => handleUpdateSelectedStep({ gate: +v.toFixed(2) })}
-                unit="x"
-                color="emerald"
-              />
-              <Knob
-                label="Prob %"
-                value={selectedStep.probability ?? 100}
-                min={10}
-                max={100}
-                size={30}
-                onChange={(v) => handleUpdateSelectedStep({ probability: Math.round(v) })}
-                unit="%"
-                color="amber"
-              />
+            <div className="flex items-center gap-2 p-2 rounded bg-[#080b13] border border-[#1c2438] shrink-0">
+              <div className="flex items-center gap-1.5">
+                <Knob
+                  label="Velocity"
+                  value={selectedStep.velocity || 100}
+                  min={1}
+                  max={127}
+                  size={28}
+                  onChange={(v) => handleUpdateSelectedStep({ velocity: Math.round(v) })}
+                  color="cyan"
+                />
+                <Knob
+                  label="Gate"
+                  value={selectedStep.gate || 0.8}
+                  min={0.1}
+                  max={1.5}
+                  size={28}
+                  onChange={(v) => handleUpdateSelectedStep({ gate: +v.toFixed(2) })}
+                  unit="x"
+                  color="emerald"
+                />
+                <Knob
+                  label="Prob %"
+                  value={selectedStep.probability ?? 100}
+                  min={10}
+                  max={100}
+                  size={28}
+                  onChange={(v) => handleUpdateSelectedStep({ probability: Math.round(v) })}
+                  unit="%"
+                  color="amber"
+                />
+              </div>
 
               {/* Slide & Ratchet Toggles */}
-              <div className="flex flex-col gap-1 pl-1 border-l border-[#1f283c]">
+              <div className="flex flex-col gap-1.5 pl-2 border-l border-[#1f283c] justify-center">
                 <LEDButton
                   label="SLIDE 303"
                   active={selectedStep.slide || false}
                   onClick={() => handleUpdateSelectedStep({ slide: !selectedStep.slide })}
                   color="emerald"
                   size="sm"
-                  className="text-[7px] px-1.5 py-0.5"
+                  className="text-[7px] px-1.5 py-0.5 whitespace-nowrap"
                 />
 
                 {/* Ratchet Selector */}
                 <div className="flex items-center gap-0.5">
-                  <span className="text-[6px] font-mono text-gray-400 uppercase">ROLL:</span>
+                  <span className="text-[6.5px] font-mono text-gray-400 uppercase font-semibold">ROLL:</span>
                   {[1, 2, 3, 4].map((r) => (
                     <button
                       key={r}
@@ -637,70 +639,70 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
             </div>
 
             {/* P-Locks Rack for Selected Step */}
-            <div className="flex-1 flex flex-col gap-1 w-full lg:w-auto p-1.5 rounded bg-[#080b13] border border-[#241c38]">
+            <div className="flex-1 flex flex-col gap-1.5 min-w-0 p-2 rounded bg-[#080b13] border border-[#241c38]">
               <div className="flex items-center justify-between">
-                <span className="text-[7px] font-mono uppercase tracking-wider text-[#ffaa00] font-bold">
+                <span className="text-[7px] font-mono uppercase tracking-wider text-[#ffaa00] font-bold truncate">
                   STEP PARAMETER LOCKS (OVERRIDE SYNTH ON THIS STEP)
                 </span>
               </div>
 
-              <div className="flex items-center flex-wrap gap-2.5">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 sm:gap-2">
                 <Knob
-                  label="Lock Cutoff"
+                  label="Cutoff"
                   value={selectedStep.pLocks?.cutoff ?? 3500}
                   min={20}
                   max={20000}
                   logarithmic
-                  size={30}
+                  size={28}
                   onChange={(v) => handleUpdatePLocks({ cutoff: Math.round(v) })}
                   unit="Hz"
                   color={selectedStep.pLocks?.cutoff !== undefined ? 'amber' : 'cyan'}
                 />
                 <Knob
-                  label="Lock Res"
+                  label="Res"
                   value={selectedStep.pLocks?.resonance ?? 4}
                   min={0}
                   max={35}
-                  size={30}
+                  size={28}
                   onChange={(v) => handleUpdatePLocks({ resonance: +v.toFixed(1) })}
                   color={selectedStep.pLocks?.resonance !== undefined ? 'amber' : 'cyan'}
                 />
                 <Knob
-                  label="Lock Drive"
+                  label="Drive"
                   value={selectedStep.pLocks?.drive ?? 0}
                   min={0}
                   max={1}
-                  size={30}
+                  size={28}
                   onChange={(v) => handleUpdatePLocks({ drive: +v.toFixed(2) })}
                   unit="%"
                   color={selectedStep.pLocks?.drive !== undefined ? 'amber' : 'red'}
                 />
                 <Knob
-                  label="Lock Delay"
+                  label="Delay"
                   value={selectedStep.pLocks?.delayMix ?? 0.3}
                   min={0}
                   max={1}
-                  size={30}
+                  size={28}
                   onChange={(v) => handleUpdatePLocks({ delayMix: +v.toFixed(2) })}
                   unit="%"
                   color={selectedStep.pLocks?.delayMix !== undefined ? 'amber' : 'emerald'}
                 />
                 <Knob
-                  label="Lock Reverb"
+                  label="Reverb"
                   value={selectedStep.pLocks?.reverbMix ?? 0.3}
                   min={0}
                   max={1}
-                  size={30}
+                  size={28}
                   onChange={(v) => handleUpdatePLocks({ reverbMix: +v.toFixed(2) })}
                   unit="%"
                   color={selectedStep.pLocks?.reverbMix !== undefined ? 'amber' : 'emerald'}
                 />
                 <Knob
-                  label="Lock Sub"
+                  label="Sub"
                   value={selectedStep.pLocks?.subGain ?? 0}
                   min={0}
                   max={1}
-                  size={30}
+                  size={28}
                   onChange={(v) => handleUpdatePLocks({ subGain: +v.toFixed(2) })}
                   unit="%"
                   color={selectedStep.pLocks?.subGain !== undefined ? 'amber' : 'cyan'}

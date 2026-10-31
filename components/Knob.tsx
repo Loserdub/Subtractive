@@ -271,7 +271,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   return (
     <div 
       className="flex flex-col items-center justify-center select-none group min-w-0 relative" 
-      style={{ minWidth: Math.max(size + 12, 54), maxWidth: Math.max(size + 24, 72) }}
+      style={{ minWidth: Math.max(size + 6, 36), maxWidth: Math.max(size + 24, 68) }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onContextMenu={handleContextMenu}
@@ -477,10 +477,11 @@ export const Knob: React.FC<KnobProps> = React.memo(({
       </div>
 
       {/* Label Underneath with MIDI Learn indicator and CC tag */}
-      <div className="flex flex-col items-center mt-1.5 max-w-full">
+      <div className="flex flex-col items-center mt-1.5 max-w-full overflow-hidden px-0.5">
         <span 
-          className="text-[7.5px] md:text-[8.5px] font-bold tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full whitespace-nowrap px-0.5"
+          className="text-[7.5px] md:text-[8.5px] font-bold tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
           style={{ color: isLearning ? '#ffaa00' : hasMod ? activeModTheme.stroke : 'var(--text-label)' }}
+          title={label}
         >
           {isLearning ? 'LEARN...' : label}
         </span>

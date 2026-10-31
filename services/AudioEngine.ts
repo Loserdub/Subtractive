@@ -2108,6 +2108,20 @@ export class AudioEngine {
   // ──────────────────────────────────────────────────────────────────────────
 
   /**
+   * Auditions / previews a note directly without being intercepted by the arpeggiator.
+   */
+  public auditionNote(note: number, velocity: number = 100, durationSeconds: number = 0.35) {
+    if (!this.audioContext || !this.voiceSumNode) return;
+    if (this.audioContext.state === 'suspended') {
+      this.audioContext.resume();
+    }
+    const now = this.audioContext.currentTime;
+    const freq = this.midiToFrequency(note);
+    const velGain = velocity / 127;
+    this.triggerTimedVoice(note, freq, velGain, now, durationSeconds, false);
+  }
+
+  /**
    * Schedules a melodic step with parameter locks on the Web Audio timeline.
    */
   public scheduleSequencerStep(
@@ -2183,6 +2197,7 @@ export class AudioEngine {
     pLocks?: StepParameterLocks
   ) {
     const ctx = this.audioContext!;
+    const safeStartTime = Math.max(startTime, ctx.currentTime);
     const masterHeadroom = 0.25;
 
     // 1. Voice Panning & Gain
@@ -2190,10 +2205,10 @@ export class AudioEngine {
     if (ctx.createStereoPanner) {
       voicePanner = ctx.createStereoPanner();
       const panVal = pLocks?.pan !== undefined ? pLocks.pan : 0;
-      voicePanner.pan.setValueAtTime(panVal, startTime);
+      voicePanner.pan.setValueAtTime(panVal, safeStartTime);
     }
     const tremoloGain = ctx.createGain();
-    tremoloGain.gain.setValueAtTime(1, startTime);
+    tremoloGain.gain.setValueAtTime(1, safeStartTime);
 
     if (voicePanner) {
       tremoloGain.connect(voicePanner).connect(this.voiceSumNode!);
@@ -2203,7 +2218,7 @@ export class AudioEngine {
 
     // 2. Amplifier Envelope
     const amp = ctx.createGain();
-    amp.gain.setValueAtTime(0, startTime);
+    amp.gain.setValueAtTime(0.0001, safeStartTime);
     amp.connect(tremoloGain);
 
     // 3. Filter Stage
@@ -2214,7 +2229,7 @@ export class AudioEngine {
     const filterStage1 = ctx.createBiquadFilter();
     filterStage1.type = (this.params.filter.type || 'lowpass') as BiquadFilterType;
     const filterCutoff = pLocks?.cutoff !== undefined ? pLocks.cutoff : this.params.filter.cutoff;
-    filterStage1.frequency.setValueAtTime(filterCutoff, startTime);
+    filterStage1.frequency.setValueAtTime(filterCutoff, safeStartTime);
 
     const filterModel = this.params.filter.model || 'clean';
     let interFilterDrive: WaveShaperNode | null = null;
@@ -2227,11 +2242,11 @@ export class AudioEngine {
 
       filterStage2 = ctx.createBiquadFilter();
       filterStage2.type = (this.params.filter.type || 'lowpass') as BiquadFilterType;
-      filterStage2.frequency.setValueAtTime(filterCutoff, startTime);
+      filterStage2.frequency.setValueAtTime(filterCutoff, safeStartTime);
 
       const ladderQ = baseRes * 0.7;
-      filterStage1.Q.setValueAtTime(ladderQ, startTime);
-      filterStage2.Q.setValueAtTime(ladderQ, startTime);
+      filterStage1.Q.setValueAtTime(ladderQ, safeStartTime);
+      filterStage2.Q.setValueAtTime(ladderQ, safeStartTime);
 
       preFilterDrive.connect(filterStage1);
       filterStage1.connect(interFilterDrive);
@@ -2240,45 +2255,45 @@ export class AudioEngine {
     } else if (filterModel === 'diode12') {
       interFilterDrive = ctx.createWaveShaper();
       if (this.diodeCurve) interFilterDrive.curve = this.diodeCurve;
-      filterStage1.Q.setValueAtTime(baseRes, startTime);
+      filterStage1.Q.setValueAtTime(baseRes, safeStartTime);
 
       preFilterDrive.connect(filterStage1);
       filterStage1.connect(interFilterDrive);
       interFilterDrive.connect(amp);
     } else {
-      filterStage1.Q.setValueAtTime(baseRes, startTime);
+      filterStage1.Q.setValueAtTime(baseRes, safeStartTime);
       preFilterDrive.connect(filterStage1);
       filterStage1.connect(amp);
     }
 
     // Filter Envelope Constant Source
     const filterEnvSource = ctx.createConstantSource();
-    filterEnvSource.offset.setValueAtTime(0, startTime);
-    filterEnvSource.start(startTime);
+    filterEnvSource.offset.setValueAtTime(0.0001, safeStartTime);
+    filterEnvSource.start(safeStartTime);
 
     const filterEnvGain = ctx.createGain();
-    filterEnvGain.gain.setValueAtTime(this.params.filterEnvelope.amount * velocityGain, startTime);
+    filterEnvGain.gain.setValueAtTime(this.params.filterEnvelope.amount * velocityGain, safeStartTime);
     filterEnvSource.connect(filterEnvGain);
     filterEnvGain.connect(filterStage1.detune);
     if (filterStage2) filterEnvGain.connect(filterStage2.detune);
 
     // PWM Offset Constant Source
     const pwmOffset = ctx.createConstantSource();
-    pwmOffset.offset.setValueAtTime(this.params.pwm * 10, startTime);
-    pwmOffset.start(startTime);
+    pwmOffset.offset.setValueAtTime(this.params.pwm * 10, safeStartTime);
+    pwmOffset.start(safeStartTime);
 
     // 4. Oscillators
-    const osc1 = this.createOscVoiceGroup(this.params.osc1, frequency, startTime, masterHeadroom, preFilterDrive, 'osc1');
-    const osc2 = this.createOscVoiceGroup(this.params.osc2, frequency, startTime, masterHeadroom, preFilterDrive, 'osc2');
-    const osc3 = this.createOscVoiceGroup(this.params.osc3, frequency, startTime, masterHeadroom, preFilterDrive, 'osc3');
-    const osc4 = this.createOscVoiceGroup(this.params.osc4, frequency, startTime, masterHeadroom, preFilterDrive, 'osc4');
+    const osc1 = this.createOscVoiceGroup(this.params.osc1, frequency, safeStartTime, masterHeadroom, preFilterDrive, 'osc1');
+    const osc2 = this.createOscVoiceGroup(this.params.osc2, frequency, safeStartTime, masterHeadroom, preFilterDrive, 'osc2');
+    const osc3 = this.createOscVoiceGroup(this.params.osc3, frequency, safeStartTime, masterHeadroom, preFilterDrive, 'osc3');
+    const osc4 = this.createOscVoiceGroup(this.params.osc4, frequency, safeStartTime, masterHeadroom, preFilterDrive, 'osc4');
 
     // Audio-rate Filter FM (Timed voice)
     let offlineFmGain: GainNode | null = null;
     const offlineFmAmt = (this.params.filter.filterFM ?? 0) * 4000;
     if (offlineFmAmt > 0) {
       offlineFmGain = ctx.createGain();
-      offlineFmGain.gain.setValueAtTime(offlineFmAmt, startTime);
+      offlineFmGain.gain.setValueAtTime(offlineFmAmt, safeStartTime);
       osc1.gain.connect(offlineFmGain);
       offlineFmGain.connect(filterStage1.detune);
       if (filterStage2) offlineFmGain.connect(filterStage2.detune);
@@ -2287,13 +2302,13 @@ export class AudioEngine {
     // Sub-Oscillator (Square wave 1 octave down with analog pulse body)
     const subOsc = ctx.createOscillator();
     subOsc.setPeriodicWave(this.getAnalogPeriodicWave('square', 'osc1'));
-    subOsc.frequency.setValueAtTime(frequency / 2, startTime);
-    subOsc.detune.setValueAtTime(this.pitchBendCents, startTime);
+    subOsc.frequency.setValueAtTime(frequency / 2, safeStartTime);
+    subOsc.detune.setValueAtTime(this.pitchBendCents, safeStartTime);
     const subGainAmount = pLocks?.subGain !== undefined ? pLocks.subGain : this.params.subGain;
     const subGain = ctx.createGain();
-    subGain.gain.setValueAtTime(subGainAmount * masterHeadroom, startTime);
+    subGain.gain.setValueAtTime(subGainAmount * masterHeadroom, safeStartTime);
     subOsc.connect(subGain).connect(preFilterDrive);
-    subOsc.start(startTime);
+    subOsc.start(safeStartTime);
 
     // Noise Node
     const noiseNode = ctx.createBufferSource();
@@ -2302,23 +2317,23 @@ export class AudioEngine {
       noiseNode.loop = true;
     }
     const noiseGain = ctx.createGain();
-    noiseGain.gain.setValueAtTime(this.params.noiseGain * 0.15, startTime);
+    noiseGain.gain.setValueAtTime(this.params.noiseGain * 0.15, safeStartTime);
     noiseNode.connect(noiseGain).connect(preFilterDrive);
-    noiseNode.start(startTime);
+    noiseNode.start(safeStartTime);
 
     // LFO 1 & 2
     const lfo1Osc = ctx.createOscillator();
     lfo1Osc.type = this.params.lfo.waveform;
-    lfo1Osc.frequency.setValueAtTime(this.getLfoRateHz(this.params.lfo), startTime);
+    lfo1Osc.frequency.setValueAtTime(this.getLfoRateHz(this.params.lfo), safeStartTime);
     const lfo1Gain = ctx.createGain();
     let maxLfo1 = 0;
     if (this.params.lfo.target === 'pitch') maxLfo1 = this.params.lfo.depth * 1200;
     else if (this.params.lfo.target === 'filter') maxLfo1 = this.params.lfo.depth * 4800;
     else if (this.params.lfo.target === 'amp') maxLfo1 = this.params.lfo.depth * 0.5;
     else if (this.params.lfo.target === 'pwm') maxLfo1 = this.params.lfo.depth * 10;
-    lfo1Gain.gain.setValueAtTime(maxLfo1, startTime);
+    lfo1Gain.gain.setValueAtTime(maxLfo1, safeStartTime);
     lfo1Osc.connect(lfo1Gain);
-    lfo1Osc.start(startTime);
+    lfo1Osc.start(safeStartTime);
 
     if (this.params.lfo.target === 'pitch') {
       this.connectLfoToGroupPitch(lfo1Gain, osc1);
@@ -2347,47 +2362,70 @@ export class AudioEngine {
     };
     const lfo2Osc = ctx.createOscillator();
     lfo2Osc.type = lfo2Params.waveform;
-    lfo2Osc.frequency.setValueAtTime(this.getLfoRateHz(lfo2Params), startTime);
+    lfo2Osc.frequency.setValueAtTime(this.getLfoRateHz(lfo2Params), safeStartTime);
     const lfo2Gain = ctx.createGain();
-    lfo2Gain.gain.setValueAtTime(lfo2Params.depth * 1200, startTime);
+    lfo2Gain.gain.setValueAtTime(lfo2Params.depth * 1200, safeStartTime);
     lfo2Osc.connect(lfo2Gain);
-    lfo2Osc.start(startTime);
+    lfo2Osc.start(safeStartTime);
 
-    // 5. Envelope Trajectory
-    const { attack: ampAttack, decay: baseAmpDecay, sustain: ampSustain, release: ampRelease } = this.params.ampEnvelope;
-    const ampDecay = pLocks?.decay !== undefined ? pLocks.decay : baseAmpDecay;
-    const peakAmp = velocityGain;
-    const sustainAmp = peakAmp * ampSustain;
+    // 5. Envelope Trajectory (Strictly monotonically non-decreasing timeline with non-zero exponential ramps)
+    const { attack: rawAmpAttack, decay: baseAmpDecay, sustain: rawAmpSustain, release: rawAmpRelease } = this.params.ampEnvelope;
+    const rawAmpDecay = pLocks?.decay !== undefined ? pLocks.decay : baseAmpDecay;
+    const safeAmpAttack = Math.max(0.001, rawAmpAttack);
+    const safeAmpDecay = Math.max(0.001, rawAmpDecay);
+    const safeAmpRelease = Math.max(0.002, rawAmpRelease);
+    const peakAmp = Math.max(0.0001, velocityGain);
+    const sustainAmp = Math.max(0.0001, peakAmp * Math.max(0, rawAmpSustain));
 
-    amp.gain.setValueAtTime(0, startTime);
-    amp.gain.linearRampToValueAtTime(peakAmp, startTime + ampAttack);
-    amp.gain.linearRampToValueAtTime(sustainAmp, startTime + ampAttack + ampDecay);
-    
-    // Hold sustain until note duration expires, then release
-    const releaseStartTime = startTime + duration;
+    const attackEndTime = safeStartTime + Math.min(safeAmpAttack, duration);
+    const timeRemainingForDecay = Math.max(0, duration - (attackEndTime - safeStartTime));
+    const decayDuration = Math.min(safeAmpDecay, timeRemainingForDecay);
+    const decayEndTime = attackEndTime + decayDuration;
+    const releaseStartTime = Math.max(decayEndTime, safeStartTime + duration);
+    const releaseEndTime = releaseStartTime + safeAmpRelease;
+
+    amp.gain.setValueAtTime(0.0001, safeStartTime);
+    amp.gain.linearRampToValueAtTime(peakAmp, attackEndTime);
+    if (decayDuration > 0.0001) {
+      amp.gain.linearRampToValueAtTime(sustainAmp, decayEndTime);
+    }
     amp.gain.setValueAtTime(sustainAmp, releaseStartTime);
-    amp.gain.exponentialRampToValueAtTime(0.0001, releaseStartTime + ampRelease);
+    amp.gain.exponentialRampToValueAtTime(0.0001, releaseEndTime);
 
-    // Filter Envelope
-    const { attack: fAttack, decay: fDecay, sustain: fSustain, release: fRelease } = this.params.filterEnvelope;
-    filterEnvSource.offset.setValueAtTime(0, startTime);
-    filterEnvSource.offset.linearRampToValueAtTime(1, startTime + fAttack);
-    filterEnvSource.offset.linearRampToValueAtTime(fSustain, startTime + fAttack + fDecay);
-    filterEnvSource.offset.setValueAtTime(fSustain, releaseStartTime);
-    filterEnvSource.offset.exponentialRampToValueAtTime(0.0001, releaseStartTime + fRelease);
+    // Filter Envelope Trajectory
+    const { attack: rawFAttack, decay: rawFDecay, sustain: rawFSustain, release: rawFRelease } = this.params.filterEnvelope;
+    const safeFAttack = Math.max(0.001, rawFAttack);
+    const safeFDecay = Math.max(0.001, rawFDecay);
+    const safeFRelease = Math.max(0.002, rawFRelease);
+    const fSustain = Math.max(0.0001, Math.min(1, Math.max(0, rawFSustain)));
+
+    const fAttackEndTime = safeStartTime + Math.min(safeFAttack, duration);
+    const fTimeRemainingForDecay = Math.max(0, duration - (fAttackEndTime - safeStartTime));
+    const fDecayDuration = Math.min(safeFDecay, fTimeRemainingForDecay);
+    const fDecayEndTime = fAttackEndTime + fDecayDuration;
+    const fReleaseStartTime = Math.max(fDecayEndTime, safeStartTime + duration);
+    const fReleaseEndTime = fReleaseStartTime + safeFRelease;
+
+    filterEnvSource.offset.setValueAtTime(0.0001, safeStartTime);
+    filterEnvSource.offset.linearRampToValueAtTime(1, fAttackEndTime);
+    if (fDecayDuration > 0.0001) {
+      filterEnvSource.offset.linearRampToValueAtTime(fSustain, fDecayEndTime);
+    }
+    filterEnvSource.offset.setValueAtTime(fSustain, fReleaseStartTime);
+    filterEnvSource.offset.exponentialRampToValueAtTime(0.0001, fReleaseEndTime);
 
     // Slide / Portamento handling
     if (isSlide) {
       const glideTime = Math.max(0.02, this.params.glide || 0.05);
-      this.glideGroupFrequency(osc1, frequency * 1.05, startTime, glideTime);
-      this.glideGroupFrequency(osc2, frequency * 1.05, startTime, glideTime);
-      this.glideGroupFrequency(osc3, frequency * 1.05, startTime, glideTime);
-      this.glideGroupFrequency(osc4, frequency * 1.05, startTime, glideTime);
+      this.glideGroupFrequency(osc1, frequency * 1.05, safeStartTime, glideTime);
+      this.glideGroupFrequency(osc2, frequency * 1.05, safeStartTime, glideTime);
+      this.glideGroupFrequency(osc3, frequency * 1.05, safeStartTime, glideTime);
+      this.glideGroupFrequency(osc4, frequency * 1.05, safeStartTime, glideTime);
     }
 
     // Stop time & Garbage Collection
-    const totalVoiceLifetime = duration + Math.max(ampRelease, fRelease) + 0.1;
-    const stopTime = startTime + totalVoiceLifetime;
+    const effectiveRelease = Math.max(releaseEndTime, fReleaseEndTime);
+    const stopTime = effectiveRelease + 0.1;
 
     this.stopGroup(osc1, stopTime);
     this.stopGroup(osc2, stopTime);
