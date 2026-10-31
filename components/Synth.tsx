@@ -1176,124 +1176,146 @@ export const Synth: React.FC = () => {
 
   if (!isStarted) {
     return (
-      <div className="h-full w-full flex flex-col items-center justify-center p-3 sm:p-5 relative overflow-y-auto" style={{ background: 'var(--chassis-bg)' }}>
-        <div className="synth-panel max-w-2xl w-full p-4 sm:p-6 rounded text-center flex flex-col items-center relative shadow-2xl my-auto">
-          <div className="synth-screw-chassis absolute top-2 left-2" />
-          <div className="synth-screw-chassis absolute top-2 right-2" />
-          <div className="synth-screw-chassis absolute bottom-2 left-2" />
-          <div className="synth-screw-chassis absolute bottom-2 right-2" />
-          
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 rounded-full bg-[#10b981]/15 border border-[#10b981]/50 flex items-center justify-center led-glow-cyan">
-              <div className="w-3 h-3 rounded-full bg-[#10b981]" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-brand font-black tracking-widest uppercase text-white">
-              SUBTRACTIVE SYNTH
-            </h2>
-          </div>
-          <p className="font-mono text-[9px] sm:text-xs mb-3 tracking-wide text-gray-400">
-            Polyphonic Analog Modelling Synthesis • Master Studio FX • Precision Motion Sequencer
-          </p>
+      <div 
+        className="h-full w-full flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-y-auto select-none"
+        style={{
+          background: 'radial-gradient(ellipse 90% 60% at 50% 10%, rgba(16, 185, 129, 0.12) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 50% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 70%), #06080d'
+        }}
+      >
+        {/* Subtle Matrix / Studio Grid Background */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-20"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px)`,
+            backgroundSize: '32px 32px'
+          }}
+        />
 
-          {/* Central Initiate Square / Trigger Unit */}
-          <div className="w-full flex flex-col items-center justify-center p-3 sm:p-4 rounded border border-[#10b981]/30 bg-[#061410] shadow-[0_0_24px_rgba(16,185,129,0.12)] relative mb-3">
+        {/* Modern Monolith Chassis Card */}
+        <div className="max-w-2xl w-full p-5 sm:p-7 rounded-xl text-center flex flex-col items-center relative shadow-[0_24px_80px_rgba(0,0,0,0.9)] my-auto bg-[#090c14]/95 border border-white/[0.08] backdrop-blur-2xl">
+          {/* Subtle Accent Glow Line at Top Edge */}
+          <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-[#10b981]/80 to-transparent pointer-events-none" />
+
+          {/* Futuristic Audio Emblem & Branding */}
+          <div className="flex flex-col items-center gap-1 mb-4">
+            <div className="relative flex items-center justify-center mb-1">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#10b981]/25 via-[#062017] to-[#040e0b] border border-[#10b981]/40 flex items-center justify-center shadow-[0_0_24px_rgba(16,185,129,0.3)]">
+                <span className="font-brand font-black text-2xl text-[#10b981] transform skew-x-[-6deg] drop-shadow-[0_0_8px_#10b981]">
+                  S
+                </span>
+              </div>
+              <div className="absolute -inset-1 rounded-2xl border border-[#10b981]/20 animate-pulse pointer-events-none" />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl sm:text-3xl font-brand font-black tracking-[0.25em] uppercase text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.15)]">
+                SUBTRACTIVE
+              </h1>
+              <span className="text-[8px] sm:text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#10b981]/15 border border-[#10b981]/40 text-[#10b981]">
+                v2.0
+              </span>
+            </div>
+
+            <p className="font-mono text-[9px] sm:text-xs text-gray-400 tracking-wider uppercase font-semibold">
+              Analog Modeling Synthesizer Workstation
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1.5">
+              <span className="text-[7.5px] sm:text-[8px] font-mono px-2 py-0.5 rounded-full bg-[#121927] border border-[#1e2a3e] text-gray-300">
+                ⚡ WEB AUDIO DSP
+              </span>
+              <span className="text-[7.5px] sm:text-[8px] font-mono px-2 py-0.5 rounded-full bg-[#121927] border border-[#1e2a3e] text-gray-300">
+                🔊 24-BIT LOSSLESS
+              </span>
+              <span className="text-[7.5px] sm:text-[8px] font-mono px-2 py-0.5 rounded-full bg-[#121927] border border-[#1e2a3e] text-gray-300">
+                🎹 DUAL TOUCH KEYBED
+              </span>
+            </div>
+          </div>
+
+          {/* Central Power / Initiate Monolith Trigger Unit */}
+          <div className="w-full flex flex-col items-center justify-center p-3.5 sm:p-5 rounded-lg border border-white/[0.08] bg-[#04060b] shadow-[inset_0_2px_12px_rgba(0,0,0,0.95)] relative mb-4">
             <button
               type="button"
               onClick={handleStart}
-              className="w-full flex flex-col items-center justify-center py-3 sm:py-3.5 px-4 rounded bg-gradient-to-b from-[#0e3528] to-[#051a13] border-2 border-[#10b981] hover:brightness-110 active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_18px_rgba(16,185,129,0.35)]"
+              className="w-full group flex flex-col items-center justify-center py-4 sm:py-5 px-4 rounded-md bg-gradient-to-b from-[#0a241c] via-[#051510] to-[#030d0a] border-2 border-[#10b981]/80 hover:border-[#10b981] active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_24px_rgba(16,185,129,0.3)] hover:shadow-[0_0_36px_rgba(16,185,129,0.5)]"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981] animate-pulse" />
-                <span className="font-brand font-black text-xs sm:text-sm tracking-[0.2em] text-white uppercase">
+              <div className="flex items-center gap-2.5 mb-1.5">
+                <div className="w-3.5 h-3.5 rounded-full bg-[#10b981] shadow-[0_0_10px_#10b981] group-hover:scale-110 transition-transform flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                </div>
+                <span className="font-brand font-black text-sm sm:text-base tracking-[0.2em] text-white uppercase group-hover:text-emerald-100 transition-colors">
                   INITIALIZE SYNTHESIZER ENGINE
                 </span>
               </div>
-              <span className="font-mono text-[8px] sm:text-[9.5px] text-[#10b981] tracking-wider uppercase font-semibold">
-                [ CLICK TO START OR PRESS ENTER / SPACEBAR ]
+              <span className="font-mono text-[8.5px] sm:text-[10px] text-[#10b981] tracking-widest uppercase font-bold group-hover:underline">
+                [ TAP TO START • SPACEBAR / ENTER ]
               </span>
             </button>
-            <div className="mt-2 flex items-center justify-between w-full px-1 text-[8px] sm:text-[9px] font-mono text-gray-400">
+
+            {/* Live System Telemetry Status Bar */}
+            <div className="mt-3 flex flex-wrap items-center justify-between w-full px-1 text-[8px] sm:text-[9px] font-mono text-gray-400 gap-1">
               <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                <span>DSP ENGINE: STANDBY</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] shadow-[0_0_4px_#10b981]" />
+                <span className="font-semibold text-gray-300">DSP CORE: READY</span>
               </span>
-              <span className="uppercase text-gray-400 truncate max-w-[240px]">
-                {midiStatus}
+              <span className="flex items-center gap-1.5 text-gray-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] shadow-[0_0_4px_#38bdf8]" />
+                <span>STEREO 48kHz / 96kHz</span>
+              </span>
+              <span className="flex items-center gap-1.5 text-gray-300 uppercase truncate max-w-[200px]">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#ffaa00] shadow-[0_0_4px_#ffaa00]" />
+                <span>{midiStatus || 'MIDI READY'}</span>
               </span>
             </div>
           </div>
 
-          {/* Setup Explainer & Key Shortcut Info Block */}
-          <div className="w-full pt-3 border-t border-[#1a2333] text-left flex flex-col gap-2.5">
-            <div className="flex items-center justify-between px-1">
-              <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-widest font-bold text-[#10b981] flex items-center gap-1.5">
-                <span>⚡</span> SYSTEM SETUP & KEYBOARD SHORTCUTS
-              </span>
-              <span className="font-mono text-[8px] sm:text-[9px] text-gray-500 uppercase">
-                DAW KEYMAP
-              </span>
+          {/* 3 Modern Feature Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 w-full text-left">
+            {/* Card 1: Workspaces */}
+            <div className="p-3 rounded-lg bg-[#070a12]/80 border border-white/[0.06] hover:border-[#10b981]/30 transition-all flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] sm:text-[9.5px] font-mono font-bold text-[#10b981] uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🎛️</span> WORKSPACES
+                </span>
+                <span className="text-[7.5px] font-mono text-gray-500 font-bold">1–5</span>
+              </div>
+              <p className="text-[8px] sm:text-[8.5px] font-mono text-gray-400 leading-relaxed">
+                5 dedicated views: Synth Lab, Studio FX, Arp & Seq, Groove Box, and Live Perform.
+              </p>
             </div>
 
-            {/* Quick Setup Explainer Banner */}
-            <div className="p-2 sm:p-2.5 rounded-sm bg-[#090d16] border border-[#1e293b] text-[8px] sm:text-[9.5px] font-mono text-gray-300 leading-relaxed">
-              <span className="font-bold text-[#10b981] uppercase">How It Is Set Up:</span> Subtractive is partitioned into <span className="font-bold text-white">5 dedicated workspaces</span> (Synth Lab, FX Rack, Arp & Seq, Groove, Perform) so modules never overlap or crowd the screen. Switch tabs anytime with top buttons or hotkeys <span className="font-bold text-white">1–5</span> / <span className="font-bold text-white">Alt+1–5</span>.
+            {/* Card 2: Playing Notes */}
+            <div className="p-3 rounded-lg bg-[#070a12]/80 border border-white/[0.06] hover:border-[#ffaa00]/30 transition-all flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] sm:text-[9.5px] font-mono font-bold text-[#ffaa00] uppercase tracking-wider flex items-center gap-1.5">
+                  <span>🎹</span> TOUCH & KEYS
+                </span>
+                <span className="text-[7.5px] font-mono text-gray-500 font-bold">\ HOTKEY</span>
+              </div>
+              <p className="text-[8px] sm:text-[8.5px] font-mono text-gray-400 leading-relaxed">
+                Multi-touch glissando, 1-Oct & 2-Oct zoom, pitch/mod wheels, and typing keys <span className="text-white font-bold">A–L</span>.
+              </p>
             </div>
 
-            {/* 3 Shortcut Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
-              {/* Card 1: Workspace Tabs */}
-              <div className="p-2 sm:p-2.5 rounded-sm bg-[#090d15] border border-[#1b2536] flex flex-col gap-1.5">
-                <span className="text-[8.5px] sm:text-[9px] font-mono font-bold text-[#10b981] uppercase tracking-wider flex items-center gap-1">
-                  <span>🎛️</span> WORKSPACES (1–5)
+            {/* Card 3: Production Suite */}
+            <div className="p-3 rounded-lg bg-[#070a12]/80 border border-white/[0.06] hover:border-[#38bdf8]/30 transition-all flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] sm:text-[9.5px] font-mono font-bold text-[#38bdf8] uppercase tracking-wider flex items-center gap-1.5">
+                  <span>⚡</span> PRODUCTION
                 </span>
-                <div className="flex flex-col gap-1 text-[8px] sm:text-[8.5px] font-mono text-gray-300">
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">1</span> <span className="font-bold text-white">SYNTH LAB</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">2</span> <span className="font-bold text-[#ff3344]">FX RACK</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">3</span> <span className="font-bold text-[#00ff66]">ARP & SEQ</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">4</span> <span className="font-bold text-[#ffaa00]">GROOVE</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">5</span> <span className="font-bold text-[#38bdf8]">PERFORM</span></div>
-                </div>
+                <span className="text-[7.5px] font-mono text-gray-500 font-bold">WAV REC</span>
               </div>
-
-              {/* Card 2: Playing Notes */}
-              <div className="p-2 sm:p-2.5 rounded-sm bg-[#090d15] border border-[#1b2536] flex flex-col gap-1.5">
-                <span className="text-[8.5px] sm:text-[9px] font-mono font-bold text-[#ffaa00] uppercase tracking-wider flex items-center gap-1">
-                  <span>🎹</span> PLAYING NOTES
-                </span>
-                <div className="flex flex-col gap-1 text-[8px] sm:text-[8.5px] font-mono text-gray-300">
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">\</span> <span className="font-bold text-[#10b981]">KEYBED DOCK</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">A–L</span> <span className="font-bold text-white">White Keys</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">W E T Y U</span> <span className="font-bold text-white">Black Keys</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Z / X</span> <span className="font-bold text-white">Octave - / +</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">SPACE</span> <span className="font-bold text-[#ffaa00]">Play/Stop Beat</span></div>
-                </div>
-              </div>
-
-              {/* Card 3: Transport & Controls */}
-              <div className="p-2 sm:p-2.5 rounded-sm bg-[#090d15] border border-[#1b2536] flex flex-col gap-1.5">
-                <span className="text-[8.5px] sm:text-[9px] font-mono font-bold text-[#00ff66] uppercase tracking-wider flex items-center gap-1">
-                  <span>⚡</span> TACTILE & MIDI
-                </span>
-                <div className="flex flex-col gap-1 text-[8px] sm:text-[8.5px] font-mono text-gray-300">
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Drag ↕</span> <span className="font-bold text-white">Adjust Knob</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Shift+Drag</span> <span className="font-bold text-[#38bdf8]">Fine Tune</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Dbl-Click</span> <span className="font-bold text-white">Reset Default</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">R-Click</span> <span className="font-bold text-[#00ff66]">MIDI Learn</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-400 font-bold bg-[#111927] px-1 rounded border border-[#1b2536]">Web MIDI</span> <span className="font-bold text-white">Plug & Play</span></div>
-                </div>
-              </div>
+              <p className="text-[8px] sm:text-[8.5px] font-mono text-gray-400 leading-relaxed">
+                Master analog chorus & delay, tape reverb, MIDI Learn, and 24-bit lossless WAV recording.
+              </p>
             </div>
           </div>
         </div>
 
         {/* Start Screen Bottom Bar: Author & Official Website */}
         <footer 
-          className="w-full max-w-2xl mt-4 px-3 py-1.5 rounded border flex items-center justify-between text-[9px] sm:text-[10px] font-mono select-none shadow-md backdrop-blur-md"
-          style={{
-            background: 'var(--panel-bg)',
-            borderColor: 'var(--panel-border)',
-            color: 'var(--text-muted)'
-          }}
+          className="w-full max-w-2xl mt-3 px-3 py-1.5 rounded-lg border border-white/[0.07] bg-[#07090e]/80 flex items-center justify-between text-[9px] sm:text-[10px] font-mono select-none shadow-md backdrop-blur-md"
         >
           <div className="flex items-center gap-2 min-w-0">
             <span className="flex items-center gap-1.5 font-bold tracking-widest text-white uppercase text-[8px] sm:text-[9px]">
@@ -1301,7 +1323,7 @@ export const Synth: React.FC = () => {
               SUBTRACTIVE
             </span>
             <span className="text-gray-600 hidden sm:inline">•</span>
-            <span className="truncate">
+            <span className="truncate text-gray-400">
               CREATED BY{' '}
               <a 
                 href="https://trustnodelogic.com/#person" 
@@ -1344,23 +1366,19 @@ export const Synth: React.FC = () => {
       {/* ── Top Header ── */}
       <header className="synth-panel p-1.5 md:p-2 rounded shrink-0">
 
-        {/* Mobile header: single row, essentials only */}
-        <div className="flex md:hidden items-center justify-between gap-1.5">
-          {/* Logo */}
-          <div className="flex items-center gap-1 shrink-0">
-            <div className="w-6 h-6 bg-[#10b981] text-black font-brand font-black text-sm flex items-center justify-center rounded-sm transform skew-x-[-6deg] shrink-0">
-              S
-            </div>
-            <h1 className="font-brand font-bold text-xs text-white tracking-wider uppercase leading-none">
-              SUBTRACTIVE
-            </h1>
-          </div>
-
-          {/* Patch selector + MIDI status */}
-          <div className="oled-screen px-1.5 py-0.5 rounded-sm flex flex-col flex-1 min-w-0">
-            <div className="flex items-center justify-between gap-1">
-              <span className="text-[7px] font-mono text-gray-400 uppercase">Patch</span>
-              <span className={`text-[7px] font-mono uppercase tracking-wide truncate max-w-[90px] ${
+        {/* Mobile header: Ergonomic 2-row layout with spacious preset station */}
+        <div className="flex md:hidden flex-col gap-1.5">
+          {/* Row 1: Logo + Status + Lossless REC + VU + Vol Knob + Skin Picker */}
+          <div className="flex items-center justify-between gap-1.5">
+            {/* Logo */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <div className="w-6 h-6 bg-[#10b981] text-black font-brand font-black text-xs flex items-center justify-center rounded-xs transform skew-x-[-6deg] shrink-0 shadow-[0_0_8px_#10b981]">
+                S
+              </div>
+              <h1 className="font-brand font-bold text-xs text-white tracking-wider uppercase leading-none">
+                SUBTRACTIVE
+              </h1>
+              <span className={`text-[7px] font-mono uppercase tracking-wide truncate max-w-[80px] ${
                 midiStatus.startsWith('MIDI:') && !midiStatus.includes('Keyboard') && !midiStatus.includes('Keys')
                   ? 'text-[#00ff66]'
                   : midiStatus.includes('Error') || midiStatus.includes('Locked')
@@ -1370,69 +1388,14 @@ export const Synth: React.FC = () => {
                 {midiStatus}
               </span>
             </div>
-            <div className="flex items-center gap-1 mt-0.5">
-              <select
-                value={selectedPresetName}
-                onChange={(e) => {
-                  loadPreset(e.target.value);
-                  e.currentTarget.blur();
-                }}
-                className="bg-transparent text-[#10b981] font-mono-lcd text-[9px] focus:outline-none cursor-pointer flex-1 truncate"
-              >
-                {[...SYNTH_PRESETS, ...userPresets].map(p => (
-                  <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#10b981]">
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <div className="flex items-center gap-0.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={undo}
-                  disabled={!canUndo}
-                  title="Undo (Ctrl+Z)"
-                  className={`px-1 py-0.5 rounded text-[8px] font-mono font-bold ${
-                    canUndo ? 'text-[#00f0ff]' : 'text-gray-600 opacity-30'
-                  }`}
-                >
-                  ↶
-                </button>
-                <button
-                  type="button"
-                  onClick={redo}
-                  disabled={!canRedo}
-                  title="Redo (Ctrl+Y)"
-                  className={`px-1 py-0.5 rounded text-[8px] font-mono font-bold ${
-                    canRedo ? 'text-[#00f0ff]' : 'text-gray-600 opacity-30'
-                  }`}
-                >
-                  ↷
-                </button>
-                <button
-                  type="button"
-                  onClick={togglePatchSlot}
-                  title={`A/B Slot: ${patchSlot}`}
-                  className={`px-1 py-0.5 rounded text-[7.5px] font-mono font-bold border ${
-                    patchSlot === 'A'
-                      ? 'bg-[#10b981]/25 text-[#10b981] border-[#10b981]/60'
-                      : 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00]/60'
-                  }`}
-                >
-                  {patchSlot}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsPresetBrowserOpen(true)}
-                className="px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider border bg-[#0d1422] text-[#10b981] border-[#10b981]/40 shrink-0"
-              >
-                BROWSE
-              </button>
+
+            {/* Right: REC + VU + Vol + Theme */}
+            <div className="flex items-center gap-1.5 shrink-0">
               <button
                 type="button"
                 onClick={toggleRecording}
                 disabled={!isStarted}
-                title={isRecording ? "Stop & Download Lossless 24-bit WAV" : "Record Master Bus to Lossless 24-bit WAV"}
+                title={isRecording ? "Stop Lossless Recording" : "Record Master Bus (24-bit WAV)"}
                 className={`px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider flex items-center gap-1 border transition-all shrink-0 ${
                   isRecording
                     ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_8px_#ff3344] animate-pulse'
@@ -1440,49 +1403,114 @@ export const Synth: React.FC = () => {
                 }`}
               >
                 <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white' : 'bg-[#ff3344]'}`} />
-                <span>{isRecording ? `STOP ${formatRecordTime(recordingSeconds)}` : 'REC'}</span>
+                <span>{isRecording ? formatRecordTime(recordingSeconds) : 'REC'}</span>
               </button>
-              <button
-                type="button"
-                onClick={() => setIsKeyboardMode(v => !v)}
-                title="Toggle Computer Keyboard Musical Typing Mode (Hotkey: \)"
-                className={`px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider border transition-all shrink-0 flex items-center gap-1 ${
-                  isKeyboardMode
-                    ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/60 shadow-[0_0_6px_rgba(16,185,129,0.4)]'
-                    : 'bg-[#121620] text-gray-500 border-[#222c3c]'
-                }`}
-              >
-                <span>⌨️</span>
-                <span>{isKeyboardMode ? 'ON' : 'OFF'}</span>
-              </button>
+              <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
+              <Knob 
+                label="Vol" 
+                value={params.masterGain ?? 0.8} 
+                min={0} 
+                max={1} 
+                size={28} 
+                onChange={v => setParams(p => patchParams(p, { masterGain: v }))} 
+                unit="%"
+                color="emerald"
+                modActive={params.lfo.target === 'amp' && params.lfo.depth > 0}
+                modDepth={params.lfo.depth}
+                modColor="emerald"
+                lfoRate={params.lfo.rate}
+                lfoWaveform={params.lfo.waveform}
+                paramId="masterGain"
+                isLearning={learningParamId === 'masterGain'}
+                mappedCC={mappedCCs['masterGain'] ?? null}
+                onMidiLearn={handleMidiLearn}
+              />
+              <div className="pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
+                <SkinPicker />
+              </div>
             </div>
           </div>
 
-          {/* Vol + VU + Theme Picker */}
-          <div className="flex items-center gap-1 shrink-0">
-            <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
-            <Knob 
-              label="Vol" 
-              value={params.masterGain ?? 0.8} 
-              min={0} 
-              max={1} 
-              size={32} 
-              onChange={v => setParams(p => patchParams(p, { masterGain: v }))} 
-              unit="%"
-              color="emerald"
-              modActive={params.lfo.target === 'amp' && params.lfo.depth > 0}
-              modDepth={params.lfo.depth}
-              modColor="emerald"
-              lfoRate={params.lfo.rate}
-              lfoWaveform={params.lfo.waveform}
-              paramId="masterGain"
-              isLearning={learningParamId === 'masterGain'}
-              mappedCC={mappedCCs['masterGain'] ?? null}
-              onMidiLearn={handleMidiLearn}
-            />
-            {/* Mobile Skin Picker */}
-            <div className="pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
-              <SkinPicker />
+          {/* Row 2: Ergonomic Preset Station (Easy to tap, audition & maneuver) */}
+          <div className="oled-screen px-2 py-1 rounded flex items-center justify-between gap-1.5 shadow-inner">
+            {/* Prev Preset Stepper Button */}
+            <button
+              type="button"
+              onClick={handlePrevPreset}
+              title="Previous Preset"
+              className="w-7 h-7 flex items-center justify-center rounded bg-[#121824] hover:bg-[#1b2538] active:scale-95 border border-[#232f44] text-gray-300 hover:text-white text-xs font-mono transition-all shrink-0"
+            >
+              ◀
+            </button>
+
+            {/* Tap-to-Browse Preset Display / Dropdown */}
+            <div 
+              onClick={() => setIsPresetBrowserOpen(true)}
+              className="flex-1 min-w-0 flex flex-col items-center justify-center cursor-pointer group px-1 py-0.5 rounded hover:bg-white/[0.04] transition-all"
+              title="Tap to Open Preset Vault"
+            >
+              <div className="flex items-center gap-1.5 w-full justify-center">
+                <span className="text-[7px] font-mono text-gray-400 uppercase tracking-widest font-bold">PATCH:</span>
+                <span className="text-[7px] font-mono text-[#10b981] group-hover:underline">TAP TO BROWSE ↗</span>
+              </div>
+              <div className="text-[11px] font-mono-lcd text-[#10b981] font-bold truncate max-w-full text-center drop-shadow-[0_0_4px_rgba(16,185,129,0.5)]">
+                {selectedPresetName}
+              </div>
+            </div>
+
+            {/* Next Preset Stepper Button */}
+            <button
+              type="button"
+              onClick={handleNextPreset}
+              title="Next Preset"
+              className="w-7 h-7 flex items-center justify-center rounded bg-[#121824] hover:bg-[#1b2538] active:scale-95 border border-[#232f44] text-gray-300 hover:text-white text-xs font-mono transition-all shrink-0"
+            >
+              ▶
+            </button>
+
+            {/* Preset Action Utilities: VAULT, A/B Slot, Undo, Redo */}
+            <div className="flex items-center gap-1 pl-1 border-l border-[#1a273b] shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsPresetBrowserOpen(true)}
+                className="px-2 py-1 rounded font-mono text-[7.5px] font-bold tracking-wider bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/50 hover:bg-[#10b981]/25 active:scale-95 transition-all shadow-[0_0_6px_rgba(16,185,129,0.2)]"
+              >
+                VAULT
+              </button>
+              <button
+                type="button"
+                onClick={togglePatchSlot}
+                title={`A/B Slot: ${patchSlot}`}
+                className={`w-6 h-6 flex items-center justify-center rounded text-[7.5px] font-mono font-bold border transition-all ${
+                  patchSlot === 'A'
+                    ? 'bg-[#10b981]/25 text-[#10b981] border-[#10b981]/60'
+                    : 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00]/60'
+                }`}
+              >
+                {patchSlot}
+              </button>
+              <button
+                type="button"
+                onClick={undo}
+                disabled={!canUndo}
+                title="Undo (Ctrl+Z)"
+                className={`w-6 h-6 flex items-center justify-center rounded text-[8.5px] font-mono font-bold ${
+                  canUndo ? 'text-[#00f0ff] hover:bg-white/5' : 'text-gray-600 opacity-30 pointer-events-none'
+                }`}
+              >
+                ↶
+              </button>
+              <button
+                type="button"
+                onClick={redo}
+                disabled={!canRedo}
+                title="Redo (Ctrl+Y)"
+                className={`w-6 h-6 flex items-center justify-center rounded text-[8.5px] font-mono font-bold ${
+                  canRedo ? 'text-[#00f0ff] hover:bg-white/5' : 'text-gray-600 opacity-30 pointer-events-none'
+                }`}
+              >
+                ↷
+              </button>
             </div>
           </div>
         </div>
@@ -1790,8 +1818,8 @@ export const Synth: React.FC = () => {
             </button>
           )}
 
-          {/* Preset / Patch Dropdown & Browser (To the right of the drum player) */}
-          <div className="flex items-center gap-1.5 pl-2 ml-1 border-l border-[#1e2a3c] bg-[#070b13] px-2 py-0.5 rounded-xs border border-[#1a273b]">
+          {/* Preset / Patch Dropdown & Browser (To the right of the drum player on desktop) */}
+          <div className="hidden md:flex items-center gap-1.5 pl-2 ml-1 border-l border-[#1e2a3c] bg-[#070b13] px-2 py-0.5 rounded-xs border border-[#1a273b]">
             <span className="text-[7.5px] font-mono uppercase text-gray-400 font-bold tracking-wider">PATCH</span>
             <select
               value={selectedPresetName}

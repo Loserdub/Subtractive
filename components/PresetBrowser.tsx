@@ -324,43 +324,46 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
         <div className="synth-screw-chassis absolute bottom-2 right-2" />
 
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-4 py-3 border-b shrink-0" style={{ borderColor: 'var(--section-border)', background: 'var(--section-bg)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-sm bg-[#10b981] text-black font-brand font-black flex items-center justify-center transform skew-x-[-6deg] text-base shadow-[0_0_10px_#10b981]">
+        <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b shrink-0 gap-2" style={{ borderColor: 'var(--section-border)', background: 'var(--section-bg)' }}>
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-sm bg-[#10b981] text-black font-brand font-black flex items-center justify-center transform skew-x-[-6deg] text-sm sm:text-base shadow-[0_0_10px_#10b981] shrink-0">
               P
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm md:text-base font-brand font-black tracking-widest uppercase text-white">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="text-xs sm:text-base font-brand font-black tracking-widest uppercase text-white truncate">
                   PRESET VAULT
                 </h2>
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#10b981]/10 border border-[#10b981]/30 text-[#10b981]">
+                <span className="text-[8px] sm:text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#10b981]/15 border border-[#10b981]/40 text-[#10b981] shrink-0">
                   {allPresets.length} PATCHES
                 </span>
               </div>
-              <p className="text-[9px] font-mono text-gray-400">
+              <p className="text-[8px] sm:text-[9px] font-mono text-gray-400 hidden sm:block truncate">
                 Studio Factory Soundbank • User Patches • Lossless Import/Export
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Save Current Patch Button */}
             <button
               onClick={() => setIsSaveModalOpen(true)}
-              className="px-2.5 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#10b981]/10 text-[#10b981] border border-[#10b981] hover:bg-[#10b981]/20 transition-all flex items-center gap-1.5"
+              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-[#10b981]/15 text-[#10b981] border border-[#10b981] hover:bg-[#10b981]/25 active:scale-95 transition-all flex items-center gap-1"
+              title="Save current synthesizer parameters as a preset"
             >
               <span>+</span>
-              <span>Save Current Patch</span>
+              <span className="hidden sm:inline">Save Current Patch</span>
+              <span className="sm:hidden">Save</span>
             </button>
 
             {/* Import Button */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1.5 rounded text-[10px] font-mono font-bold uppercase tracking-wider bg-[#141b28] text-gray-300 border border-[#2b3548] hover:border-[#10b981] hover:text-white transition-all flex items-center gap-1"
+              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-[#141b28] text-gray-300 border border-[#2b3548] hover:border-[#10b981] hover:text-white active:scale-95 transition-all flex items-center gap-1"
+              title="Import Presets from JSON"
             >
               <span>📥</span>
-              <span>Import</span>
+              <span className="hidden sm:inline">Import</span>
             </button>
             <input 
               type="file" 
@@ -373,7 +376,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded text-gray-400 hover:text-white hover:bg-red-500/20 hover:border-red-500 border border-transparent transition-all font-mono text-sm"
+              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded text-gray-400 hover:text-white hover:bg-red-500/20 hover:border-red-500 border border-transparent transition-all font-mono text-sm active:scale-95"
               title="Close (Esc)"
             >
               ✕
@@ -382,7 +385,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
         </div>
 
         {/* ── Search & Filter Bar ── */}
-        <div className="p-3 border-b flex flex-col md:flex-row items-center justify-between gap-2 shrink-0" style={{ borderColor: 'var(--section-border)' }}>
+        <div className="p-2 sm:p-3 border-b flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2 shrink-0" style={{ borderColor: 'var(--section-border)' }}>
           {/* Search Input */}
           <div className="relative w-full md:w-80">
             <input
@@ -396,15 +399,15 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs font-mono"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs font-mono p-1"
               >
                 ✕
               </button>
             )}
           </div>
 
-          {/* Category Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none">
+          {/* Category Tabs (Touch-scrollable) */}
+          <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-none touch-pan-x">
             {CATEGORIES.map((category) => {
               const isActive = selectedCategory === category;
               const count = categoryCounts[category] || 0;
@@ -412,14 +415,14 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-2.5 py-1 rounded text-[10px] font-mono font-bold tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1 ${
+                  className={`px-2.5 py-1 sm:py-1.5 rounded text-[9.5px] sm:text-[10px] font-mono font-bold tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1 shrink-0 ${
                     isActive
                       ? 'bg-[#10b981] text-black shadow-[0_0_8px_#10b981]'
                       : 'bg-[#0e131e] text-gray-400 hover:text-gray-200 border border-[#1e2638]'
                   }`}
                 >
                   {category === 'Favorites' ? '★ Favs' : category}
-                  <span className={`text-[8px] px-1 rounded ${isActive ? 'bg-black/20 text-black' : 'bg-black/40 text-gray-400'}`}>
+                  <span className={`text-[8px] px-1 rounded ${isActive ? 'bg-black/20 text-black font-black' : 'bg-black/40 text-gray-400'}`}>
                     {count}
                   </span>
                 </button>
@@ -429,7 +432,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
         </div>
 
         {/* ── Main Presets Grid / List ── */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 content-start">
+        <div className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5 content-start">
           {filteredPresets.length === 0 ? (
             <div className="col-span-full h-48 flex flex-col items-center justify-center text-gray-500 font-mono text-xs">
               <span className="text-2xl mb-2">🔍</span>
@@ -450,36 +453,49 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                     setSelectedPresetId(idOrName);
                     onSelectPreset(patch);
                   }}
-                  className={`p-3 rounded-sm border transition-all cursor-pointer flex flex-col justify-between group relative ${
+                  className={`p-2.5 sm:p-3 rounded border transition-all cursor-pointer flex flex-col justify-between group relative touch-manipulation select-none ${
                     isSelected
-                      ? 'bg-[#10b981]/10 border-[#10b981] shadow-[0_0_12px_rgba(16,185,129,0.25)]'
+                      ? 'bg-[#10b981]/15 border-[#10b981] shadow-[0_0_12px_rgba(16,185,129,0.25)] ring-1 ring-[#10b981]/50'
                       : 'bg-[#0c1018] border-[#1c2436] hover:border-[#10b981]/60 hover:bg-[#111722]'
                   }`}
                 >
-                  {/* Top Row: Name + Favorite + Category Badge */}
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                  {/* Top Row: Favorite + Name + Category Badge + Active Indicator */}
+                  <div className="flex items-center justify-between gap-1.5 mb-1.5">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <button
+                        type="button"
                         onClick={(e) => toggleFavorite(idOrName, e)}
-                        className={`text-sm transition-transform active:scale-125 ${
+                        className={`w-6 h-6 flex items-center justify-center rounded text-sm transition-transform active:scale-125 touch-manipulation shrink-0 ${
                           isFav ? 'text-[#ffaa00] drop-shadow-[0_0_6px_#ffaa00]' : 'text-gray-600 hover:text-gray-400'
                         }`}
                         title={isFav ? 'Remove Favorite' : 'Mark Favorite'}
                       >
                         ★
                       </button>
-                      <span className={`font-mono text-xs font-bold truncate ${isSelected ? 'text-[#10b981]' : 'text-white'}`}>
+                      <span className={`font-mono text-xs sm:text-sm font-bold truncate ${isSelected ? 'text-[#10b981]' : 'text-white'}`}>
                         {patch.name}
                       </span>
                     </div>
 
-                    <span className={`text-[8px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
-                      {patch.category}
-                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isSelected ? (
+                        <span className="text-[7.5px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-[#10b981] text-black shadow-[0_0_6px_#10b981] flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                          ACTIVE
+                        </span>
+                      ) : (
+                        <span className="hidden sm:inline text-[7px] font-mono font-bold uppercase px-1.5 py-0.5 rounded text-gray-500 bg-white/5 border border-white/10 group-hover:text-[#10b981] group-hover:border-[#10b981]/40 transition-colors">
+                          LOAD ▶
+                        </span>
+                      )}
+                      <span className={`text-[7.5px] sm:text-[8px] font-mono font-bold uppercase px-1.5 py-0.5 rounded border ${catColor.bg} ${catColor.text} ${catColor.border}`}>
+                        {patch.category}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Middle Row: Description */}
-                  <p className="text-[10px] font-mono text-gray-400 line-clamp-2 mb-2 leading-relaxed">
+                  <p className="text-[9.5px] sm:text-[10px] font-mono text-gray-400 line-clamp-2 mb-2 leading-relaxed">
                     {patch.description || 'Rich analog modeling synthesizer patch.'}
                   </p>
 
@@ -523,25 +539,25 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
         </div>
 
         {/* ── Footer ── */}
-        <div className="p-3 border-t flex items-center justify-between shrink-0 text-[10px] font-mono" style={{ borderColor: 'var(--section-border)', background: 'var(--section-bg)' }}>
-          <div className="flex items-center gap-4 text-gray-400">
-            <span>Showing <b className="text-white">{filteredPresets.length}</b> of {allPresets.length}</span>
-            <span className="hidden sm:inline text-gray-600">•</span>
-            <span className="hidden sm:inline">Use <kbd className="bg-black/40 px-1 rounded text-[#10b981]">↑</kbd> <kbd className="bg-black/40 px-1 rounded text-[#10b981]">↓</kbd> to audition patches</span>
+        <div className="p-2.5 sm:p-3 border-t flex items-center justify-between shrink-0 text-[9.5px] sm:text-[10px] font-mono gap-2" style={{ borderColor: 'var(--section-border)', background: 'var(--section-bg)' }}>
+          <div className="flex items-center gap-3 text-gray-400 min-w-0">
+            <span className="truncate">Showing <b className="text-white">{filteredPresets.length}</b> of {allPresets.length}</span>
+            <span className="hidden md:inline text-gray-600">•</span>
+            <span className="hidden md:inline">Use <kbd className="bg-black/40 px-1 rounded text-[#10b981]">↑</kbd> <kbd className="bg-black/40 px-1 rounded text-[#10b981]">↓</kbd> to audition patches</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {userPresets.length > 0 && (
               <button
                 onClick={handleExportAll}
-                className="text-[9px] font-mono text-gray-400 hover:text-[#10b981] transition-all"
+                className="hidden sm:inline text-[9px] font-mono text-gray-400 hover:text-[#10b981] transition-all"
               >
                 📦 Backup User Library ({userPresets.length})
               </button>
             )}
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-[#10b981] text-black shadow-[0_0_10px_#10b981] hover:opacity-95 transition-all"
+              className="px-4 sm:px-5 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-[#10b981] text-black shadow-[0_0_10px_#10b981] hover:opacity-95 active:scale-95 transition-all"
             >
               Done
             </button>
