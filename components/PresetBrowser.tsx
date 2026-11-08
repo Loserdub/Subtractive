@@ -71,6 +71,23 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
 
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isDocked, setIsDocked] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('subtractive_vault_docked') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleDock = () => {
+    setIsDocked(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('subtractive_vault_docked', String(next));
+      } catch {}
+      return next;
+    });
+  };
   const [saveName, setSaveName] = useState('');
   const [saveCategory, setSaveCategory] = useState('User');
   const [saveAuthor, setSaveAuthor] = useState('User');
@@ -313,9 +330,22 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 md:p-6 bg-black/80 backdrop-blur-sm animate-fade-in select-none">
+    <div 
+      className={`fixed z-50 animate-fade-in select-none ${
+        isDocked
+          ? 'inset-y-0 right-0 w-full sm:w-[500px] xl:w-[580px] bg-black/60 backdrop-blur-xs flex flex-col pointer-events-auto'
+          : 'inset-0 flex items-center justify-center p-2 md:p-6 bg-black/80 backdrop-blur-sm'
+      }`}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isDocked) onClose();
+      }}
+    >
       <div 
-        className="synth-panel w-full max-w-5xl h-[90vh] max-h-[850px] flex flex-col rounded-md overflow-hidden shadow-2xl relative"
+        className={`synth-panel flex flex-col overflow-hidden relative shadow-2xl ${
+          isDocked
+            ? 'w-full h-full rounded-none sm:rounded-l-lg border-l border-[#243048] shadow-[-16px_0_40px_rgba(0,0,0,0.85)]'
+            : 'w-full max-w-5xl h-[90vh] max-h-[850px] rounded-md'
+        }`}
       >
         {/* Chassis machine bolts */}
         <div className="synth-screw-chassis absolute top-2 left-2" />
@@ -345,6 +375,16 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Dock / Expand Toggle Button (Desktop & Tablet) */}
+            <button
+              onClick={handleToggleDock}
+              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-[#141b28] text-gray-300 border border-[#2b3548] hover:border-[#10b981] hover:text-white active:scale-95 transition-all flex items-center gap-1 hidden md:flex"
+              title={isDocked ? "Expand to Full Modal Vault" : "Dock to Side Drawer (Live Synth & Audition View)"}
+            >
+              <span>{isDocked ? '🗖' : '◧'}</span>
+              <span className="hidden sm:inline">{isDocked ? 'Full' : 'Dock'}</span>
+            </button>
+
             {/* Save Current Patch Button */}
             <button
               onClick={() => setIsSaveModalOpen(true)}

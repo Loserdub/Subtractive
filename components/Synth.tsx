@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings, PresetPatch, WorkspaceMode, MelodicSequencerPattern, DrumTrackLengths, DrumTrackRatchets } from '../types';
 import { patchParams } from '../utils/patchParams';
 import { useSynthStore, MobileTab, VisualizerMode } from '../stores/useSynthStore';
@@ -6,12 +6,8 @@ import { AudioEngine } from '../services/AudioEngine';
 import { DrumMachineEngine, TransportState, TransportQuantizeMode } from '../services/DrumMachineEngine';
 import { Knob } from './Knob';
 import { Keyboard } from './Keyboard';
-import { DrumMachine } from './DrumMachine';
 import { MasterFXPanel } from './MasterFXPanel';
 import { ArpeggiatorPanel } from './ArpeggiatorPanel';
-import { MelodicSequencer } from './MelodicSequencer';
-import { GrooveWorkspace } from './GrooveWorkspace';
-import { PerformWorkspace } from './PerformWorkspace';
 import { LEDButton, ToggleSwitch } from './Switch';
 import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN, DEFAULT_DRUM_TRACK_SETTINGS, SYNTH_PRESETS, DAW_KEY_MAP, CLASSIC_KEY_MAP, DEFAULT_MELODIC_PATTERN, DEFAULT_DRUM_TRACK_LENGTHS, DEFAULT_DRUM_TRACK_RATCHETS } from '../constants';
 import { SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from './Icon';
@@ -19,13 +15,25 @@ import { WaveformDisplay } from './WaveformDisplay';
 import { VUMeter } from './VUMeter';
 import { FilterResponseCurve } from './FilterResponseCurve';
 import { EnvelopeEditor } from './EnvelopeEditor';
-import { PresetBrowser } from './PresetBrowser';
 import { AudioRecorder } from '../services/AudioRecorder';
 import { MidiManager } from '../services/MidiManager';
 import { useTheme, THEMES } from '../contexts/ThemeContext';
-import { SkinPicker } from './SkinPicker';
 import { ErrorBoundary } from './ErrorBoundary';
 import { ModulationFlowHUD } from './ModulationFlowHUD';
+
+// Lazy-loaded secondary workspaces and modals (Dynamic Code Splitting)
+const PresetBrowser = lazy(() => import('./PresetBrowser').then(m => ({ default: m.PresetBrowser })));
+const MelodicSequencer = lazy(() => import('./MelodicSequencer').then(m => ({ default: m.MelodicSequencer })));
+const GrooveWorkspace = lazy(() => import('./GrooveWorkspace').then(m => ({ default: m.GrooveWorkspace })));
+const PerformWorkspace = lazy(() => import('./PerformWorkspace').then(m => ({ default: m.PerformWorkspace })));
+const SkinPicker = lazy(() => import('./SkinPicker').then(m => ({ default: m.SkinPicker })));
+
+const WorkspaceLoadingFallback: React.FC = () => (
+  <div className="w-full h-64 flex flex-col items-center justify-center gap-3 rounded bg-[#090d16]/70 border border-[#1e2a3c]">
+    <div className="w-5 h-5 rounded-full border-2 border-[#10b981] border-t-transparent animate-spin" />
+    <span className="text-[9px] font-mono tracking-widest uppercase text-gray-400">Loading Module...</span>
+  </div>
+);
 
 interface PanelProps {
   title: string;
@@ -36,19 +44,23 @@ interface PanelProps {
 
 const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, className = "" }) => {
   const badgeGlows = {
-    cyan:    'bg-[#10b981] shadow-[0_0_6px_#10b981]',
-    amber:   'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]',
-    emerald: 'bg-[#00ff66] shadow-[0_0_6px_#00ff66]',
-    red:     'bg-[#ff3344] shadow-[0_0_6px_#ff3344]',
+    cyan:    'bg-[#10b981] shadow-[0_0_8px_#10b981]',
+    amber:   'bg-[#ffaa00] shadow-[0_0_8px_#ffaa00]',
+    emerald: 'bg-[#00ff66] shadow-[0_0_8px_#00ff66]',
+    red:     'bg-[#ff3344] shadow-[0_0_8px_#ff3344]',
   };
 
   return (
-    <div className={`synth-panel rounded p-2 md:p-2.5 flex flex-col items-center select-none relative ${className}`}>
+    <div className={`synth-panel rounded-md p-2 md:p-2.5 flex flex-col items-center select-none relative shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_4px_16px_rgba(0,0,0,0.6)] ${className}`}>
       {/* Module Title Header Bar — Contained INSIDE the panel */}
-      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-2 rounded-sm border shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_2px_4px_rgba(0,0,0,0.4)] shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
         <div className="flex items-center gap-1.5 overflow-hidden">
           <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${badgeGlows[badgeColor]}`} />
-          <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>{title}</span>
+          <span className="font-mono text-[9px] md:text-[10px] font-black tracking-[0.16em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>{title}</span>
+        </div>
+        <div className="flex items-center gap-1 opacity-40">
+          <div className="w-1 h-1 rounded-full bg-white/40" />
+          <div className="w-1 h-1 rounded-full bg-white/40" />
         </div>
       </div>
       <div className="w-full flex-1 flex flex-col min-h-0">
@@ -57,6 +69,54 @@ const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, cla
     </div>
   );
 };
+
+const RecordButton: React.FC<{
+  onToggleRecord: () => void;
+  disabled?: boolean;
+  isMobile?: boolean;
+}> = React.memo(({ onToggleRecord, disabled, isMobile }) => {
+  const isRecording = useSynthStore(s => s.isRecording);
+  const recordingSeconds = useSynthStore(s => s.recordingSeconds);
+  const m = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+  const s = (recordingSeconds % 60).toString().padStart(2, '0');
+  const timeStr = `${m}:${s}`;
+
+  if (isMobile) {
+    return (
+      <button
+        type="button"
+        onClick={onToggleRecord}
+        disabled={disabled}
+        title={isRecording ? "Stop Lossless Recording" : "Record Master Bus (24-bit WAV)"}
+        className={`px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider flex items-center gap-1 border transition-all shrink-0 ${
+          isRecording
+            ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_8px_#ff3344] animate-pulse'
+            : 'bg-[#121620] text-gray-400 border-[#222c3c] hover:text-[#ff3344]'
+        }`}
+      >
+        <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white' : 'bg-[#ff3344]'}`} />
+        <span>{isRecording ? timeStr : 'REC'}</span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onToggleRecord}
+      disabled={disabled}
+      title={isRecording ? "Stop & Download Master Lossless 24-bit WAV" : "Record Master Bus to Lossless 24-bit WAV"}
+      className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold tracking-wider flex items-center gap-1.5 border transition-all ${
+        isRecording
+          ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_8px_#ff3344] animate-pulse'
+          : 'bg-[#101622] text-gray-400 border-[#222e42] hover:text-[#ff3344] hover:border-[#ff3344]/60'
+      }`}
+    >
+      <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white' : 'bg-[#ff3344]'}`} />
+      <span>{isRecording ? `STOP ${timeStr}` : '● REC 24-BIT'}</span>
+    </button>
+  );
+});
 
 const WORKSPACE_TABS: Array<{
   id: WorkspaceMode;
@@ -165,7 +225,6 @@ export const Synth: React.FC = () => {
 
   const isRecording = useSynthStore(s => s.isRecording);
   const setIsRecording = useSynthStore(s => s.setIsRecording);
-  const recordingSeconds = useSynthStore(s => s.recordingSeconds);
   const setRecordingSeconds = useSynthStore(s => s.setRecordingSeconds);
   const audioRecorderRef = useRef<AudioRecorder | null>(null);
   const midiManagerRef = useRef<MidiManager | null>(null);
@@ -204,13 +263,7 @@ export const Synth: React.FC = () => {
     return () => {
       if (timer) clearInterval(timer);
     };
-  }, [isRecording]);
-
-  const formatRecordTime = (sec: number) => {
-    const m = Math.floor(sec / 60).toString().padStart(2, '0');
-    const s = (sec % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
+  }, [isRecording, setRecordingSeconds]);
 
   const handleMidiParamChange = useCallback((paramId: string, normalizedVal: number) => {
     switch (paramId) {
@@ -846,6 +899,13 @@ export const Synth: React.FC = () => {
         }
       }
 
+      // Global Shortcut: Cmd/Ctrl + K toggles Preset Vault
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsPresetBrowserOpen(prev => !prev);
+        return;
+      }
+
       // Workspace Mode shortcuts (Alt+1..6 or 1..6 in DAW layout)
       if (e.altKey && (e.key === '1' || e.key === '2' || e.key === '3' || e.key === '4' || e.key === '5' || e.key === '6')) {
         e.preventDefault();
@@ -1386,20 +1446,7 @@ export const Synth: React.FC = () => {
 
             {/* Right: REC + VU + Vol + Theme */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={toggleRecording}
-                disabled={!isStarted}
-                title={isRecording ? "Stop Lossless Recording" : "Record Master Bus (24-bit WAV)"}
-                className={`px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider flex items-center gap-1 border transition-all shrink-0 ${
-                  isRecording
-                    ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_8px_#ff3344] animate-pulse'
-                    : 'bg-[#121620] text-gray-400 border-[#222c3c] hover:text-[#ff3344]'
-                }`}
-              >
-                <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white' : 'bg-[#ff3344]'}`} />
-                <span>{isRecording ? formatRecordTime(recordingSeconds) : 'REC'}</span>
-              </button>
+              <RecordButton onToggleRecord={toggleRecording} disabled={!isStarted} isMobile />
               <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
               <Knob 
                 label="Vol" 
@@ -1421,7 +1468,9 @@ export const Synth: React.FC = () => {
                 onMidiLearn={handleMidiLearn}
               />
               <div className="pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
-                <SkinPicker />
+                <Suspense fallback={null}>
+                  <SkinPicker />
+                </Suspense>
               </div>
             </div>
           </div>
@@ -1683,20 +1732,7 @@ export const Synth: React.FC = () => {
               >
                 <span>🎹 {isKeybedVisible ? 'KEYBED' : 'KEYBED'}</span>
               </button>
-              <button
-                type="button"
-                onClick={toggleRecording}
-                disabled={!isStarted}
-                title={isRecording ? "Stop & Download Master Lossless 24-bit WAV" : "Record Master Bus to Lossless 24-bit WAV"}
-                className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold tracking-wider flex items-center gap-1.5 border transition-all ${
-                  isRecording
-                    ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_8px_#ff3344] animate-pulse'
-                    : 'bg-[#101622] text-gray-400 border-[#222e42] hover:text-[#ff3344] hover:border-[#ff3344]/60'
-                }`}
-              >
-                <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white' : 'bg-[#ff3344]'}`} />
-                <span>{isRecording ? `STOP ${formatRecordTime(recordingSeconds)}` : '● REC 24-BIT'}</span>
-              </button>
+              <RecordButton onToggleRecord={toggleRecording} disabled={!isStarted} />
               <LEDButton label="OSC" active={visualizerMode === 'oscilloscope'} onClick={() => setVisualizerMode('oscilloscope')} color="cyan" size="sm" className="text-[8px] px-1.5 py-0.5" />
               <LEDButton label="FFT" active={visualizerMode === 'spectrum'} onClick={() => setVisualizerMode('spectrum')} color="amber" size="sm" className="text-[8px] px-1.5 py-0.5" />
               <LEDButton label="VEC" active={visualizerMode === 'lissajous'} onClick={() => setVisualizerMode('lissajous')} color="emerald" size="sm" className="text-[8px] px-1.5 py-0.5" />
@@ -1726,7 +1762,9 @@ export const Synth: React.FC = () => {
             />
             {/* Desktop Skin & Aesthetics Palette */}
             <div className="pl-2" style={{ borderLeft: '1px solid var(--panel-border)' }}>
-              <SkinPicker />
+              <Suspense fallback={null}>
+                <SkinPicker />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -1919,80 +1957,84 @@ export const Synth: React.FC = () => {
         {workspaceMode === 'groove' ? (
           <ErrorBoundary fallbackTitle="Groove Workstation" onReset={() => handleWorkspaceModeChange('synth')}>
             <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
-              <GrooveWorkspace
-                isPlaying={isDrumMachinePlaying}
-                onPlayToggle={handlePlayToggle}
-                isDrumPlaying={isDrumPlaying}
-                isDrumQueued={isDrumQueued}
-                onDrumPlayToggle={handleDrumPlayToggle}
-                isSeqPlaying={isSeqPlaying}
-                isSeqQueued={isSeqQueued}
-                onSeqPlayToggle={handleSeqPlayToggle}
-                bpm={bpm}
-                onBpmChange={setBpm}
-                swing={swing}
-                onSwingChange={setSwing}
-                currentBank={currentBankIndex}
-                onBankSelect={setCurrentBankIndex}
-                pattern={drumPattern}
-                onStepToggle={handleStepToggle}
-                trackSettings={drumSettings}
-                onTrackSettingsChange={handleDrumTrackSettingsChange}
-                trackLengths={drumTrackLengths}
-                onTrackLengthsChange={setDrumTrackLengths}
-                trackRatchets={drumTrackRatchets}
-                onTrackRatchetsChange={setDrumTrackRatchets}
-                engine={drumMachineEngine.current}
-                onPatternChange={handlePatternChange}
-                melodicPattern={melodicPattern}
-                onMelodicPatternChange={handleMelodicPatternChange}
-                onAuditionNote={handleAuditionNote}
-                arpParams={params.arpeggiator}
-                onArpChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
-                synthParams={params}
-                onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
-                selectedPresetName={selectedPresetName}
-                onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
-                onSwitchWorkspace={handleWorkspaceModeChange}
-                onMidiLearn={handleMidiLearn}
-                learningParamId={learningParamId}
-                mappedCCs={rawMappedCCs}
-              />
+              <Suspense fallback={<WorkspaceLoadingFallback />}>
+                <GrooveWorkspace
+                  isPlaying={isDrumMachinePlaying}
+                  onPlayToggle={handlePlayToggle}
+                  isDrumPlaying={isDrumPlaying}
+                  isDrumQueued={isDrumQueued}
+                  onDrumPlayToggle={handleDrumPlayToggle}
+                  isSeqPlaying={isSeqPlaying}
+                  isSeqQueued={isSeqQueued}
+                  onSeqPlayToggle={handleSeqPlayToggle}
+                  bpm={bpm}
+                  onBpmChange={setBpm}
+                  swing={swing}
+                  onSwingChange={setSwing}
+                  currentBank={currentBankIndex}
+                  onBankSelect={setCurrentBankIndex}
+                  pattern={drumPattern}
+                  onStepToggle={handleStepToggle}
+                  trackSettings={drumSettings}
+                  onTrackSettingsChange={handleDrumTrackSettingsChange}
+                  trackLengths={drumTrackLengths}
+                  onTrackLengthsChange={setDrumTrackLengths}
+                  trackRatchets={drumTrackRatchets}
+                  onTrackRatchetsChange={setDrumTrackRatchets}
+                  engine={drumMachineEngine.current}
+                  onPatternChange={handlePatternChange}
+                  melodicPattern={melodicPattern}
+                  onMelodicPatternChange={handleMelodicPatternChange}
+                  onAuditionNote={handleAuditionNote}
+                  arpParams={params.arpeggiator}
+                  onArpChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
+                  synthParams={params}
+                  onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+                  selectedPresetName={selectedPresetName}
+                  onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+                  onSwitchWorkspace={handleWorkspaceModeChange}
+                  onMidiLearn={handleMidiLearn}
+                  learningParamId={learningParamId}
+                  mappedCCs={rawMappedCCs}
+                />
+              </Suspense>
             </div>
           </ErrorBoundary>
         ) : workspaceMode === 'perform' ? (
           <ErrorBoundary fallbackTitle="Perform Deck" onReset={() => handleWorkspaceModeChange('synth')}>
             <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
-              <PerformWorkspace
-                synthParams={params}
-                audioEngine={audioEngine.current}
-                onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
-                onNoteOn={handleNoteOn}
-                onNoteOff={handleNoteOff}
-                activeNotes={activeNotes}
-                onPitchBendChange={handlePitchBendChange}
-                onModulationChange={handleModulationChange}
-                octaveOffset={octaveOffset}
-                onOctaveChange={setOctaveOffset}
-                isKeyboardMode={isKeyboardMode}
-                onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
-                keyboardLayout={keyboardLayout}
-                onChangeKeyboardLayout={setKeyboardLayout}
-                isDrumPlaying={isDrumPlaying}
-                isDrumQueued={isDrumQueued}
-                onDrumPlayToggle={handleDrumPlayToggle}
-                isSeqPlaying={isSeqPlaying}
-                isSeqQueued={isSeqQueued}
-                onSeqPlayToggle={handleSeqPlayToggle}
-                bpm={bpm}
-                onBpmChange={setBpm}
-                currentBank={currentBankIndex}
-                onBankSelect={setCurrentBankIndex}
-                drumEngine={drumMachineEngine.current}
-                onSwitchWorkspace={handleWorkspaceModeChange}
-                selectedPresetName={selectedPresetName}
-                onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
-              />
+              <Suspense fallback={<WorkspaceLoadingFallback />}>
+                <PerformWorkspace
+                  synthParams={params}
+                  audioEngine={audioEngine.current}
+                  onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+                  onNoteOn={handleNoteOn}
+                  onNoteOff={handleNoteOff}
+                  activeNotes={activeNotes}
+                  onPitchBendChange={handlePitchBendChange}
+                  onModulationChange={handleModulationChange}
+                  octaveOffset={octaveOffset}
+                  onOctaveChange={setOctaveOffset}
+                  isKeyboardMode={isKeyboardMode}
+                  onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
+                  keyboardLayout={keyboardLayout}
+                  onChangeKeyboardLayout={setKeyboardLayout}
+                  isDrumPlaying={isDrumPlaying}
+                  isDrumQueued={isDrumQueued}
+                  onDrumPlayToggle={handleDrumPlayToggle}
+                  isSeqPlaying={isSeqPlaying}
+                  isSeqQueued={isSeqQueued}
+                  onSeqPlayToggle={handleSeqPlayToggle}
+                  bpm={bpm}
+                  onBpmChange={setBpm}
+                  currentBank={currentBankIndex}
+                  onBankSelect={setCurrentBankIndex}
+                  drumEngine={drumMachineEngine.current}
+                  onSwitchWorkspace={handleWorkspaceModeChange}
+                  selectedPresetName={selectedPresetName}
+                  onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+                />
+              </Suspense>
             </div>
           </ErrorBoundary>
         ) : workspaceMode === 'fx' ? (
@@ -2190,17 +2232,19 @@ export const Synth: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex-1 min-h-0 flex flex-col">
-                  <MelodicSequencer
-                    pattern={melodicPattern}
-                    onChange={handleMelodicPatternChange}
-                    isPlaying={isSeqPlaying}
-                    bpm={bpm}
-                    drumPattern={drumPattern}
-                    onAuditionNote={handleAuditionNote}
-                    onMidiLearn={handleMidiLearn}
-                    learningParamId={learningParamId}
-                    mappedCCs={rawMappedCCs}
-                  />
+                  <Suspense fallback={<WorkspaceLoadingFallback />}>
+                    <MelodicSequencer
+                      pattern={melodicPattern}
+                      onChange={handleMelodicPatternChange}
+                      isPlaying={isSeqPlaying}
+                      bpm={bpm}
+                      drumPattern={drumPattern}
+                      onAuditionNote={handleAuditionNote}
+                      onMidiLearn={handleMidiLearn}
+                      learningParamId={learningParamId}
+                      mappedCCs={rawMappedCCs}
+                    />
+                  </Suspense>
                 </div>
 
                 {/* Real-Time Synth Sound Shaping & Quick Tweak Console */}
@@ -3197,17 +3241,19 @@ export const Synth: React.FC = () => {
                 </span>
                 <span className="text-[8px] font-mono text-[#00ff66]">16 STEPS</span>
               </div>
-              <MelodicSequencer
-                pattern={melodicPattern}
-                onChange={handleMelodicPatternChange}
-                isPlaying={isSeqPlaying}
-                bpm={bpm}
-                drumPattern={drumPattern}
-                onAuditionNote={handleAuditionNote}
-                onMidiLearn={handleMidiLearn}
-                learningParamId={learningParamId}
-                mappedCCs={rawMappedCCs}
-              />
+              <Suspense fallback={<WorkspaceLoadingFallback />}>
+                <MelodicSequencer
+                  pattern={melodicPattern}
+                  onChange={handleMelodicPatternChange}
+                  isPlaying={isSeqPlaying}
+                  bpm={bpm}
+                  drumPattern={drumPattern}
+                  onAuditionNote={handleAuditionNote}
+                  onMidiLearn={handleMidiLearn}
+                  learningParamId={learningParamId}
+                  mappedCCs={rawMappedCCs}
+                />
+              </Suspense>
             </div>
           </div>
           )}
@@ -3216,40 +3262,42 @@ export const Synth: React.FC = () => {
           {activeTab === 'drums' && (
           <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1 flex flex-col min-h-0">
-              <GrooveWorkspace
-                isPlaying={isDrumMachinePlaying}
-                onPlayToggle={handlePlayToggle}
-                isDrumPlaying={isDrumPlaying}
-                isDrumQueued={isDrumQueued}
-                onDrumPlayToggle={handleDrumPlayToggle}
-                isSeqPlaying={isSeqPlaying}
-                isSeqQueued={isSeqQueued}
-                onSeqPlayToggle={handleSeqPlayToggle}
-                bpm={bpm}
-                onBpmChange={setBpm}
-                swing={swing}
-                onSwingChange={setSwing}
-                currentBank={currentBankIndex}
-                onBankSelect={setCurrentBankIndex}
-                pattern={drumPattern}
-                onStepToggle={handleStepToggle}
-                trackSettings={drumSettings}
-                onTrackSettingsChange={handleDrumTrackSettingsChange}
-                trackLengths={drumTrackLengths}
-                onTrackLengthsChange={setDrumTrackLengths}
-                trackRatchets={drumTrackRatchets}
-                onTrackRatchetsChange={setDrumTrackRatchets}
-                engine={drumMachineEngine.current}
-                onPatternChange={handlePatternChange}
-                synthParams={params}
-                onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
-                selectedPresetName={selectedPresetName}
-                onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
-                onSwitchWorkspace={handleWorkspaceModeChange}
-                onMidiLearn={handleMidiLearn}
-                learningParamId={learningParamId}
-                mappedCCs={rawMappedCCs}
-              />
+              <Suspense fallback={<WorkspaceLoadingFallback />}>
+                <GrooveWorkspace
+                  isPlaying={isDrumMachinePlaying}
+                  onPlayToggle={handlePlayToggle}
+                  isDrumPlaying={isDrumPlaying}
+                  isDrumQueued={isDrumQueued}
+                  onDrumPlayToggle={handleDrumPlayToggle}
+                  isSeqPlaying={isSeqPlaying}
+                  isSeqQueued={isSeqQueued}
+                  onSeqPlayToggle={handleSeqPlayToggle}
+                  bpm={bpm}
+                  onBpmChange={setBpm}
+                  swing={swing}
+                  onSwingChange={setSwing}
+                  currentBank={currentBankIndex}
+                  onBankSelect={setCurrentBankIndex}
+                  pattern={drumPattern}
+                  onStepToggle={handleStepToggle}
+                  trackSettings={drumSettings}
+                  onTrackSettingsChange={handleDrumTrackSettingsChange}
+                  trackLengths={drumTrackLengths}
+                  onTrackLengthsChange={setDrumTrackLengths}
+                  trackRatchets={drumTrackRatchets}
+                  onTrackRatchetsChange={setDrumTrackRatchets}
+                  engine={drumMachineEngine.current}
+                  onPatternChange={handlePatternChange}
+                  synthParams={params}
+                  onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+                  selectedPresetName={selectedPresetName}
+                  onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+                  onSwitchWorkspace={handleWorkspaceModeChange}
+                  onMidiLearn={handleMidiLearn}
+                  learningParamId={learningParamId}
+                  mappedCCs={rawMappedCCs}
+                />
+              </Suspense>
             </div>
           </div>
           )}
@@ -3344,23 +3392,27 @@ export const Synth: React.FC = () => {
         </div>
       </footer>
 
-      {/* Studio Preset Browser Modal */}
-      <PresetBrowser
-        isOpen={isPresetBrowserOpen}
-        onClose={() => {
-          setIsPresetBrowserOpen(false);
-          try {
-            const saved = localStorage.getItem('subtractive_user_presets');
-            if (saved) setUserPresets(JSON.parse(saved));
-          } catch {}
-        }}
-        currentPresetName={selectedPresetName}
-        onSelectPreset={(p) => {
-          setParams(patchParams(DEFAULT_SYNTH_PARAMS, p.params));
-          setSelectedPresetName(p.name);
-        }}
-        currentParams={params}
-      />
+      {/* Studio Preset Browser Modal / Dock */}
+      {isPresetBrowserOpen && (
+        <Suspense fallback={null}>
+          <PresetBrowser
+            isOpen={isPresetBrowserOpen}
+            onClose={() => {
+              setIsPresetBrowserOpen(false);
+              try {
+                const saved = localStorage.getItem('subtractive_user_presets');
+                if (saved) setUserPresets(JSON.parse(saved));
+              } catch {}
+            }}
+            currentPresetName={selectedPresetName}
+            onSelectPreset={(p) => {
+              setParams(patchParams(DEFAULT_SYNTH_PARAMS, p.params));
+              setSelectedPresetName(p.name);
+            }}
+            currentParams={params}
+          />
+        </Suspense>
+      )}
 
     </div>
   );
