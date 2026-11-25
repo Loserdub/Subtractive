@@ -1,4 +1,5 @@
 import React from 'react';
+import './components/instrument.css';
 import { Synth } from './components/Synth';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { ThemeBackground } from './components/ThemeBackground';

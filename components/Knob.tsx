@@ -479,7 +479,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
       {/* Label Underneath with MIDI Learn indicator and CC tag */}
       <div className="flex flex-col items-center mt-1.5 max-w-full overflow-hidden px-0.5">
         <span 
-          className="text-[7.5px] md:text-[8.5px] font-bold tracking-wider uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
+          className="text-[9px] md:text-[10px] font-semibold tracking-normal uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
           style={{ color: isLearning ? '#ffaa00' : hasMod ? activeModTheme.stroke : 'var(--text-label)' }}
           title={label}
         >

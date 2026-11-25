@@ -180,6 +180,8 @@ export type DrumTrackLengths = Record<DrumTrackName, number>;
 export type DrumTrackRatchets = Record<DrumTrackName, number[]>;
 
 export interface DrumTrackSettings {
+  muted?: boolean;
+  solo?: boolean;
   volume: number; // 0 to 1
   pan: number; // -1 to 1
   decay: number; // seconds multiplier

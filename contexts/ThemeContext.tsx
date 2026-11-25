@@ -133,7 +133,7 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'solar-aurora',
+  theme: 'obsidian-minimal',
   setTheme: () => {},
   themeDefinition: THEMES[0],
 });
@@ -147,7 +147,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (stored === 'cyberpunk-crt') return 'tokyo-neon';
       if (stored && THEMES.some(t => t.id === stored)) return stored;
     } catch {}
-    return 'solar-aurora';
+    return 'obsidian-minimal';
   });
 
   const setTheme = useCallback((newTheme: SynthTheme) => {

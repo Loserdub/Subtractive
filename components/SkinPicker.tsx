@@ -32,8 +32,9 @@ export const SkinPicker: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen(v => !v)}
+        aria-label="Choose synth skin"
         title="Open Synthesizer Skin & Aesthetic Palette"
-        className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm border transition-all cursor-pointer shadow-sm group"
+        className="skin-trigger flex items-center gap-1.5 px-2.5 py-1 rounded-sm border transition-all cursor-pointer shadow-sm group"
         style={{
           background: 'var(--btn-inactive-bg)',
           borderColor: isOpen ? 'var(--tab-active-border)' : 'var(--panel-border)',

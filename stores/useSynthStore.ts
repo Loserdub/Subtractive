@@ -8,7 +8,7 @@ import {
   WorkspaceMode, 
   MelodicSequencerPattern, 
   DrumTrackLengths, 
-  DrumTrackRatchets 
+  DrumTrackRatchets, StepParameterLocks
 } from '../types';
 import { TransportQuantizeMode } from '../services/DrumMachineEngine';
 import { 
@@ -22,7 +22,7 @@ import {
 } from '../constants';
 import { patchParams, DeepPartial } from '../utils/patchParams';
 
-export type MobileTab = 'vco' | 'vcf' | 'env' | 'fx' | 'arp' | 'seq' | 'drums' | 'keys';
+export type MobileTab = 'vco' | 'vcf' | 'env' | 'fx' | 'arp' | 'seq' | 'drums' | 'keys' | 'perform';
 export type VisualizerMode = 'oscilloscope' | 'spectrum' | 'lissajous';
 
 export interface SynthStoreState {
@@ -465,3 +465,29 @@ export const useSynthStore = create<SynthStoreState>((set) => ({
       };
     })
 }));
+
+// A single gesture may change several controls, as on the Perform macros.
+export function recordParameterChange(next: SynthParameters) {
+  const state = useSynthStore.getState();
+  const pattern = state.melodicBanks[state.currentBankIndex];
+  if (pattern?.motionRecording && state.runningStep !== null && state.isDrumMachinePlaying) {
+    const values = (p: SynthParameters) => ({
+      cutoff: p.filter.cutoff, resonance: p.filter.resonance, drive: p.fx.drive.amount,
+      reverbMix: p.fx.reverb.mix, delayMix: p.fx.delay.mix, subGain: p.subGain,
+    });
+    const before = values(state.params);
+    const after = values(next);
+    const locks: StepParameterLocks = {};
+    for (const key of Object.keys(before) as (keyof typeof before)[]) {
+      if (before[key] !== after[key]) locks[key] = after[key];
+    }
+    if (Object.keys(locks).length) {
+      const index = state.runningStep % pattern.length;
+      const steps = [...pattern.steps];
+      steps[index] = { ...steps[index], pLocks: { ...steps[index].pLocks, ...locks } };
+      state.setMelodicBanks(banks => banks.map((bank, i) =>
+        i === state.currentBankIndex ? { ...bank, steps } : bank));
+    }
+  }
+  state.setParams(next);
+}

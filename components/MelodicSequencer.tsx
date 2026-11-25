@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import { MotionLane } from './MotionLane';
 import { Knob } from './Knob';
 import { LEDButton } from './Switch';
 import { 
@@ -200,7 +201,7 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
         <div className="flex items-center gap-2">
           <div className="w-2.5 h-2.5 rounded-full bg-[#a855f7] shadow-[0_0_8px_#a855f7]" />
           <span className="font-mono text-[10px] md:text-xs font-black tracking-widest uppercase text-[#c084fc]">
-            SYNTH MELODIC MOTION SEQUENCER (P-LOCKS)
+            Melodic sequencer
           </span>
           
           <button
@@ -388,9 +389,9 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
       </div>
 
       {/* ── 16 Step Buttons Matrix ── */}
-      <div className="w-full overflow-x-auto pb-1">
-        <div className="flex items-center justify-between gap-1 min-w-[640px] px-0.5">
-          {pattern.steps.map((step, index) => {
+      <div className="motion-viewport w-full overflow-x-auto pb-1">
+        <div className="motion-scroll"><div className="motion-notes">
+          {safePattern.steps.map((step, index) => {
             const isCurrentStep = index === currentStep && isPlaying;
             const isSelected = index === selectedStepIndex;
             const isDownbeat = index % 4 === 0;
@@ -416,7 +417,7 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
             }
 
             return (
-              <div key={index} className="flex-1 flex flex-col gap-1 min-w-[34px] max-w-[56px]">
+              <div key={index} className="flex flex-col gap-1 min-w-0">
                 <button
                   type="button"
                   onClick={() => handleStepToggle(index)}
@@ -487,6 +488,8 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
               </div>
             );
           })}
+        </div>
+        <MotionLane pattern={safePattern} onChange={onChange} current={isPlaying ? currentStep : null} />
         </div>
       </div>
 

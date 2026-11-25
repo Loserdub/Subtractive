@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { SynthParameters, Waveform, FilterType, StepSequencePattern, DrumTrackName, LFOTarget, VoiceMode, DrumTrackSettings, PresetPatch, WorkspaceMode, MelodicSequencerPattern, DrumTrackLengths, DrumTrackRatchets } from '../types';
 import { patchParams } from '../utils/patchParams';
-import { useSynthStore, MobileTab, VisualizerMode } from '../stores/useSynthStore';
+import { useSynthStore, recordParameterChange, MobileTab, VisualizerMode } from '../stores/useSynthStore';
+import { effectiveDrumSettings, useSceneStore } from '../stores/useSceneStore';
 import { AudioEngine } from '../services/AudioEngine';
 import { DrumMachineEngine, TransportState, TransportQuantizeMode } from '../services/DrumMachineEngine';
 import { Knob } from './Knob';
@@ -13,7 +14,8 @@ import { DEFAULT_SYNTH_PARAMS, DEFAULT_BPM, DEFAULT_DRUM_PATTERN, DEFAULT_DRUM_T
 import { SineIcon, SawtoothIcon, SquareIcon, TriangleIcon } from './Icon';
 import { WaveformDisplay } from './WaveformDisplay';
 import { VUMeter } from './VUMeter';
-import { FilterResponseCurve } from './FilterResponseCurve';
+import { FilterModulation } from './FilterModulation';
+import { PowerPanel } from './PowerPanel';
 import { EnvelopeEditor } from './EnvelopeEditor';
 import { AudioRecorder } from '../services/AudioRecorder';
 import { MidiManager } from '../services/MidiManager';
@@ -43,26 +45,9 @@ interface PanelProps {
 }
 
 const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, className = "" }) => {
-  const badgeGlows = {
-    cyan:    'bg-[#10b981] shadow-[0_0_8px_#10b981]',
-    amber:   'bg-[#ffaa00] shadow-[0_0_8px_#ffaa00]',
-    emerald: 'bg-[#00ff66] shadow-[0_0_8px_#00ff66]',
-    red:     'bg-[#ff3344] shadow-[0_0_8px_#ff3344]',
-  };
-
   return (
-    <div className={`synth-panel rounded-md p-2 md:p-2.5 flex flex-col items-center select-none relative shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_4px_16px_rgba(0,0,0,0.6)] ${className}`}>
-      {/* Module Title Header Bar — Contained INSIDE the panel */}
-      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-2 rounded-sm border shadow-[inset_0_1px_0_rgba(255,255,255,0.06),inset_0_2px_4px_rgba(0,0,0,0.4)] shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
-        <div className="flex items-center gap-1.5 overflow-hidden">
-          <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${badgeGlows[badgeColor]}`} />
-          <span className="font-mono text-[9px] md:text-[10px] font-black tracking-[0.16em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>{title}</span>
-        </div>
-        <div className="flex items-center gap-1 opacity-40">
-          <div className="w-1 h-1 rounded-full bg-white/40" />
-          <div className="w-1 h-1 rounded-full bg-white/40" />
-        </div>
-      </div>
+    <div className={`synth-panel sound-module rounded-md p-2 md:p-2.5 flex flex-col items-center select-none relative ${className}`}>
+      <h2 className="sound-module-title" data-accent={badgeColor}>{title}</h2>
       <div className="w-full flex-1 flex flex-col min-h-0">
         {children}
       </div>
@@ -244,6 +229,7 @@ export const Synth: React.FC = () => {
         arp: 'arp',
         seq: 'seq',
         groove: 'drums',
+        perform: 'perform',
       };
       const mappedTab = mobileTabMap[mode];
       if (mappedTab) setActiveTab(mappedTab);
@@ -457,83 +443,107 @@ export const Synth: React.FC = () => {
   const audioEngine = useRef<AudioEngine | null>(null);
   const drumMachineEngine = useRef<DrumMachineEngine | null>(null);
 
+  const syncedSettings = useRef<typeof drumSettings | null>(null);
+  const syncDrumSettings = (settings: typeof drumSettings, time?: number) => {
+    if (!drumMachineEngine.current || syncedSettings.current === settings) return;
+    for (const track of Object.keys(settings) as DrumTrackName[]) {
+      drumMachineEngine.current.setTrackSettings(track, effectiveDrumSettings(settings, track), time);
+    }
+    syncedSettings.current = settings;
+  };
+
+  useEffect(() => { syncDrumSettings(drumSettings); }, [drumSettings]);
+
   // Keep Melodic Pattern synced to Drum Engine
   useEffect(() => {
-    if (drumMachineEngine.current) {
-      drumMachineEngine.current.setMelodicPattern(melodicPattern);
-      drumMachineEngine.current.setOnScheduleMelodicStep((time, stepIndex, step, stepDuration) => {
-        audioEngine.current?.scheduleSequencerStep(time, step, stepDuration, melodicPattern.octave);
-      });
-    }
+    drumMachineEngine.current?.setMelodicPattern(melodicPattern);
   }, [melodicPattern]);
 
+  const starting = useRef(false);
   const handleStart = useCallback(async () => {
-    if (isStarted) return;
-    
-    const engine = new AudioEngine(params);
-    await engine.start();
-    const audioContext = engine.getContext();
-    if (!audioContext) {
-      setMidiStatus('AudioContext Error');
-      return;
-    }
-    audioEngine.current = engine;
-    audioEngine.current.setBpm(bpm);
-    audioEngine.current.setArpStepCallback((step, note) => {
-      setArpActiveStep(step >= 0 ? step : null);
-      setArpActiveNote(note);
-    });
-    
-    drumMachineEngine.current = new DrumMachineEngine(audioContext, undefined, engine.getMasterGainNode());
-    drumMachineEngine.current.subscribeStep((step) => setRunningStep(step));
-    drumMachineEngine.current.subscribeTransport((tState) => {
-      setTransportState(tState);
-    });
-    drumMachineEngine.current.setPattern(drumPattern);
-    drumMachineEngine.current.setMelodicPattern(melodicPattern);
-    drumMachineEngine.current.setOnScheduleMelodicStep((time, stepIndex, step, stepDuration) => {
-      audioEngine.current?.scheduleSequencerStep(time, step, stepDuration, melodicPattern.octave);
-    });
-    drumMachineEngine.current.setSwing(swing);
-    drumMachineEngine.current.setBpm(bpm);
-    drumMachineEngine.current.setQuantizeMode(quantizeMode);
-    Object.entries(drumSettings).forEach(([track, settings]) => {
-      drumMachineEngine.current?.setTrackSettings(track as DrumTrackName, settings);
-    });
-    drumMachineEngine.current.setTrackLengths(drumTrackLengths);
-    drumMachineEngine.current.setTrackRatchets(drumTrackRatchets);
+    if (isStarted || starting.current) return;
+    starting.current = true;
+    try {
+      const engine = new AudioEngine(params);
+      await engine.start();
+      const audioContext = engine.getContext();
+      if (!audioContext) {
+        setMidiStatus('AudioContext Error');
+        return;
+      }
+      audioEngine.current = engine;
+      audioEngine.current.setBpm(bpm);
+      audioEngine.current.setArpStepCallback((step, note) => {
+        setArpActiveStep(step >= 0 ? step : null);
+        setArpActiveNote(note);
+      });
 
-    setIsStarted(true);
-    setMidiStatus('MIDI Initializing...');
+      drumMachineEngine.current = new DrumMachineEngine(audioContext, undefined, engine.getMasterGainNode());
+      drumMachineEngine.current.subscribeStep((step) => {
+        setRunningStep(step);
+        if (step === null) useSceneStore.setState({ queued: null });
+      });
+      drumMachineEngine.current.onBarStart = (time) => {
+        const memory = useSceneStore.getState();
+        if (memory.queued === null) return;
+        memory.recall(memory.queued);
+        const state = useSynthStore.getState();
+        const drums = drumMachineEngine.current!;
+        drums.setPattern(state.banks[state.currentBankIndex]);
+        drums.setMelodicPattern(state.melodicBanks[state.currentBankIndex]);
+        drums.setTrackLengths(state.drumTrackLengths);
+        drums.setTrackRatchets(state.drumTrackRatchets);
+        syncDrumSettings(state.drumSettings, time);
+        engine.updateParams(state.params, time);
+      };
+      drumMachineEngine.current.subscribeTransport((tState) => {
+        setTransportState(tState);
+      });
+      drumMachineEngine.current.setPattern(drumPattern);
+      drumMachineEngine.current.setMelodicPattern(melodicPattern);
+      drumMachineEngine.current.setOnScheduleMelodicStep((time, stepIndex, step, stepDuration) => {
+        const state = useSynthStore.getState();
+        engine.scheduleSequencerStep(time, step, stepDuration, state.melodicBanks[state.currentBankIndex]?.octave ?? 0);
+      });
+      drumMachineEngine.current.setSwing(swing);
+      drumMachineEngine.current.setBpm(bpm);
+      drumMachineEngine.current.setQuantizeMode(quantizeMode);
+      syncDrumSettings(drumSettings);
+      drumMachineEngine.current.setTrackLengths(drumTrackLengths);
+      drumMachineEngine.current.setTrackRatchets(drumTrackRatchets);
+
+      setIsStarted(true);
+      setMidiStatus('MIDI Initializing...');
 
 
-    const midiMgr = new MidiManager({
-      onStatusChange: (status) => {
-        setMidiStatus(status.deviceName);
-      },
-      onParamChange: (paramId, val) => {
-        handleMidiParamChange(paramId, val);
-      },
-      onNoteOn: (note, vel) => {
-        audioEngine.current?.noteOn(note, vel);
-        noteOn(note);
-      },
-      onNoteOff: (note) => {
-        audioEngine.current?.noteOff(note);
-        noteOff(note);
-      },
-      onPitchBend: (val) => {
-        audioEngine.current?.setPitchBend(val);
-      },
-      onModWheel: (val) => {
-        audioEngine.current?.setModulation(val);
-        setParams(p => patchParams(p, { lfo: { depth: val } }));
-      },
-    });
+      const midiMgr = new MidiManager({
+        onStatusChange: (status) => {
+          setMidiStatus(status.deviceName);
+        },
+        onParamChange: (paramId, val) => {
+          handleMidiParamChange(paramId, val);
+        },
+        onNoteOn: (note, vel) => {
+          audioEngine.current?.noteOn(note, vel);
+          noteOn(note);
+        },
+        onNoteOff: (note) => {
+          audioEngine.current?.noteOff(note);
+          noteOff(note);
+        },
+        onPitchBend: (val) => {
+          audioEngine.current?.setPitchBend(val);
+        },
+        onModWheel: (val) => {
+          audioEngine.current?.setModulation(val);
+          setParams(p => patchParams(p, { lfo: { depth: val } }));
+        },
+      });
 
-    await midiMgr.initialize();
-    midiManagerRef.current = midiMgr;
-  }, [isStarted, params, drumPattern, swing, drumSettings, bpm, handleMidiParamChange]);
+      await midiMgr.initialize();
+      midiManagerRef.current = midiMgr;
+    } finally { starting.current = false; }
+  }, [isStarted, params, drumPattern, melodicPattern, swing, drumSettings, drumTrackLengths, drumTrackRatchets, quantizeMode, bpm, handleMidiParamChange]);
 
   const handleDrumPlayToggle = useCallback(async () => {
     if (!isStarted) {
@@ -693,9 +703,7 @@ export const Synth: React.FC = () => {
       [track]: { ...drumSettings[track], ...settings }
     };
     setDrumSettings(newSettings);
-    if (drumMachineEngine.current) {
-      drumMachineEngine.current.setTrackSettings(track, settings);
-    }
+
   };
   
   const handleStepToggle = (track: DrumTrackName, stepIndex: number) => {
@@ -868,11 +876,14 @@ export const Synth: React.FC = () => {
 
   // Global window computer keyboard musical typing listener
   useEffect(() => {
+    if (!isStarted) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       // Ignore if user is typing in a text field, input, or contenteditable
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement ||
+        ((e.key === 'Enter' || e.key === ' ') && (e.target as HTMLElement)?.closest('button')) ||
         (e.target as HTMLElement)?.isContentEditable
       ) {
         return;
@@ -902,7 +913,7 @@ export const Synth: React.FC = () => {
       // Global Shortcut: Cmd/Ctrl + K toggles Preset Vault
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        setIsPresetBrowserOpen(prev => !prev);
+        setIsPresetBrowserOpen(!useSynthStore.getState().isPresetBrowserOpen);
         return;
       }
 
@@ -988,6 +999,8 @@ export const Synth: React.FC = () => {
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement ||
+        ((e.key === 'Enter' || e.key === ' ') && (e.target as HTMLElement)?.closest('button')) ||
         (e.target as HTMLElement)?.isContentEditable
       ) {
         return;
@@ -1027,7 +1040,7 @@ export const Synth: React.FC = () => {
       activeKeysMapRef.current.forEach(note => handleNoteOff(note));
       activeKeysMapRef.current.clear();
     };
-  }, [isKeyboardMode, keyboardLayout, octaveOffset, isPresetBrowserOpen, handleNoteOn, handleNoteOff, handlePlayToggle, undo, redo]);
+  }, [isStarted, isKeyboardMode, keyboardLayout, octaveOffset, isPresetBrowserOpen, handleNoteOn, handleNoteOff, handlePlayToggle, undo, redo]);
 
   const setOscWaveform = (osc: 'osc1' | 'osc2' | 'osc3' | 'osc4', waveform: Waveform) => {
     setParams(p => patchParams(p, { [osc]: { waveform } }));
@@ -1209,205 +1222,43 @@ export const Synth: React.FC = () => {
     );
   };
 
-  // Allow Enter or Spacebar on start screen to initiate engine
-  useEffect(() => {
-    if (isStarted) return;
-    const handleStartKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement ||
-        (e.target as HTMLElement)?.isContentEditable
-      ) {
-        return;
-      }
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        handleStart();
-      }
-    };
-    window.addEventListener('keydown', handleStartKeyDown);
-    return () => window.removeEventListener('keydown', handleStartKeyDown);
-  }, [isStarted, handleStart]);
+  const performanceDeck = (
+    <Suspense fallback={<WorkspaceLoadingFallback />}>
+      <PerformWorkspace
+        synthParams={params}
+        audioEngine={audioEngine.current}
+        onSynthParamChange={(patch) => recordParameterChange(patchParams(useSynthStore.getState().params, patch))}
+        onNoteOn={handleNoteOn}
+        onNoteOff={handleNoteOff}
+        activeNotes={activeNotes}
+        onPitchBendChange={handlePitchBendChange}
+        onModulationChange={handleModulationChange}
+        octaveOffset={octaveOffset}
+        onOctaveChange={setOctaveOffset}
+        isKeyboardMode={isKeyboardMode}
+        onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
+        keyboardLayout={keyboardLayout}
+        onChangeKeyboardLayout={setKeyboardLayout}
+        isDrumPlaying={isDrumPlaying}
+        isDrumQueued={isDrumQueued}
+        onDrumPlayToggle={handleDrumPlayToggle}
+        isSeqPlaying={isSeqPlaying}
+        isSeqQueued={isSeqQueued}
+        onSeqPlayToggle={handleSeqPlayToggle}
+        bpm={bpm}
+        onBpmChange={setBpm}
+        currentBank={currentBankIndex}
+        onBankSelect={setCurrentBankIndex}
+        drumEngine={drumMachineEngine.current}
+        onSwitchWorkspace={handleWorkspaceModeChange}
+        selectedPresetName={selectedPresetName}
+        onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
+      />
+    </Suspense>
+  );
 
   if (!isStarted) {
-    return (
-      <div 
-        className="h-full w-full flex flex-col items-center justify-center p-3 sm:p-6 relative overflow-y-auto select-none"
-        style={{
-          background: 'radial-gradient(ellipse 90% 60% at 50% 10%, rgba(16, 185, 129, 0.12) 0%, transparent 60%), radial-gradient(ellipse 70% 50% at 50% 90%, rgba(56, 189, 248, 0.08) 0%, transparent 70%), #06080d'
-        }}
-      >
-        {/* Subtle Matrix / Studio Grid Background */}
-        <div 
-          className="absolute inset-0 pointer-events-none opacity-20"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px)`,
-            backgroundSize: '32px 32px'
-          }}
-        />
-
-        {/* Modern Monolith Chassis Card */}
-        <div className="max-w-2xl w-full p-5 sm:p-7 rounded-xl text-center flex flex-col items-center relative shadow-[0_24px_80px_rgba(0,0,0,0.9)] my-auto bg-[#090c14]/95 border border-white/[0.08] backdrop-blur-2xl">
-          {/* Subtle Accent Glow Line at Top Edge */}
-          <div className="absolute top-0 left-1/4 right-1/4 h-[1px] bg-gradient-to-r from-transparent via-[#10b981]/80 to-transparent pointer-events-none" />
-
-          {/* Futuristic Audio Emblem & Branding */}
-          <div className="flex flex-col items-center gap-1 mb-4">
-            <div className="relative flex items-center justify-center mb-1">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#10b981]/25 via-[#062017] to-[#040e0b] border border-[#10b981]/40 flex items-center justify-center shadow-[0_0_24px_rgba(16,185,129,0.3)]">
-                <span className="font-brand font-black text-2xl text-[#10b981] transform skew-x-[-6deg] drop-shadow-[0_0_8px_#10b981]">
-                  S
-                </span>
-              </div>
-              <div className="absolute -inset-1 rounded-2xl border border-[#10b981]/20 animate-pulse pointer-events-none" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-brand font-black tracking-[0.25em] uppercase text-white drop-shadow-[0_2px_12px_rgba(255,255,255,0.15)]">
-                SUBTRACTIVE
-              </h1>
-              <span className="text-[8px] sm:text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#10b981]/15 border border-[#10b981]/40 text-[#10b981]">
-                v2.0
-              </span>
-            </div>
-
-            <p className="font-mono text-[9px] sm:text-xs text-gray-400 tracking-wider uppercase font-semibold">
-              Analog Modeling Synthesizer Workstation
-            </p>
-
-            <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1.5">
-              <span className="text-[7.5px] sm:text-[8px] font-mono px-2 py-0.5 rounded-full bg-[#121927] border border-[#1e2a3e] text-gray-300">
-                ⚡ WEB AUDIO DSP
-              </span>
-              <span className="text-[7.5px] sm:text-[8px] font-mono px-2 py-0.5 rounded-full bg-[#121927] border border-[#1e2a3e] text-gray-300">
-                🔊 24-BIT LOSSLESS
-              </span>
-              <span className="text-[7.5px] sm:text-[8px] font-mono px-2 py-0.5 rounded-full bg-[#121927] border border-[#1e2a3e] text-gray-300">
-                🎹 DUAL TOUCH KEYBED
-              </span>
-            </div>
-          </div>
-
-          {/* Central Power / Initiate Monolith Trigger Unit */}
-          <div className="w-full flex flex-col items-center justify-center p-3.5 sm:p-5 rounded-lg border border-white/[0.08] bg-[#04060b] shadow-[inset_0_2px_12px_rgba(0,0,0,0.95)] relative mb-4">
-            <button
-              type="button"
-              onClick={handleStart}
-              className="w-full group flex flex-col items-center justify-center py-4 sm:py-5 px-4 rounded-md bg-gradient-to-b from-[#0a241c] via-[#051510] to-[#030d0a] border-2 border-[#10b981]/80 hover:border-[#10b981] active:scale-[0.99] transition-all cursor-pointer shadow-[0_0_24px_rgba(16,185,129,0.3)] hover:shadow-[0_0_36px_rgba(16,185,129,0.5)]"
-            >
-              <div className="flex items-center gap-2.5 mb-1.5">
-                <div className="w-3.5 h-3.5 rounded-full bg-[#10b981] shadow-[0_0_10px_#10b981] group-hover:scale-110 transition-transform flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
-                </div>
-                <span className="font-brand font-black text-sm sm:text-base tracking-[0.2em] text-white uppercase group-hover:text-emerald-100 transition-colors">
-                  INITIALIZE SYNTHESIZER ENGINE
-                </span>
-              </div>
-              <span className="font-mono text-[8.5px] sm:text-[10px] text-[#10b981] tracking-widest uppercase font-bold group-hover:underline">
-                [ TAP TO START • SPACEBAR / ENTER ]
-              </span>
-            </button>
-
-            {/* Live System Telemetry Status Bar */}
-            <div className="mt-3 flex flex-wrap items-center justify-between w-full px-1 text-[8px] sm:text-[9px] font-mono text-gray-400 gap-1">
-              <span className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] shadow-[0_0_4px_#10b981]" />
-                <span className="font-semibold text-gray-300">DSP CORE: READY</span>
-              </span>
-              <span className="flex items-center gap-1.5 text-gray-400">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#38bdf8] shadow-[0_0_4px_#38bdf8]" />
-                <span>STEREO 48kHz / 96kHz</span>
-              </span>
-              <span className="flex items-center gap-1.5 text-gray-300 uppercase truncate max-w-[200px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ffaa00] shadow-[0_0_4px_#ffaa00]" />
-                <span>{midiStatus || 'MIDI READY'}</span>
-              </span>
-            </div>
-          </div>
-
-          {/* 3 Modern Feature Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5 w-full text-left">
-            {/* Card 1: Workspaces */}
-            <div className="p-3 rounded-lg bg-[#070a12]/80 border border-white/[0.06] hover:border-[#10b981]/30 transition-all flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] sm:text-[9.5px] font-mono font-bold text-[#10b981] uppercase tracking-wider flex items-center gap-1.5">
-                  <span>🎛️</span> WORKSPACES
-                </span>
-                <span className="text-[7.5px] font-mono text-gray-500 font-bold">1–5</span>
-              </div>
-              <p className="text-[8px] sm:text-[8.5px] font-mono text-gray-400 leading-relaxed">
-                5 dedicated views: Synth Lab, Studio FX, Arp & Seq, Groove Box, and Live Perform.
-              </p>
-            </div>
-
-            {/* Card 2: Playing Notes */}
-            <div className="p-3 rounded-lg bg-[#070a12]/80 border border-white/[0.06] hover:border-[#ffaa00]/30 transition-all flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] sm:text-[9.5px] font-mono font-bold text-[#ffaa00] uppercase tracking-wider flex items-center gap-1.5">
-                  <span>🎹</span> TOUCH & KEYS
-                </span>
-                <span className="text-[7.5px] font-mono text-gray-500 font-bold">\ HOTKEY</span>
-              </div>
-              <p className="text-[8px] sm:text-[8.5px] font-mono text-gray-400 leading-relaxed">
-                Multi-touch glissando, 1-Oct & 2-Oct zoom, pitch/mod wheels, and typing keys <span className="text-white font-bold">A–L</span>.
-              </p>
-            </div>
-
-            {/* Card 3: Production Suite */}
-            <div className="p-3 rounded-lg bg-[#070a12]/80 border border-white/[0.06] hover:border-[#38bdf8]/30 transition-all flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] sm:text-[9.5px] font-mono font-bold text-[#38bdf8] uppercase tracking-wider flex items-center gap-1.5">
-                  <span>⚡</span> PRODUCTION
-                </span>
-                <span className="text-[7.5px] font-mono text-gray-500 font-bold">WAV REC</span>
-              </div>
-              <p className="text-[8px] sm:text-[8.5px] font-mono text-gray-400 leading-relaxed">
-                Master analog chorus & delay, tape reverb, MIDI Learn, and 24-bit lossless WAV recording.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Start Screen Bottom Bar: Author & Official Website */}
-        <footer 
-          className="w-full max-w-2xl mt-3 px-3 py-1.5 rounded-lg border border-white/[0.07] bg-[#07090e]/80 flex items-center justify-between text-[9px] sm:text-[10px] font-mono select-none shadow-md backdrop-blur-md"
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="flex items-center gap-1.5 font-bold tracking-widest text-white uppercase text-[8px] sm:text-[9px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_6px_#10b981]" />
-              SUBTRACTIVE
-            </span>
-            <span className="text-gray-600 hidden sm:inline">•</span>
-            <span className="truncate text-gray-400">
-              CREATED BY{' '}
-              <a 
-                href="https://trustnodelogic.com/#person" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="font-bold text-white hover:text-[#10b981] transition-colors underline decoration-dotted underline-offset-2"
-                title="Justin Ray — Creative Technologist & DSP Engineer"
-              >
-                JUSTIN RAY
-              </a>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <a
-              href="https://trustnodelogic.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/10 hover:border-[#10b981]/50 bg-black/40 hover:bg-black/60 text-gray-300 hover:text-white transition-all group shadow-xs"
-              title="Visit Trust Node Logic — Official Website of Justin Ray"
-            >
-              <span className="text-[#10b981] group-hover:scale-110 transition-transform">🌐</span>
-              <span className="font-bold tracking-wider">trustnodelogic.com</span>
-              <span className="text-[8px] text-gray-500 group-hover:text-[#10b981] transition-colors">↗</span>
-            </a>
-          </div>
-        </footer>
-      </div>
-    );
+    return <PowerPanel onStart={handleStart} />;
   }
 
   return (
@@ -1433,7 +1284,7 @@ export const Synth: React.FC = () => {
               <h1 className="font-brand font-bold text-xs text-white tracking-wider uppercase leading-none">
                 SUBTRACTIVE
               </h1>
-              <span className={`text-[7px] font-mono uppercase tracking-wide truncate max-w-[80px] ${
+              <span className={`mobile-midi text-[7px] font-mono uppercase tracking-wide truncate max-w-[80px] ${
                 midiStatus.startsWith('MIDI:') && !midiStatus.includes('Keyboard') && !midiStatus.includes('Keys')
                   ? 'text-[#00ff66]'
                   : midiStatus.includes('Error') || midiStatus.includes('Locked')
@@ -1447,7 +1298,7 @@ export const Synth: React.FC = () => {
             {/* Right: REC + VU + Vol + Theme */}
             <div className="flex items-center gap-1.5 shrink-0">
               <RecordButton onToggleRecord={toggleRecording} disabled={!isStarted} isMobile />
-              <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
+              <VUMeter className="mobile-levels" getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
               <Knob 
                 label="Vol" 
                 value={params.masterGain ?? 0.8} 
@@ -1576,58 +1427,11 @@ export const Synth: React.FC = () => {
           </div>
 
           {/* Physical File Folder Section Tabs ("Layers of a Real File") */}
-          <nav aria-label="Section Folders" className="file-tabs-rack flex items-end gap-1 shrink-0 overflow-x-auto scrollbar-none">
-            {WORKSPACE_TABS.map((tab) => {
-              const isActive = workspaceMode === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => handleWorkspaceModeChange(tab.id as WorkspaceMode)}
-                  title={`${tab.label} (${tab.sublabel}) — Hotkey: ${tab.hotkey}`}
-                  className={`file-folder-tab ${isActive ? 'active' : 'inactive'}`}
-                  style={{
-                    ['--tab-accent' as any]: tab.color,
-                    ['--tab-glow' as any]: tab.glow,
-                  }}
-                >
-                  {/* File Folder Colored Top Accent Stripe */}
-                  <div
-                    className="file-folder-accent-bar"
-                    style={{
-                      background: isActive ? tab.color : 'transparent',
-                      boxShadow: isActive ? `0 0 8px ${tab.color}` : 'none',
-                    }}
-                  />
-                  {/* Folder Tab Index Number Ear */}
-                  <span
-                    className="text-[8px] font-mono font-bold tracking-tight px-1 py-0.5 rounded-xs"
-                    style={{
-                      background: isActive ? `${tab.color}25` : 'rgba(255, 255, 255, 0.05)',
-                      color: isActive ? tab.color : 'var(--text-muted)',
-                      border: `1px solid ${isActive ? tab.color + '44' : 'transparent'}`,
-                    }}
-                  >
-                    {tab.idx}
-                  </span>
-                  <span className="text-[12px] leading-none">{tab.icon}</span>
-                  <div className="flex flex-col items-start leading-tight">
-                    <span className="text-[11px] font-black tracking-wider text-inherit">
-                      {tab.label}
-                    </span>
-                    <span className="hidden 2xl:inline text-[7px] font-mono tracking-widest opacity-60">
-                      {tab.sublabel}
-                    </span>
-                  </div>
-                  <span
-                    className="hidden lg:inline text-[8px] font-mono font-bold ml-0.5 opacity-40 group-hover:opacity-80"
-                    style={{ color: isActive ? tab.color : undefined }}
-                  >
-                    [{tab.hotkey}]
-                  </span>
-                </button>
-              );
-            })}
+          <nav aria-label="Instrument workspaces" className="workspace-switch">
+            {WORKSPACE_TABS.map(tab => <button key={tab.id} type="button" aria-pressed={workspaceMode === tab.id}
+              title={tab.sublabel + ' (' + tab.hotkey + ')'} onClick={() => handleWorkspaceModeChange(tab.id)}>
+              {tab.label}
+            </button>)}
           </nav>
 
           <div className="hidden xl:flex oled-screen px-3 py-1.5 rounded-sm items-center gap-3.5 flex-1 min-w-0 justify-between shadow-inner">
@@ -1780,6 +1584,7 @@ export const Synth: React.FC = () => {
           { id: 'arp',   label: 'ARP',   icon: '♩' },
           { id: 'seq',   label: 'SEQ',   icon: '🎼' },
           { id: 'drums', label: 'DRUMS', icon: '🥁' },
+          { id: 'perform', label: 'PERFORM', icon: '◈' },
           { id: 'keys',  label: 'KEYS',  icon: '♪' },
         ].map((tab) => (
           <button
@@ -1989,7 +1794,7 @@ export const Synth: React.FC = () => {
                   arpParams={params.arpeggiator}
                   onArpChange={(arpeggiator) => setParams(p => ({ ...p, arpeggiator }))}
                   synthParams={params}
-                  onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+                  onSynthParamChange={(patch) => recordParameterChange(patchParams(useSynthStore.getState().params, patch))}
                   selectedPresetName={selectedPresetName}
                   onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
                   onSwitchWorkspace={handleWorkspaceModeChange}
@@ -2003,38 +1808,7 @@ export const Synth: React.FC = () => {
         ) : workspaceMode === 'perform' ? (
           <ErrorBoundary fallbackTitle="Perform Deck" onReset={() => handleWorkspaceModeChange('synth')}>
             <div className="hidden md:flex flex-col flex-1 min-h-0 pt-1">
-              <Suspense fallback={<WorkspaceLoadingFallback />}>
-                <PerformWorkspace
-                  synthParams={params}
-                  audioEngine={audioEngine.current}
-                  onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
-                  onNoteOn={handleNoteOn}
-                  onNoteOff={handleNoteOff}
-                  activeNotes={activeNotes}
-                  onPitchBendChange={handlePitchBendChange}
-                  onModulationChange={handleModulationChange}
-                  octaveOffset={octaveOffset}
-                  onOctaveChange={setOctaveOffset}
-                  isKeyboardMode={isKeyboardMode}
-                  onToggleKeyboardMode={() => setIsKeyboardMode(v => !v)}
-                  keyboardLayout={keyboardLayout}
-                  onChangeKeyboardLayout={setKeyboardLayout}
-                  isDrumPlaying={isDrumPlaying}
-                  isDrumQueued={isDrumQueued}
-                  onDrumPlayToggle={handleDrumPlayToggle}
-                  isSeqPlaying={isSeqPlaying}
-                  isSeqQueued={isSeqQueued}
-                  onSeqPlayToggle={handleSeqPlayToggle}
-                  bpm={bpm}
-                  onBpmChange={setBpm}
-                  currentBank={currentBankIndex}
-                  onBankSelect={setCurrentBankIndex}
-                  drumEngine={drumMachineEngine.current}
-                  onSwitchWorkspace={handleWorkspaceModeChange}
-                  selectedPresetName={selectedPresetName}
-                  onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
-                />
-              </Suspense>
+              {performanceDeck}
             </div>
           </ErrorBoundary>
         ) : workspaceMode === 'fx' ? (
@@ -2218,20 +1992,8 @@ export const Synth: React.FC = () => {
         ) : workspaceMode === 'seq' ? (
           <ErrorBoundary fallbackTitle="16-Step Melodic Sequencer" onReset={() => handleWorkspaceModeChange('synth')}>
             <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
-              {/* Full-Width Melodic Sequencer & Motion Deck */}
-              <div className="flex-1 min-h-0 flex flex-col synth-panel rounded p-2 md:p-2.5">
-                <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
-                  <div className="flex items-center gap-1.5 overflow-hidden">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#00ff66] shadow-[0_0_6px_#00ff66] shrink-0" />
-                    <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>
-                      16-STEP MELODIC MOTION SEQUENCER & PARAMETER LOCKS
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[8px] font-mono text-[#00ff66]">FULL EXPANDED CONSOLE</span>
-                  </div>
-                </div>
-                <div className="flex-1 min-h-0 flex flex-col">
+              <div className="flex-none flex flex-col gap-2">
+                <div>
                   <Suspense fallback={<WorkspaceLoadingFallback />}>
                     <MelodicSequencer
                       pattern={melodicPattern}
@@ -2262,7 +2024,7 @@ export const Synth: React.FC = () => {
                       min={20}
                       max={20000}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { filter: { cutoff: v } }))}
                       color="amber"
                       unit="Hz"
                     />
@@ -2272,7 +2034,7 @@ export const Synth: React.FC = () => {
                       min={0.1}
                       max={25}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { filter: { resonance: v } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { filter: { resonance: v } }))}
                       color="amber"
                     />
                     <Knob
@@ -2282,7 +2044,7 @@ export const Synth: React.FC = () => {
                       max={1}
                       size={28}
                       onChange={(v) => {
-                        setParams(p => patchParams(p, { filter: { filterFM: v } }));
+                        recordParameterChange(patchParams(useSynthStore.getState().params, { filter: { filterFM: v } }));
                         audioEngine.current?.setFilterFM(v);
                       }}
                       color="red"
@@ -2302,7 +2064,7 @@ export const Synth: React.FC = () => {
                       min={0.001}
                       max={2}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { ampEnvelope: { attack: v } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { ampEnvelope: { attack: v } }))}
                       unit="s"
                       color="cyan"
                     />
@@ -2312,7 +2074,7 @@ export const Synth: React.FC = () => {
                       min={0.01}
                       max={2}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { ampEnvelope: { decay: v } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { ampEnvelope: { decay: v } }))}
                       unit="s"
                       color="cyan"
                     />
@@ -2322,7 +2084,7 @@ export const Synth: React.FC = () => {
                       min={0}
                       max={1}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { ampEnvelope: { sustain: v } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { ampEnvelope: { sustain: v } }))}
                       unit="%"
                       color="cyan"
                     />
@@ -2332,7 +2094,7 @@ export const Synth: React.FC = () => {
                       min={0.01}
                       max={5}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { ampEnvelope: { release: v } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { ampEnvelope: { release: v } }))}
                       unit="s"
                       color="cyan"
                     />
@@ -2346,7 +2108,7 @@ export const Synth: React.FC = () => {
                       min={0}
                       max={1}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { fx: { drive: { enabled: v > 0, amount: v } } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { fx: { drive: { enabled: v > 0, amount: v } } }))}
                       color="red"
                       unit="%"
                     />
@@ -2356,7 +2118,7 @@ export const Synth: React.FC = () => {
                       min={0}
                       max={1}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { fx: { delay: { enabled: v > 0, mix: v } } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { fx: { delay: { enabled: v > 0, mix: v } } }))}
                       color="cyan"
                       unit="%"
                     />
@@ -2366,7 +2128,7 @@ export const Synth: React.FC = () => {
                       min={0}
                       max={1}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { fx: { reverb: { enabled: v > 0, mix: v } } }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { fx: { reverb: { enabled: v > 0, mix: v } } }))}
                       color="emerald"
                       unit="%"
                     />
@@ -2376,7 +2138,7 @@ export const Synth: React.FC = () => {
                       min={0}
                       max={1}
                       size={28}
-                      onChange={(v) => setParams(p => patchParams(p, { subGain: v }))}
+                      onChange={(v) => recordParameterChange(patchParams(useSynthStore.getState().params, { subGain: v }))}
                       color="emerald"
                       unit="%"
                     />
@@ -2541,48 +2303,10 @@ export const Synth: React.FC = () => {
                         ))}
                       </div>
 
-                      {/* Real-time Interactive Filter Response Curve */}
-                      <div className="w-full h-24">
-                        <FilterResponseCurve
-                          cutoff={params.filter.cutoff}
-                          resonance={params.filter.resonance}
-                          filterType={params.filter.type || 'lowpass'}
-                          onCutoffChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
-                          onResonanceChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}
-                          color="amber"
-                          height={95}
-                          modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
-                          modDepth={params.lfo.depth}
-                          lfoRate={params.lfo.rate}
-                          lfoWaveform={params.lfo.waveform}
-                          envelopeAmount={params.filterEnvelope.amount}
-                          filterEnvelope={params.filterEnvelope}
-                          activeNotesCount={activeNotes.size}
-                          analyser={audioEngine.current?.getAnalyser() || null}
-                        />
-                      </div>
+                      <FilterModulation engine={audioEngine.current} onMidiLearn={handleMidiLearn} />
 
                       <div className="flex items-center justify-around gap-2 pt-1 border-t" style={{ borderColor: 'var(--panel-border)' }}>
-                        <Knob 
-                          label="Cutoff"    
-                          value={params.filter.cutoff}          
-                          min={20}  
-                          max={20000} 
-                          size={34} 
-                          logarithmic 
-                          onChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}                       
-                          unit="Hz" 
-                          color="amber"
-                          modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
-                          modDepth={params.lfo.depth}
-                          modColor="emerald"
-                          lfoRate={params.lfo.rate}
-                          lfoWaveform={params.lfo.waveform}
-                          paramId="filter.cutoff"
-                          isLearning={learningParamId === 'filter.cutoff'}
-                          mappedCC={mappedCCs['filter.cutoff'] ?? null}
-                          onMidiLearn={handleMidiLearn}
-                        />
+
                         <Knob 
                           label="Resonance" 
                           value={params.filter.resonance}       
@@ -2787,8 +2511,6 @@ export const Synth: React.FC = () => {
                   <ModulationFlowHUD
                     modMatrix={params.modMatrix || []}
                     onModMatrixChange={(routes) => setParams(p => ({ ...p, modMatrix: routes }))}
-                    lfoTarget={params.lfo.target}
-                    lfoDepth={params.lfo.depth}
                     filterFM={params.filter.filterFM ?? 0}
                     isNoteActive={isAnyNoteActive}
                   />
@@ -2951,48 +2673,10 @@ export const Synth: React.FC = () => {
                       ))}
                     </div>
 
-                    {/* Mobile Interactive Filter Response Curve */}
-                    <div className="w-full min-h-[95px]">
-                      <FilterResponseCurve
-                        cutoff={params.filter.cutoff}
-                        resonance={params.filter.resonance}
-                        filterType={params.filter.type || 'lowpass'}
-                        onCutoffChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}
-                        onResonanceChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}
-                        color="amber"
-                        height={100}
-                        modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
-                        modDepth={params.lfo.depth}
-                        lfoRate={params.lfo.rate}
-                        lfoWaveform={params.lfo.waveform}
-                        envelopeAmount={params.filterEnvelope.amount}
-                        filterEnvelope={params.filterEnvelope}
-                        activeNotesCount={activeNotes.size}
-                        analyser={audioEngine.current?.getAnalyser() || null}
-                      />
-                    </div>
+                    <FilterModulation engine={audioEngine.current} onMidiLearn={handleMidiLearn} />
 
                     <div className="flex items-center justify-around gap-2 py-1">
-                      <Knob 
-                        label="Cutoff"    
-                        value={params.filter.cutoff}          
-                        min={20}  
-                        max={20000} 
-                        size={48} 
-                        logarithmic 
-                        onChange={v => setParams(p => patchParams(p, { filter: { cutoff: v } }))}                       
-                        unit="Hz" 
-                        color="amber"
-                        modActive={params.lfo.target === 'filter' && params.lfo.depth > 0}
-                        modDepth={params.lfo.depth}
-                        modColor="emerald"
-                        lfoRate={params.lfo.rate}
-                        lfoWaveform={params.lfo.waveform}
-                        paramId="filter.cutoff"
-                        isLearning={learningParamId === 'filter.cutoff'}
-                        mappedCC={mappedCCs['filter.cutoff'] ?? null}
-                        onMidiLearn={handleMidiLearn}
-                      />
+
                       <Knob 
                         label="Resonance" 
                         value={params.filter.resonance}       
@@ -3289,7 +2973,7 @@ export const Synth: React.FC = () => {
                   engine={drumMachineEngine.current}
                   onPatternChange={handlePatternChange}
                   synthParams={params}
-                  onSynthParamChange={(patch) => setParams(p => patchParams(p, patch))}
+                  onSynthParamChange={(patch) => recordParameterChange(patchParams(useSynthStore.getState().params, patch))}
                   selectedPresetName={selectedPresetName}
                   onOpenPresetBrowser={() => setIsPresetBrowserOpen(true)}
                   onSwitchWorkspace={handleWorkspaceModeChange}
@@ -3300,6 +2984,12 @@ export const Synth: React.FC = () => {
               </Suspense>
             </div>
           </div>
+          )}
+
+          {activeTab === 'perform' && (
+            <div className="mobile-section-panel mobile-section-active">
+              {performanceDeck}
+            </div>
           )}
 
           {/* KEYS Tab */}

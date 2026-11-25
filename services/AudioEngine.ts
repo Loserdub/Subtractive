@@ -46,6 +46,7 @@ interface ActiveNote {
 
   // Filter Stage with Saturation & Multi-Pole Topologies
   preFilterDrive: WaveShaperNode;
+  cutoffBus: AnalyserNode;
   filterStage1: BiquadFilterNode;
   interFilterDrive: WaveShaperNode | null;
   filterStage2: BiquadFilterNode | null;
@@ -130,6 +131,35 @@ export class AudioEngine {
   private limiterShaper: WaveShaperNode | null = null;
 
   private noiseBuffer: AudioBuffer | null = null;
+  private routeGains = new WeakMap<GainNode, { source: AudioNode; id: string; scale: number }>();
+  private cutoffMeters = new Map<AnalyserNode, { filter: BiquadFilterNode; start: number }>();
+  private cutoffSamples = new Float32Array(32);
+
+  private meterCutoff(filter: BiquadFilterNode, start: number) {
+    const meter = this.audioContext!.createAnalyser();
+    meter.fftSize = this.cutoffSamples.length;
+    meter.connect(filter.detune);
+    this.cutoffMeters.set(meter, { filter, start });
+    return meter;
+  }
+
+  public readCutoff = (): number | null => {
+    let newest = -Infinity;
+    let frequency: number | null = null;
+    let selected: AnalyserNode | null = null;
+    const now = this.audioContext?.currentTime ?? 0;
+    for (const [meter, voice] of this.cutoffMeters) {
+      if (voice.start <= now && voice.start >= newest) {
+        newest = voice.start;
+        selected = meter;
+        frequency = voice.filter.frequency.value;
+      }
+    }
+    if (!selected || frequency === null) return null;
+    selected.getFloatTimeDomainData(this.cutoffSamples);
+    return Math.max(20, Math.min(20000, frequency * 2 ** (this.cutoffSamples[31] / 1200)));
+  };
+
   private activeNotes = new Map<number, ActiveNote>();
   private noteStack: { note: number; velocity: number }[] = [];
   private params: SynthParameters;
@@ -700,12 +730,12 @@ export class AudioEngine {
     return this.masterTapNode || this.analyserNode;
   }
 
-  public updateParams(newParams: SynthParameters) {
+  public updateParams(newParams: SynthParameters, time?: number) {
     const prev = this.prevParams;
     this.params = newParams;
     if (!this.audioContext) return;
 
-    const now = this.audioContext.currentTime;
+    const now = time ?? this.audioContext.currentTime;
 
     // 0. Master Gain
     if (this.masterGainNode && (!prev || prev.masterGain !== newParams.masterGain)) {
@@ -821,6 +851,11 @@ export class AudioEngine {
     const pwmChanged = !prev || prev.pwm !== newParams.pwm;
     const modMatrixChanged = !prev || prev.modMatrix !== newParams.modMatrix || (prev.lfo && prev.lfo.target !== newParams.lfo.target);
 
+    const levelsOnly = modMatrixChanged && prev?.modMatrix && newParams.modMatrix &&
+      prev.modMatrix.length === newParams.modMatrix.length && prev.modMatrix.every((old, i) => {
+        const route = newParams.modMatrix![i];
+        return old.id === route.id && old.source === route.source && old.destination === route.destination && old.enabled === route.enabled;
+      });
     const masterHeadroom = 0.25;
     const isLadder = (this.params.filter.model || 'clean') === 'ladder24';
     const qScale = isLadder ? 0.7 : 1.0;
@@ -884,7 +919,14 @@ export class AudioEngine {
       }
 
       // Refresh Modulation Matrix routing ONLY when modMatrix or target actually changed
-      if (modMatrixChanged) {
+      if (levelsOnly) {
+        for (const node of note.modMatrixNodes) {
+          const gain = node as GainNode;
+          const info = this.routeGains.get(gain);
+          const route = info && newParams.modMatrix!.find(r => r.id === info.id);
+          if (route) gain.gain.setTargetAtTime(route.amount * info.scale, now, 0.005);
+        }
+      } else if (modMatrixChanged) {
         this.refreshVoiceModMatrix(note, now);
       }
     }
@@ -1138,6 +1180,7 @@ export class AudioEngine {
     this.updateDriveCurveOnNode(preFilterDrive, this.params.filter.drive ?? 0);
 
     const filterStage1 = ctx.createBiquadFilter();
+    const cutoffBus = this.meterCutoff(filterStage1, now);
     filterStage1.type = (this.params.filter.type || 'lowpass') as BiquadFilterType;
     filterStage1.frequency.setValueAtTime(this.params.filter.cutoff, now);
 
@@ -1187,7 +1230,7 @@ export class AudioEngine {
     const filterEnvGain = ctx.createGain();
     filterEnvGain.gain.setValueAtTime(this.params.filterEnvelope.amount * velocityGain, now);
     filterEnvSource.connect(filterEnvGain);
-    filterEnvGain.connect(filterStage1.detune);
+    filterEnvGain.connect(cutoffBus);
     if (filterStage2) {
       filterEnvGain.connect(filterStage2.detune);
     }
@@ -1284,7 +1327,7 @@ export class AudioEngine {
       this.connectLfoToGroupPitch(lfo1Gain, osc3);
       this.connectLfoToGroupPitch(lfo1Gain, osc4);
     } else if (this.params.lfo.target === 'filter') {
-      lfo1Gain.connect(filterStage1.detune);
+      lfo1Gain.connect(cutoffBus);
       if (filterStage2) lfo1Gain.connect(filterStage2.detune);
     } else if (this.params.lfo.target === 'amp') {
       lfo1Gain.connect(tremoloGain.gain);
@@ -1297,7 +1340,7 @@ export class AudioEngine {
     const fmAmt = (this.params.filter.filterFM ?? 0) * 4000;
     filterFmGain.gain.setValueAtTime(fmAmt, now);
     osc1.gain.connect(filterFmGain);
-    filterFmGain.connect(filterStage1.detune);
+    filterFmGain.connect(cutoffBus);
     if (filterStage2) {
       filterFmGain.connect(filterStage2.detune);
     }
@@ -1320,7 +1363,7 @@ export class AudioEngine {
       noiseNode,
       noiseGain,
       preFilterDrive,
-      filterStage1,
+      filterStage1, cutoffBus,
       interFilterDrive,
       filterStage2,
       filterEnvSource,
@@ -1523,13 +1566,15 @@ export class AudioEngine {
   /**
    * Connects all active Modulation Matrix slots to their target AudioParams.
    */
-  private wireModMatrix(note: ActiveNote, time: number) {
+  private wireModMatrix(note: Pick<ActiveNote, 'osc1' | 'osc2' | 'osc3' | 'osc4' | 'lfo1Osc' | 'lfo2Osc' |
+    'subOsc' | 'subGain' | 'pwmOffset' | 'voicePanner' | 'velocity' | 'filterStage1' | 'filterStage2' |
+    'cutoffBus' | 'filterEnvSource' | 'filterFmGain' | 'modMatrixNodes'>, time: number) {
     const routes = this.params.modMatrix || [];
     if (routes.length === 0) return;
 
     const ctx = this.audioContext!;
     for (const route of routes) {
-      if (!route.enabled || Math.abs(route.amount) < 0.001) continue;
+      if (!route.enabled) continue;
 
       let sourceNode: AudioNode | null = null;
       let staticWeight = 1.0;
@@ -1596,7 +1641,7 @@ export class AudioEngine {
             depthMultiplier = 4800; // ±4 octaves
             routeGain.gain.setValueAtTime(route.amount * depthMultiplier, time);
             sourceNode.connect(routeGain);
-            routeGain.connect(note.filterStage1.detune);
+            routeGain.connect(note.cutoffBus);
             if (note.filterStage2) routeGain.connect(note.filterStage2.detune);
             break;
           case 'resonance':
@@ -1650,6 +1695,7 @@ export class AudioEngine {
             break;
         }
 
+        this.routeGains.set(routeGain, { source: sourceNode, id: route.id, scale: depthMultiplier });
         note.modMatrixNodes.push(routeGain);
       } else {
         // Static parameter offset
@@ -1664,9 +1710,12 @@ export class AudioEngine {
 
   private refreshVoiceModMatrix(note: ActiveNote, time: number) {
     for (const node of note.modMatrixNodes) {
-      try {
-        node.disconnect();
-      } catch (e) {}
+      const info = this.routeGains.get(node as GainNode);
+      if (info) {
+        try { info.source.disconnect(node); } catch { /* Unconnected modulation destination. */ }
+      }
+      if (node instanceof ConstantSourceNode) node.stop(time);
+      node.disconnect();
     }
     note.modMatrixNodes = [];
     this.wireModMatrix(note, time);
@@ -1711,6 +1760,8 @@ export class AudioEngine {
       n.filterStage2?.disconnect();
       n.filterEnvSource.disconnect();
       n.filterEnvGain.disconnect();
+      this.cutoffMeters.delete(n.cutoffBus);
+      n.cutoffBus.disconnect();
       n.amp.disconnect();
       n.tremoloGain.disconnect();
       n.voicePanner?.disconnect();
@@ -1817,6 +1868,8 @@ export class AudioEngine {
         n.filterStage2?.disconnect();
         n.filterEnvSource.disconnect();
         n.filterEnvGain.disconnect();
+        this.cutoffMeters.delete(n.cutoffBus);
+        n.cutoffBus.disconnect();
         n.amp.disconnect();
         n.tremoloGain.disconnect();
         n.voicePanner?.disconnect();
@@ -2091,6 +2144,8 @@ export class AudioEngine {
         n.filterStage2?.disconnect();
         n.filterEnvSource.disconnect();
         n.filterEnvGain.disconnect();
+        this.cutoffMeters.delete(n.cutoffBus);
+        n.cutoffBus.disconnect();
         n.amp.disconnect();
         n.tremoloGain.disconnect();
         n.voicePanner?.disconnect();
@@ -2227,6 +2282,7 @@ export class AudioEngine {
     this.updateDriveCurveOnNode(preFilterDrive, driveAmount);
 
     const filterStage1 = ctx.createBiquadFilter();
+    const cutoffBus = this.meterCutoff(filterStage1, safeStartTime);
     filterStage1.type = (this.params.filter.type || 'lowpass') as BiquadFilterType;
     const filterCutoff = pLocks?.cutoff !== undefined ? pLocks.cutoff : this.params.filter.cutoff;
     filterStage1.frequency.setValueAtTime(filterCutoff, safeStartTime);
@@ -2274,7 +2330,7 @@ export class AudioEngine {
     const filterEnvGain = ctx.createGain();
     filterEnvGain.gain.setValueAtTime(this.params.filterEnvelope.amount * velocityGain, safeStartTime);
     filterEnvSource.connect(filterEnvGain);
-    filterEnvGain.connect(filterStage1.detune);
+    filterEnvGain.connect(cutoffBus);
     if (filterStage2) filterEnvGain.connect(filterStage2.detune);
 
     // PWM Offset Constant Source
@@ -2291,11 +2347,11 @@ export class AudioEngine {
     // Audio-rate Filter FM (Timed voice)
     let offlineFmGain: GainNode | null = null;
     const offlineFmAmt = (this.params.filter.filterFM ?? 0) * 4000;
-    if (offlineFmAmt > 0) {
+    if (offlineFmAmt > 0 || this.params.modMatrix?.some(r => r.enabled && r.destination === 'filterFM')) {
       offlineFmGain = ctx.createGain();
       offlineFmGain.gain.setValueAtTime(offlineFmAmt, safeStartTime);
       osc1.gain.connect(offlineFmGain);
-      offlineFmGain.connect(filterStage1.detune);
+      offlineFmGain.connect(cutoffBus);
       if (filterStage2) offlineFmGain.connect(filterStage2.detune);
     }
 
@@ -2341,7 +2397,7 @@ export class AudioEngine {
       this.connectLfoToGroupPitch(lfo1Gain, osc3);
       this.connectLfoToGroupPitch(lfo1Gain, osc4);
     } else if (this.params.lfo.target === 'filter') {
-      lfo1Gain.connect(filterStage1.detune);
+      lfo1Gain.connect(cutoffBus);
       if (filterStage2) lfo1Gain.connect(filterStage2.detune);
     } else if (this.params.lfo.target === 'amp') {
       lfo1Gain.connect(tremoloGain.gain);
@@ -2367,6 +2423,11 @@ export class AudioEngine {
     lfo2Gain.gain.setValueAtTime(lfo2Params.depth * 1200, safeStartTime);
     lfo2Osc.connect(lfo2Gain);
     lfo2Osc.start(safeStartTime);
+
+    const modMatrixNodes: AudioNode[] = [];
+    this.wireModMatrix({ osc1, osc2, osc3, osc4, lfo1Osc, lfo2Osc, subOsc, subGain, pwmOffset,
+      voicePanner, velocity: velocityGain, filterStage1, filterStage2, cutoffBus, filterEnvSource,
+      filterFmGain: offlineFmGain ?? undefined, modMatrixNodes }, safeStartTime);
 
     // 5. Envelope Trajectory (Strictly monotonically non-decreasing timeline with non-zero exponential ramps)
     const { attack: rawAmpAttack, decay: baseAmpDecay, sustain: rawAmpSustain, release: rawAmpRelease } = this.params.ampEnvelope;
@@ -2459,6 +2520,12 @@ export class AudioEngine {
         filterStage2?.disconnect();
         filterEnvSource.disconnect();
         filterEnvGain.disconnect();
+        cutoffBus.disconnect();
+        this.cutoffMeters.delete(cutoffBus);
+        for (const node of modMatrixNodes) {
+          if (node instanceof ConstantSourceNode) node.stop();
+          node.disconnect();
+        }
         amp.disconnect();
         tremoloGain.disconnect();
         voicePanner?.disconnect();

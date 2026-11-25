@@ -563,7 +563,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
         onPointerUp={handleKeybedPointerUp}
         onPointerCancel={handleKeybedPointerUp}
         style={{ touchAction: 'none' }}
-        className="relative w-full h-40 sm:h-44 md:h-40 min-h-[155px] bg-[#06080c] p-1 rounded border border-[#1b2230] overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)] cursor-pointer"
+        className="keybed-surface relative w-full h-40 sm:h-44 md:h-40 min-h-[155px] bg-[#06080c] p-1 rounded border border-[#1b2230] overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)] cursor-pointer"
       >
         
         {/* Authentic Pro Red Felt Damper Bushing Strip */}

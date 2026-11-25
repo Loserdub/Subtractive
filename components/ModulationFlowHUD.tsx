@@ -4,8 +4,6 @@ import { ModMatrixRoute, ModSource, ModDestination } from '../types';
 interface ModulationFlowHUDProps {
   modMatrix: ModMatrixRoute[];
   onModMatrixChange: (routes: ModMatrixRoute[]) => void;
-  lfoTarget: string;
-  lfoDepth: number;
   filterFM: number;
   isNoteActive: boolean;
 }
@@ -29,42 +27,19 @@ const MOD_DESTINATIONS: { id: ModDestination; label: string; color: string }[] =
 export const ModulationFlowHUD: React.FC<ModulationFlowHUDProps> = ({
   modMatrix,
   onModMatrixChange,
-  lfoTarget,
-  lfoDepth,
   filterFM,
   isNoteActive,
 }) => {
-  // Ensure at least 3 display routes
-  const activeRoutes = modMatrix && modMatrix.length > 0
-    ? modMatrix
-    : [
-        { id: 'route-1', source: 'lfo1' as ModSource, destination: (lfoTarget as ModDestination) || 'cutoff', amount: lfoDepth, enabled: lfoDepth > 0 },
-        { id: 'route-2', source: 'lfo2' as ModSource, destination: 'filterFM' as ModDestination, amount: filterFM, enabled: filterFM > 0 },
-      ];
-
+  const activeRoutes = modMatrix || [];
+  const slots: ModMatrixRoute[] = Array.from({ length: Math.max(3, activeRoutes.length) }, (_, i) =>
+    activeRoutes[i] ?? {
+      id: 'slot-' + (i + 1), source: i === 0 ? 'lfo1' : i === 1 ? 'filterEnv' : 'modWheel',
+      destination: i === 0 ? 'cutoff' : i === 1 ? 'filterFM' : 'allPitch', amount: 0.25, enabled: false,
+    });
   const updateRoute = (index: number, patch: Partial<ModMatrixRoute>) => {
-    const updated = [...(modMatrix || [])];
-    if (!updated[index]) {
-      updated[index] = {
-        id: `route-${index + 1}`,
-        source: 'lfo1',
-        destination: 'cutoff',
-        amount: 0.5,
-        enabled: true,
-      };
-    }
-    updated[index] = { ...updated[index], ...patch };
-    onModMatrixChange(updated);
+    onModMatrixChange(slots.map((slot, i) => i === index ? { ...slot, ...patch } : slot));
   };
-
-  const toggleRoute = (index: number) => {
-    const current = modMatrix?.[index];
-    if (current) {
-      updateRoute(index, { enabled: !current.enabled });
-    } else {
-      updateRoute(index, { id: `route-${index + 1}`, enabled: true, source: 'lfo1', destination: 'cutoff', amount: 0.5 });
-    }
-  };
+  const toggleRoute = (index: number) => updateRoute(index, { enabled: !slots[index].enabled });
 
   return (
     <div className="w-full flex flex-col p-1.5 rounded-sm border shadow-sm relative overflow-hidden"
@@ -97,14 +72,7 @@ export const ModulationFlowHUD: React.FC<ModulationFlowHUDProps> = ({
 
       {/* Signal Flow Trace Matrix Rows */}
       <div className="flex flex-col gap-1 w-full">
-        {[0, 1, 2].map((slotIdx) => {
-          const route = modMatrix?.[slotIdx] || activeRoutes[slotIdx] || {
-            source: slotIdx === 0 ? 'lfo1' : slotIdx === 1 ? 'filterEnv' : 'modWheel',
-            destination: slotIdx === 0 ? 'cutoff' : slotIdx === 1 ? 'filterFM' : 'allPitch',
-            amount: slotIdx === 0 ? lfoDepth : slotIdx === 1 ? filterFM : 0.4,
-            enabled: slotIdx === 0 ? lfoDepth > 0 : slotIdx === 1 ? filterFM > 0 : false,
-          };
-
+        {slots.map((route, slotIdx) => {
           const srcColor = MOD_SOURCES.find(s => s.id === route.source)?.color || '#10b981';
           const destColor = MOD_DESTINATIONS.find(d => d.id === route.destination)?.color || '#f59e0b';
           const isFlowing = route.enabled && isNoteActive && Math.abs(route.amount) > 0.01;

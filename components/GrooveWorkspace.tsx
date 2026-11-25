@@ -141,8 +141,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
   onSwitchWorkspace,
 }) => {
   const [activeStep, setActiveStep] = useState<number | null>(null);
-  const [mutedTracks, setMutedTracks] = useState<Set<DrumTrackName>>(new Set());
-  const [soloTracks, setSoloTracks] = useState<Set<DrumTrackName>>(new Set());
+
 
   // Subscribe to real-time step runner clock from engine
   useEffect(() => {
@@ -180,67 +179,11 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
     }
   }, [trackRatchets, onTrackRatchetsChange, engine]);
 
-  // Handle live motion recording when quick-tweak knob changes
-  const handleQuickSynthParamChange = useCallback((patch: Partial<SynthParameters>) => {
-    onSynthParamChange(patch);
+  const toggleMute = (track: DrumTrackName) =>
+    onTrackSettingsChange(track, { muted: !trackSettings[track].muted });
 
-    if (melodicPattern?.motionRecording && isPlaying && activeStep !== null && onMelodicPatternChange) {
-      const stepIdx = activeStep % (melodicPattern.length || melodicPattern.steps.length || 16);
-      const step = melodicPattern.steps[stepIdx];
-      if (step) {
-        const newPLocks = { ...(step.pLocks || {}) };
-        if (patch.filter?.cutoff !== undefined) newPLocks.cutoff = Math.round(patch.filter.cutoff);
-        if (patch.filter?.resonance !== undefined) newPLocks.resonance = +patch.filter.resonance.toFixed(1);
-        if (patch.fx?.drive?.amount !== undefined) newPLocks.drive = +patch.fx.drive.amount.toFixed(2);
-        if (patch.fx?.reverb?.mix !== undefined) newPLocks.reverbMix = +patch.fx.reverb.mix.toFixed(2);
-        if (patch.fx?.delay?.mix !== undefined) newPLocks.delayMix = +patch.fx.delay.mix.toFixed(2);
-        if (patch.subGain !== undefined) newPLocks.subGain = +patch.subGain.toFixed(2);
-
-        const newSteps = [...melodicPattern.steps];
-        newSteps[stepIdx] = { ...step, pLocks: newPLocks };
-        onMelodicPatternChange({ ...melodicPattern, steps: newSteps });
-      }
-    }
-  }, [onSynthParamChange, melodicPattern, isPlaying, activeStep, onMelodicPatternChange]);
-
-  // Handle Mute toggle
-  const toggleMute = useCallback((track: DrumTrackName) => {
-    setMutedTracks(prev => {
-      const next = new Set(prev);
-      if (next.has(track)) {
-        next.delete(track);
-        onTrackSettingsChange(track, { volume: trackSettings[track].volume || 0.8 });
-      } else {
-        next.add(track);
-        onTrackSettingsChange(track, { volume: 0 });
-      }
-      return next;
-    });
-  }, [onTrackSettingsChange, trackSettings]);
-
-  // Handle Solo toggle
-  const toggleSolo = useCallback((track: DrumTrackName) => {
-    setSoloTracks(prev => {
-      const next = new Set(prev);
-      if (next.has(track)) {
-        next.delete(track);
-        DRUM_TRACKS.forEach(t => {
-          onTrackSettingsChange(t, { volume: trackSettings[t].volume || 0.8 });
-        });
-      } else {
-        next.clear();
-        next.add(track);
-        DRUM_TRACKS.forEach(t => {
-          if (t !== track) {
-            onTrackSettingsChange(t, { volume: 0 });
-          } else {
-            onTrackSettingsChange(t, { volume: trackSettings[t].volume || 0.8 });
-          }
-        });
-      }
-      return next;
-    });
-  }, [onTrackSettingsChange, trackSettings]);
+  const toggleSolo = (track: DrumTrackName) =>
+    onTrackSettingsChange(track, { solo: !trackSettings[track].solo });
 
   // Clear track
   const handleClearTrack = useCallback((track: DrumTrackName) => {
@@ -432,7 +375,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             max={20000}
             logarithmic
             size={28}
-            onChange={(v) => handleQuickSynthParamChange({ filter: { ...synthParams.filter, cutoff: v } })}
+            onChange={(v) => onSynthParamChange({ filter: { ...synthParams.filter, cutoff: v } })}
             unit="Hz"
             color="amber"
           />
@@ -442,7 +385,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             min={0}
             max={40}
             size={28}
-            onChange={(v) => handleQuickSynthParamChange({ filter: { ...synthParams.filter, resonance: v } })}
+            onChange={(v) => onSynthParamChange({ filter: { ...synthParams.filter, resonance: v } })}
             color="cyan"
           />
           <Knob
@@ -451,7 +394,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             min={0}
             max={1}
             size={28}
-            onChange={(v) => handleQuickSynthParamChange({ fx: { ...synthParams.fx, drive: { ...synthParams.fx.drive, amount: v } } })}
+            onChange={(v) => onSynthParamChange({ fx: { ...synthParams.fx, drive: { ...synthParams.fx.drive, amount: v } } })}
             unit="%"
             color="red"
           />
@@ -461,7 +404,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             min={0}
             max={1}
             size={28}
-            onChange={(v) => handleQuickSynthParamChange({ fx: { ...synthParams.fx, reverb: { ...synthParams.fx.reverb, mix: v } } })}
+            onChange={(v) => onSynthParamChange({ fx: { ...synthParams.fx, reverb: { ...synthParams.fx.reverb, mix: v } } })}
             unit="%"
             color="emerald"
           />
@@ -617,8 +560,8 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             {DRUM_TRACKS.map((track) => {
               const config = TRACK_CONFIG[track];
               const settings = trackSettings[track];
-              const isMuted = mutedTracks.has(track);
-              const isSolo = soloTracks.has(track);
+              const isMuted = !!trackSettings[track].muted;
+              const isSolo = !!trackSettings[track].solo;
 
               return (
                 <div 

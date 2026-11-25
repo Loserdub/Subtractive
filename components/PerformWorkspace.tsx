@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Knob } from './Knob';
 import { LEDButton } from './Switch';
+import { useSceneStore } from '../stores/useSceneStore';
+import { ScenePads } from './ScenePads';
 import { Keyboard } from './Keyboard';
 import { SynthParameters, WorkspaceMode } from '../types';
 import { DrumMachineEngine } from '../services/DrumMachineEngine';
@@ -41,6 +43,11 @@ interface PerformWorkspaceProps {
   onOpenPresetBrowser: () => void;
 }
 
+function padPosition(params: SynthParameters) {
+  return { x: Math.max(0, Math.min(1, Math.log(params.filter.cutoff / 20) / Math.log(1000))),
+    y: Math.max(0, Math.min(1, params.fx.reverb.mix / 0.85)) };
+}
+
 export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   synthParams,
   onSynthParamChange,
@@ -72,7 +79,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   onOpenPresetBrowser,
 }) => {
   // ── XY Vector Pad State ──────────────────────────────────────────────────
-  const [xyPos, setXyPos] = useState({ x: 0.5, y: 0.5 });
+  const [xyPos, setXyPos] = useState(() => padPosition(synthParams));
   const [isXyDragging, setIsXyDragging] = useState(false);
   const [xyMode, setXyMode] = useState<'latch' | 'spring'>('latch');
   const padRef = useRef<HTMLDivElement>(null);
@@ -87,6 +94,25 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
 
   const pendingPatchRef = useRef<Partial<SynthParameters> | null>(null);
   const rafSyncRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const stopGesture = () => {
+      if (springAnimRef.current !== null) cancelAnimationFrame(springAnimRef.current);
+      if (rafSyncRef.current !== null) cancelAnimationFrame(rafSyncRef.current);
+      springAnimRef.current = rafSyncRef.current = null;
+      pendingPatchRef.current = null;
+    };
+    const unsubscribe = useSceneStore.subscribe((next, previous) => {
+      if (next.recallCount === previous.recallCount) return;
+      stopGesture();
+      prevDelayRef.current = prevFilterRef.current = null;
+      setIsDubActive(false);
+      setIsFilterDropActive(false);
+      setIsXyDragging(false);
+      setXyPos(padPosition(useSynthStore.getState().params));
+    });
+    return () => { stopGesture(); unsubscribe(); };
+  }, []);
 
   // Handle XY pad coordinate application to synth engine with audio fast-path
   const applyXyCoords = useCallback((nx: number, ny: number) => {
@@ -348,44 +374,10 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-2 overflow-y-auto pr-0.5">
       
-      {/* ── Top Header / Quick Jam Bar ── */}
-      <div 
-        className="synth-panel rounded-sm px-3 py-1.5 flex flex-wrap items-center justify-between gap-3 shrink-0"
-        style={{ border: '1px solid var(--panel-border)', background: 'var(--panel-bg)' }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-[#00ff66] shadow-[0_0_8px_#00ff66]" />
-            <span className="text-[10px] font-mono font-black tracking-widest uppercase text-white">
-              PERFORM DECK & EXPRESSION ENGINE
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 pl-3 border-l border-[#202c3e]">
-            <span className="text-[8px] font-mono uppercase text-gray-400">ACTIVE PATCH:</span>
-            <span className="text-[10px] font-mono-lcd text-[#10b981] font-bold">{selectedPresetName}</span>
-            <button
-              type="button"
-              onClick={onOpenPresetBrowser}
-              className="text-[8px] font-mono text-[#10b981] hover:underline px-1 py-0.5 bg-[#0a1018] rounded border border-[#10b981]/30"
-            >
-              [BROWSE]
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-[7.5px] font-mono uppercase text-[#00ff66] bg-[#00ff66]/10 px-2 py-0.5 rounded border border-[#00ff66]/30">
-            EXPRESSION ENGINE ACTIVE
-          </span>
-          <span className="text-[7.5px] font-mono uppercase text-gray-400 hidden sm:inline">
-            VECTOR XY + 4 PRO MACROS
-          </span>
-        </div>
-      </div>
+      <ScenePads />
 
       {/* ── Upper Performance Stage: XY Vector Surface + 4 Master Macros + Momentary FX ── */}
-      <div className="flex flex-col lg:flex-row gap-2 flex-1 min-h-0">
+      <div className="flex flex-col lg:flex-row gap-2 shrink-0">
         
         {/* Left: Interactive XY Vector Modulation Surface (6/12) */}
         <div 
@@ -591,7 +583,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                     : 'bg-[#121926] text-[#00ff66] border-[#00ff66]/40 hover:border-[#00ff66]'
                 }`}
               >
-                🌊 DUB ECHO FREEZE
+                Dub echo freeze
               </button>
 
               <button
@@ -605,7 +597,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                     : 'bg-[#121926] text-[#ff3344] border-[#ff3344]/40 hover:border-[#ff3344]'
                 }`}
               >
-                ⚡ SUB BASS FILTER DROP
+                Sub bass drop
               </button>
             </div>
           </div>
@@ -617,7 +609,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
 
 
       {/* ── Lower Section: Playable Keyboard with Mod/Pitch Wheels ── */}
-      <div className="shrink-0">
+      <div className="shrink-0 md:hidden">
         <Keyboard
           onNoteOn={onNoteOn}
           onNoteOff={onNoteOff}

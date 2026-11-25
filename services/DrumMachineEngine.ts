@@ -33,6 +33,7 @@ export class DrumMachineEngine {
   private quantizeMode: TransportQuantizeMode = 'bar';
   private bpm = 120;
   private pattern: StepSequencePattern | null = null;
+  public onBarStart?: (time: number) => void;
   private currentStep = 0;
   private worker: Worker | null = null;
   private lookahead = 25.0; // ms
@@ -191,11 +192,11 @@ export class DrumMachineEngine {
     this.swing = value;
   }
 
-  public setTrackSettings(track: DrumTrackName, settings: Partial<DrumTrackSettings>) {
+  public setTrackSettings(track: DrumTrackName, settings: Partial<DrumTrackSettings>, time = this.audioContext.currentTime) {
     this.trackSettings[track] = { ...this.trackSettings[track], ...settings };
     const strip = this.channelStrips?.[track];
     if (strip) {
-      const now = this.audioContext.currentTime;
+      const now = time;
       if (settings.volume !== undefined) {
         strip.gain.gain.setTargetAtTime(settings.volume, now, 0.005);
       }
@@ -479,6 +480,8 @@ export class DrumMachineEngine {
 
     const playTime = this.nextNoteTime + swingDelay;
     const stepToNotify = this.currentStep;
+
+    if (this.currentStep % 16 === 0) this.onBarStart?.(playTime);
 
     // Drum Track Scheduling (only when drums are playing)
     if (this.isDrumPlaying) {

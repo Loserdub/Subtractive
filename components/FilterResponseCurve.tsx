@@ -10,13 +10,7 @@ interface FilterResponseCurveProps {
   color?: 'amber' | 'cyan' | 'emerald' | 'red';
   className?: string;
   height?: number;
-  modActive?: boolean;
-  modDepth?: number;
-  lfoRate?: number;
-  lfoWaveform?: string;
-  envelopeAmount?: number;
-  filterEnvelope?: { attack: number; decay: number; sustain: number; release: number };
-  activeNotesCount?: number;
+  readCutoff?: () => number | null;
   analyser?: AnalyserNode | null;
 }
 
@@ -60,13 +54,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
   color = 'amber',
   className = '',
   height = 110,
-  modActive = false,
-  modDepth = 0,
-  lfoRate = 1,
-  lfoWaveform = 'sine',
-  envelopeAmount = 0,
-  filterEnvelope,
-  activeNotesCount = 0,
+  readCutoff,
   analyser = null,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -167,79 +155,21 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
   // Real-time dynamic modulation state (60 FPS loop)
   const [dynamicModCutoff, setDynamicModCutoff] = useState<number | null>(null);
 
-  // Modulation animation loop
   useEffect(() => {
-    const isLfoModulating = modActive && modDepth > 0;
-    const isEnvModulating = activeNotesCount > 0 && envelopeAmount !== 0;
-
-    if (!isLfoModulating && !isEnvModulating) {
-      setDynamicModCutoff(null);
-      return;
-    }
-
-    let animId: number;
-    let lastTime = 0;
-    let lastModCutoff: number | null = null;
-    const startTime = performance.now() / 1000;
-
-    const updateMod = () => {
-      // Skip updates if element is hidden in the DOM (e.g. desktop vs mobile view switch)
-      if (containerRef.current && containerRef.current.offsetParent === null) {
-        animId = requestAnimationFrame(updateMod);
-        return;
+    if (!readCutoff) return;
+    let frame = 0;
+    let last = 0;
+    const sample = (time: number) => {
+      if (time - last >= 32 && containerRef.current?.offsetParent !== null) {
+        last = time;
+        const frequency = readCutoff();
+        setDynamicModCutoff(frequency === null ? null : Math.round(frequency));
       }
-
-      const nowMs = performance.now();
-      // Throttle state updates to ~35fps (~28ms) to avoid locking up React reconciliation with heavy SVG math
-      if (nowMs - lastTime >= 28) {
-        lastTime = nowMs;
-        const now = nowMs / 1000;
-        let totalOctaveOffset = 0;
-
-        // 1. LFO Sweep Contribution
-        if (isLfoModulating) {
-          const t = (now - startTime) * lfoRate;
-          let lfoVal = 0;
-          if (lfoWaveform === 'triangle') {
-            lfoVal = Math.asin(Math.sin(2 * Math.PI * t)) * (2 / Math.PI);
-          } else if (lfoWaveform === 'square') {
-            lfoVal = Math.sin(2 * Math.PI * t) >= 0 ? 1 : -1;
-          } else if (lfoWaveform === 'sawtooth') {
-            lfoVal = 2 * (t % 1) - 1;
-          } else {
-            lfoVal = Math.sin(2 * Math.PI * t);
-          }
-          totalOctaveOffset += lfoVal * modDepth * 2.2;
-        }
-
-        // 2. Filter Envelope Sweep Contribution
-        if (isEnvModulating && filterEnvelope) {
-          const elapsed = (now - startTime) % (filterEnvelope.attack + filterEnvelope.decay + 1.0);
-          let envVal = 0;
-          if (elapsed < filterEnvelope.attack) {
-            envVal = elapsed / Math.max(0.001, filterEnvelope.attack);
-          } else if (elapsed < filterEnvelope.attack + filterEnvelope.decay) {
-            const decayProgress = (elapsed - filterEnvelope.attack) / Math.max(0.001, filterEnvelope.decay);
-            envVal = 1.0 - decayProgress * (1.0 - filterEnvelope.sustain);
-          } else {
-            envVal = filterEnvelope.sustain;
-          }
-          totalOctaveOffset += envVal * (envelopeAmount / 100) * 3.5;
-        }
-
-        const modulated = Math.max(MIN_FREQ, Math.min(MAX_FREQ, cutoff * Math.pow(2, totalOctaveOffset)));
-        if (lastModCutoff === null || Math.abs(modulated - lastModCutoff) > 2) {
-          lastModCutoff = modulated;
-          setDynamicModCutoff(modulated);
-        }
-      }
-
-      animId = requestAnimationFrame(updateMod);
+      frame = requestAnimationFrame(sample);
     };
-
-    animId = requestAnimationFrame(updateMod);
-    return () => cancelAnimationFrame(animId);
-  }, [modActive, modDepth, lfoRate, lfoWaveform, envelopeAmount, filterEnvelope, activeNotesCount, cutoff]);
+    frame = requestAnimationFrame(sample);
+    return () => cancelAnimationFrame(frame);
+  }, [readCutoff]);
 
   // Real-time FFT Harmonic Spectrum Underlay Loop
   useEffect(() => {
