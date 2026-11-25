@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { useSynthStore } from '../stores/useSynthStore';
+import { recordParameterChange, useSynthStore } from '../stores/useSynthStore';
 import { ModMatrixRoute } from '../types';
 import { FilterResponseCurve } from './FilterResponseCurve';
 import { Knob } from './Knob';
@@ -66,6 +66,9 @@ export function FilterModulation({ engine, onMidiLearn }: { engine: AudioEngine 
     if (!isActive(id)) {
       store.pushSnapshot();
       write(id, find(id)?.amount || 0.25);
+    } else if (id === 'lfo1' && find('lfo1')?.enabled && legacy > 0) {
+      store.pushSnapshot();
+      write('lfo1', find('lfo1')!.amount);
     }
   };
   const toggle = (id: Source) => {
@@ -78,8 +81,9 @@ export function FilterModulation({ engine, onMidiLearn }: { engine: AudioEngine 
     }
   };
   const changeFilter = (key: 'cutoff' | 'resonance', value: number) =>
-    store.setParams(p => ({ ...p, filter: { ...p.filter, [key]: value } }));
+    recordParameterChange(p => ({ ...p, filter: { ...p.filter, [key]: value } }));
   const percent = Math.round(amount * 100);
+  const active = isActive(source);
   const angle = Math.PI * (amount * 0.75 - 0.5);
   const arc = `M39 5 A34 34 0 0 ${amount >= 0 ? 1 : 0} ${39 + 34 * Math.cos(angle)} ${39 + 34 * Math.sin(angle)}`;
   return <section className="filter-routing" data-dragging={dragging}
@@ -128,14 +132,14 @@ export function FilterModulation({ engine, onMidiLearn }: { engine: AudioEngine 
             if (e.currentTarget.hasPointerCapture(e.pointerId)) write(source, gesture.current.amount + (gesture.current.y - e.clientY) / 100);
           }}>
           <title>Drag the outer ring up or down for signed modulation depth</title>
-          <path d="M15 63 A34 34 0 1 1 63 63" fill="none" stroke="#48504d" strokeWidth="2" />
+          <path d="M15 63 A34 34 0 1 1 63 63" fill="none" stroke="var(--knob-track, #48504d)" strokeWidth="2" />
           <path d={arc} fill="none" stroke="currentColor" strokeWidth="3" />
           <path d="M39 2v6" stroke="currentColor" />
           <circle cx="39" cy="39" r="33" fill="none" stroke="transparent" strokeWidth="12" pointerEvents="stroke" />
         </svg>
       </div>
     </div>
-    <footer className="mod-readout"><span>{dragging ? 'Drop on cutoff' : 'Drag outer ring'}</span>
-      <output>{sourceName[source]} <b>{percent > 0 ? '+' : ''}{percent}%</b></output></footer>
+    <footer className="mod-readout"><span>{dragging ? 'Drop on cutoff' : active ? 'Drag outer ring' : 'Click chip or drag ring'}</span>
+      <output>{sourceName[source]} <b>{active ? `${percent > 0 ? '+' : ''}${percent}%` : 'OFF'}</b></output></footer>
   </section>;
 }

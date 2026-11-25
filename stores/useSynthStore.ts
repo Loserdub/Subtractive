@@ -467,8 +467,9 @@ export const useSynthStore = create<SynthStoreState>((set) => ({
 }));
 
 // A single gesture may change several controls, as on the Perform macros.
-export function recordParameterChange(next: SynthParameters) {
+export function recordParameterChange(updater: SynthParameters | ((prev: SynthParameters) => SynthParameters)) {
   const state = useSynthStore.getState();
+  const next = typeof updater === 'function' ? updater(state.params) : updater;
   const pattern = state.melodicBanks[state.currentBankIndex];
   if (pattern?.motionRecording && state.runningStep !== null && state.isDrumMachinePlaying) {
     const values = (p: SynthParameters) => ({
@@ -481,8 +482,9 @@ export function recordParameterChange(next: SynthParameters) {
     for (const key of Object.keys(before) as (keyof typeof before)[]) {
       if (before[key] !== after[key]) locks[key] = after[key];
     }
-    if (Object.keys(locks).length) {
-      const index = state.runningStep % pattern.length;
+    if (Object.keys(locks).length && pattern.steps.length > 0) {
+      const len = Math.max(1, Math.min(pattern.steps.length, pattern.length || pattern.steps.length));
+      const index = ((state.runningStep % len) + len) % len;
       const steps = [...pattern.steps];
       steps[index] = { ...steps[index], pLocks: { ...steps[index].pLocks, ...locks } };
       state.setMelodicBanks(banks => banks.map((bank, i) =>

@@ -56,10 +56,10 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
       : JSON.parse(JSON.stringify(DEFAULT_MELODIC_PATTERN.steps));
     return {
       enabled: pattern.enabled ?? true,
-      length: pattern.length ?? 16,
-      octave: typeof pattern.octave === 'number' ? pattern.octave : 0,
+      length: typeof pattern.length === 'number' && Number.isFinite(pattern.length) ? pattern.length : 16,
+      octave: typeof pattern.octave === 'number' && Number.isFinite(pattern.octave) ? pattern.octave : 0,
       scale: pattern.scale && SCALE_DEFINITIONS[pattern.scale] ? pattern.scale : 'minor',
-      rootNote: typeof pattern.rootNote === 'number' ? pattern.rootNote : 0,
+      rootNote: typeof pattern.rootNote === 'number' && Number.isFinite(pattern.rootNote) ? pattern.rootNote : 0,
       motionRecording: pattern.motionRecording ?? false,
       steps,
     };
@@ -397,7 +397,7 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
             const isDownbeat = index % 4 === 0;
             const stepGroup = Math.floor(index / 4);
             const hasPLocks = step.pLocks && Object.keys(step.pLocks).length > 0;
-            const noteName = midiToNoteName(step.note + (pattern.octave * 12));
+            const noteName = midiToNoteName(step.note + (safePattern.octave * 12));
 
             let btnStyle = 'bg-[#101420] border-[#1e273a] text-gray-400';
             if (step.enabled) {
@@ -504,7 +504,7 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
                 STEP {String(selectedStepIndex + 1).padStart(2, '0')} PARAMETER & MOTION DOCK
               </span>
               <span className="text-[10px] font-mono-lcd text-white font-bold px-1.5 py-0.5 bg-[#1c132c] rounded border border-[#a855f7]/40">
-                {selectedStep.enabled ? midiToNoteName(selectedStep.note + (pattern.octave * 12)) : 'STEP OFF'}
+                {selectedStep.enabled ? midiToNoteName(selectedStep.note + (safePattern.octave * 12)) : 'STEP OFF'}
               </span>
 
               {selectedStep.pLocks && Object.keys(selectedStep.pLocks).length > 0 && (
@@ -544,7 +544,7 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
                 </span>
                 <button
                   type="button"
-                  onClick={() => onAuditionNote && onAuditionNote(selectedStep.note + (pattern.octave * 12))}
+                  onClick={() => onAuditionNote && onAuditionNote(selectedStep.note + (safePattern.octave * 12))}
                   className="text-[7px] font-mono text-[#00ff66] hover:underline"
                 >
                   ▶ Audition
@@ -560,7 +560,7 @@ export const MelodicSequencer: React.FC<MelodicSequencerProps> = React.memo(({
                       type="button"
                       onClick={() => {
                         handleUpdateSelectedStep({ note: midi, enabled: true });
-                        if (onAuditionNote) onAuditionNote(midi + (pattern.octave * 12));
+                        if (onAuditionNote) onAuditionNote(midi + (safePattern.octave * 12));
                       }}
                       className={`h-6 rounded text-[8px] font-mono font-bold transition-all ${
                         isCurrentNote

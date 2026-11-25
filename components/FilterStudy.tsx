@@ -56,7 +56,7 @@ export function FilterStudy() {
             const age = (now - ripple.time) / lifetime;
             const phase = age * 2.8 - distance / radius;
             if (phase <= 0) continue;
-            dy += 6 * Math.sin(phase * 7) * (1 - age) ** 2 * (1 - distance / radius) ** 2;
+            dy += 8 * Math.sin(phase * 7) * (1 - age) ** 2 * (1 - distance / radius) ** 2;
           }
           const y = point.y + dy;
           if (i === 0) ctx!.moveTo(point.x, y);

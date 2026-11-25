@@ -8,9 +8,10 @@ const lanes = {
   delayMix: 'Delay mix', reverbMix: 'Reverb mix', subGain: 'Sub level',
 };
 type Lane = keyof typeof lanes;
-const clamp = (n: number) => Math.max(0, Math.min(1, n));
-const normalize = (key: Lane, value: number) => clamp(key === 'cutoff' ? Math.log(value / 20) / Math.log(1000) :
-  key === 'resonance' ? value / 40 : value);
+const clamp = (n: number) => Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
+const normalize = (key: Lane, value: number) => clamp(key === 'cutoff'
+  ? Math.log(Math.max(20, Number.isFinite(value) ? value : 20) / 20) / Math.log(1000)
+  : key === 'resonance' ? value / 40 : value);
 const valueAt = (key: Lane, level: number) => key === 'cutoff' ? Math.round(20 * 1000 ** level) :
   Number((level * (key === 'resonance' ? 40 : 1)).toFixed(3));
 const display = (key: Lane, value?: number) => value === undefined ? 'Patch' : key === 'cutoff' ?
@@ -55,6 +56,7 @@ export function MotionLane({ pattern, onChange, current }: Props) {
     const start = last.current || { index, level };
     const steps = [...source.steps];
     for (let i = Math.min(start.index, index); i <= Math.max(start.index, index); i++) {
+      if (!steps[i]) continue;
       const fraction = index === start.index ? 1 : (i - start.index) / (index - start.index);
       const locks = { ...steps[i].pLocks };
       if (clear) delete locks[lane];
@@ -67,6 +69,7 @@ export function MotionLane({ pattern, onChange, current }: Props) {
   };
   const paint = (e: React.PointerEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0 || pattern.steps.length === 0) return;
     const index = Math.min(pattern.steps.length - 1, Math.floor(clamp((e.clientX - rect.left) / rect.width) * pattern.steps.length));
     const level = clamp(1 - (e.clientY - rect.top) / rect.height);
     write(index, level, erase || e.altKey);
@@ -96,7 +99,7 @@ export function MotionLane({ pattern, onChange, current }: Props) {
         const value = step.pLocks?.[lane];
         return <div key={index} className="motion-cell" data-current={index === current} data-unused={index >= pattern.length}
           role="slider" tabIndex={0} aria-label={`${lanes[lane]}, step ${index + 1}`}
-          aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(normalize(lane, value ?? valueAt(lane, 0)) * 100)}
+          aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(normalize(lane, value ?? valueAt(lane, 0.5)) * 100)}
           aria-valuetext={display(lane, value)} onFocus={() => setFocus(index)} onKeyDown={e => {
             if (!['ArrowUp','ArrowDown','Delete','Backspace'].includes(e.key)) return;
             e.preventDefault();

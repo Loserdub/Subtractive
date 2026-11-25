@@ -56,7 +56,7 @@ export function PowerPanel({ onStart }: { onStart: () => Promise<void> }) {
         </div>
         <footer className="initialize-footer">
           <span>Designed by Justin Ray</span>
-          <a href="https://trustnodelogic.com/">trustnodelogic.com <span aria-hidden="true">↗</span></a>
+          <a href="https://trustnodelogic.com/" target="_blank" rel="noopener noreferrer">trustnodelogic.com <span aria-hidden="true">↗</span></a>
         </footer>
       </div>
     </main>

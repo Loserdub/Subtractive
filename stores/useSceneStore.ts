@@ -4,7 +4,9 @@ import { useSynthStore } from './useSynthStore';
 
 function snapshot() {
   const state = useSynthStore.getState();
-  const bank = state.currentBankIndex;
+  const bank = Number.isInteger(state.currentBankIndex)
+    ? Math.max(0, Math.min(SCENE_COUNT - 1, state.currentBankIndex))
+    : 0;
   return structuredClone({
     bank, name: state.selectedPresetName, params: state.params,
     drums: state.banks[bank], melody: state.melodicBanks[bank],
@@ -13,15 +15,52 @@ function snapshot() {
 }
 
 export type Scene = ReturnType<typeof snapshot>;
+const SCENE_COUNT = 4;
+const DRUM_TRACKS: DrumTrackName[] = ['kick', 'snare', 'hihat', 'crash'];
+
+function isValidSlot(slot: number) {
+  return Number.isInteger(slot) && slot >= 0 && slot < SCENE_COUNT;
+}
+
+function isFiniteNum(v: unknown): v is number {
+  return typeof v === 'number' && Number.isFinite(v);
+}
+
+function isValidScene(scene: unknown): scene is Scene {
+  if (!scene || typeof scene !== 'object') return false;
+  const s = scene as Partial<Scene>;
+  if (!Number.isInteger(s.bank) || (s.bank as number) < 0 || (s.bank as number) >= SCENE_COUNT) return false;
+  if (typeof s.name !== 'string') return false;
+  const p = s.params;
+  if (!p || !p.osc1 || !p.osc2 || !p.osc3 || !p.osc4 || !p.filter || !p.ampEnvelope || !p.filterEnvelope || !p.lfo || !p.arpeggiator) return false;
+  if (!p.fx?.drive || !p.fx.delay || !p.fx.reverb) return false;
+  if (!isFiniteNum(p.masterGain) || !isFiniteNum(p.subGain) || !isFiniteNum(p.filter.cutoff) || !isFiniteNum(p.filter.resonance)) return false;
+  if (!isFiniteNum(p.fx.drive.amount) || !isFiniteNum(p.fx.delay.mix) || !isFiniteNum(p.fx.delay.feedback) || !isFiniteNum(p.fx.reverb.mix)) return false;
+  if (!s.melody || typeof s.melody.enabled !== 'boolean' || !Array.isArray(s.melody.steps) || s.melody.steps.length !== 16) return false;
+  if (!Number.isInteger(s.melody.length) || s.melody.length < 1 || s.melody.length > 16 || !isFiniteNum(s.melody.octave)) return false;
+  if (!s.melody.steps.every(step => step && isFiniteNum(step.note) && typeof step.enabled === 'boolean')) return false;
+  if (!s.drums || !s.settings || !s.lengths || !s.ratchets) return false;
+  return DRUM_TRACKS.every(track => {
+    const drumRow = s.drums![track];
+    const setting = s.settings![track];
+    const len = s.lengths![track];
+    const ratchetRow = s.ratchets![track];
+    return (
+      Array.isArray(drumRow) && drumRow.length >= 16 && drumRow.every(isFiniteNum) &&
+      !!setting && isFiniteNum(setting.volume) && isFiniteNum(setting.pan) && isFiniteNum(setting.decay) && isFiniteNum(setting.pitch) &&
+      Number.isInteger(len) && len >= 1 && len <= 16 &&
+      Array.isArray(ratchetRow) && ratchetRow.length >= 16 && ratchetRow.every(isFiniteNum)
+    );
+  });
+}
+
 const storageKey = 'subtractive_scenes_v1';
 function readScenes(): (Scene | null)[] {
-  let saved: Scene[] = [];
+  let saved: unknown = [];
   try { saved = JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch {}
-  return Array.from({ length: 4 }, (_, i) => {
-    const scene = saved?.[i];
-    return scene?.params?.fx && scene.melody?.steps?.length === 16 && scene.drums?.kick &&
-      scene.settings?.kick && scene.lengths && scene.ratchets && Number.isInteger(scene.bank) &&
-      scene.bank >= 0 && scene.bank < 4 ? scene : null;
+  return Array.from({ length: SCENE_COUNT }, (_, i) => {
+    const scene = Array.isArray(saved) ? saved[i] : null;
+    return isValidScene(scene) ? scene : null;
   });
 }
 
@@ -45,6 +84,7 @@ interface SceneMemory {
 export const useSceneStore = create<SceneMemory>((set, get) => ({
   scenes: readScenes(), active: null, queued: null, recallCount: 0, storageFailed: false,
   capture(slot) {
+    if (!isValidSlot(slot)) return;
     const scenes = [...get().scenes];
     scenes[slot] = snapshot();
     let storageFailed = false;
@@ -52,7 +92,7 @@ export const useSceneStore = create<SceneMemory>((set, get) => ({
     set({ scenes, active: slot, queued: null, storageFailed });
   },
   launch(slot) {
-    if (!get().scenes[slot]) return;
+    if (!isValidSlot(slot) || !get().scenes[slot]) return;
     const state = useSynthStore.getState();
     if (state.isDrumMachinePlaying || state.isDrumQueued || state.isSeqQueued) {
       set({ queued: get().queued === slot ? null : slot });
@@ -61,6 +101,7 @@ export const useSceneStore = create<SceneMemory>((set, get) => ({
     }
   },
   recall(slot) {
+    if (!isValidSlot(slot)) return;
     const scene = get().scenes[slot];
     if (!scene) return;
     const { bank, name, params, drums, melody, settings, lengths, ratchets } = structuredClone(scene);

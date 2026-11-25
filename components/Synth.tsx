@@ -257,11 +257,11 @@ export const Synth: React.FC = () => {
         const min = 20;
         const max = 20000;
         const cutoff = min * Math.pow(max / min, normalizedVal);
-        setParams(p => patchParams(p, { filter: { cutoff } }));
+        recordParameterChange(p => patchParams(p, { filter: { cutoff } }));
         break;
       }
       case 'filter.resonance': {
-        setParams(p => patchParams(p, { filter: { resonance: normalizedVal * 40 } }));
+        recordParameterChange(p => patchParams(p, { filter: { resonance: normalizedVal * 40 } }));
         break;
       }
       case 'filterEnvelope.amount': {
@@ -273,7 +273,7 @@ export const Synth: React.FC = () => {
         break;
       }
       case 'subGain': {
-        setParams(p => patchParams(p, { subGain: normalizedVal }));
+        recordParameterChange(p => patchParams(p, { subGain: normalizedVal }));
         break;
       }
       case 'noiseGain': {
@@ -329,7 +329,7 @@ export const Synth: React.FC = () => {
         break;
       }
       case 'fx.drive.amount': {
-        setParams(p => ({ ...p, fx: { ...p.fx, drive: { ...p.fx.drive, amount: normalizedVal } } }));
+        recordParameterChange(p => ({ ...p, fx: { ...p.fx, drive: { ...p.fx.drive, amount: normalizedVal } } }));
         break;
       }
       case 'fx.delay.time': {
@@ -341,7 +341,7 @@ export const Synth: React.FC = () => {
         break;
       }
       case 'fx.delay.mix': {
-        setParams(p => ({ ...p, fx: { ...p.fx, delay: { ...p.fx.delay, mix: normalizedVal } } }));
+        recordParameterChange(p => ({ ...p, fx: { ...p.fx, delay: { ...p.fx.delay, mix: normalizedVal } } }));
         break;
       }
       case 'fx.reverb.decay': {
@@ -349,7 +349,7 @@ export const Synth: React.FC = () => {
         break;
       }
       case 'fx.reverb.mix': {
-        setParams(p => ({ ...p, fx: { ...p.fx, reverb: { ...p.fx.reverb, mix: normalizedVal } } }));
+        recordParameterChange(p => ({ ...p, fx: { ...p.fx, reverb: { ...p.fx.reverb, mix: normalizedVal } } }));
         break;
       }
       case 'arp.rate': {
@@ -469,7 +469,7 @@ export const Synth: React.FC = () => {
       const audioContext = engine.getContext();
       if (!audioContext) {
         setMidiStatus('AudioContext Error');
-        return;
+        throw new Error('AudioContext unavailable');
       }
       audioEngine.current = engine;
       audioEngine.current.setBpm(bpm);
@@ -759,7 +759,7 @@ export const Synth: React.FC = () => {
         const max = 20000;
         const normalized = data2 / 127;
         const cutoff = min * Math.pow(max / min, normalized);
-        setParams(p => patchParams(p, { filter: { cutoff } }));
+        recordParameterChange(p => patchParams(p, { filter: { cutoff } }));
       } else if (data1 === 1) {
         const depth = data2 / 127;
         setParams(p => patchParams(p, { lfo: { depth } }));
@@ -1848,7 +1848,7 @@ export const Synth: React.FC = () => {
               <div className="flex-1 min-h-0 flex flex-col">
                 <MasterFXPanel 
                   fx={params.fx} 
-                  onChange={(fx) => setParams(p => ({ ...p, fx }))} 
+                  onChange={(fx) => recordParameterChange(p => ({ ...p, fx }))} 
                   onMidiLearn={handleMidiLearn}
                   learningParamId={learningParamId}
                   mappedCCs={rawMappedCCs}
@@ -1896,7 +1896,7 @@ export const Synth: React.FC = () => {
                           max={20000}
                           logarithmic
                           size={32}
-                          onChange={(v) => setParams(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))}
+                          onChange={(v) => recordParameterChange(p => ({ ...p, filter: { ...p.filter, cutoff: v } }))}
                           unit="Hz"
                           color="cyan"
                         />
@@ -1908,7 +1908,7 @@ export const Synth: React.FC = () => {
                           min={0.1}
                           max={20}
                           size={32}
-                          onChange={(v) => setParams(p => ({ ...p, filter: { ...p.filter, resonance: v } }))}
+                          onChange={(v) => recordParameterChange(p => ({ ...p, filter: { ...p.filter, resonance: v } }))}
                           color="cyan"
                         />
                       </div>
@@ -1919,7 +1919,7 @@ export const Synth: React.FC = () => {
                           min={0}
                           max={1}
                           size={32}
-                          onChange={(v) => setParams(p => ({ ...p, subGain: v }))}
+                          onChange={(v) => recordParameterChange(p => ({ ...p, subGain: v }))}
                           color="emerald"
                         />
                       </div>
@@ -1930,7 +1930,7 @@ export const Synth: React.FC = () => {
                           min={0.01}
                           max={5}
                           size={32}
-                          onChange={(v) => setParams(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))}
+                          onChange={(v) => recordParameterChange(p => ({ ...p, ampEnvelope: { ...p.ampEnvelope, decay: v } }))}
                           unit="s"
                           color="amber"
                         />
@@ -1942,7 +1942,7 @@ export const Synth: React.FC = () => {
                           min={0}
                           max={1}
                           size={32}
-                          onChange={(v) => setParams(p => ({ ...p, fx: { ...p.fx, delay: { ...p.fx.delay, mix: v } } }))}
+                          onChange={(v) => recordParameterChange(p => ({ ...p, fx: { ...p.fx, delay: { ...p.fx.delay, mix: v } } }))}
                           color="red"
                         />
                       </div>
@@ -1953,7 +1953,7 @@ export const Synth: React.FC = () => {
                           min={0}
                           max={1}
                           size={32}
-                          onChange={(v) => setParams(p => ({ ...p, fx: { ...p.fx, reverb: { ...p.fx.reverb, mix: v } } }))}
+                          onChange={(v) => recordParameterChange(p => ({ ...p, fx: { ...p.fx, reverb: { ...p.fx.reverb, mix: v } } }))}
                           color="cyan"
                         />
                       </div>
@@ -2201,7 +2201,7 @@ export const Synth: React.FC = () => {
                       min={0}   
                       max={1}   
                       size={30} 
-                      onChange={(v) => setParams(p => patchParams(p, { subGain: v }))}   
+                      onChange={(v) => recordParameterChange(p => patchParams(p, { subGain: v }))}   
                       unit="%"  
                       color="amber"
                       paramId="subGain"
@@ -2313,7 +2313,7 @@ export const Synth: React.FC = () => {
                           min={0}   
                           max={40}    
                           size={34}             
-                          onChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}                    
+                          onChange={v => recordParameterChange(p => patchParams(p, { filter: { resonance: v } }))}                    
                           color="cyan"
                           paramId="filter.resonance"
                           isLearning={learningParamId === 'filter.resonance'}
@@ -2361,6 +2361,18 @@ export const Synth: React.FC = () => {
                   <Panel title="LFO — MODULATION GENERATOR" badgeColor="emerald" className="w-full">
                     <div className="flex flex-col gap-2 w-full">
                       <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('application/x-subtractive-lfo', 'lfo1');
+                            e.dataTransfer.effectAllowed = 'copy';
+                          }}
+                          title="Drag LFO 1 onto Cutoff to route modulation"
+                          className="px-1.5 py-1 rounded-sm font-mono text-[8px] font-bold uppercase tracking-wider cursor-grab active:cursor-grabbing border border-[#00ff66]/40 bg-[#00ff66]/10 text-[#00ff66] hover:border-[#00ff66] shrink-0"
+                        >
+                          LFO 1 ➔
+                        </button>
                         <div className="flex flex-row gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
                           {(['sine', 'triangle', 'sawtooth', 'square'] as Waveform[]).map(w => {
                             const isActive = params.lfo.waveform === w;
@@ -2560,7 +2572,7 @@ export const Synth: React.FC = () => {
                     min={0}   
                     max={1}   
                     size={36} 
-                    onChange={(v) => setParams(p => patchParams(p, { subGain: v }))}   
+                    onChange={(v) => recordParameterChange(p => patchParams(p, { subGain: v }))}   
                     unit="%"  
                     color="amber"
                     paramId="subGain"
@@ -2683,7 +2695,7 @@ export const Synth: React.FC = () => {
                         min={0}   
                         max={40}    
                         size={44}             
-                        onChange={v => setParams(p => patchParams(p, { filter: { resonance: v } }))}                    
+                        onChange={v => recordParameterChange(p => patchParams(p, { filter: { resonance: v } }))}                    
                         color="cyan"
                         paramId="filter.resonance"
                         isLearning={learningParamId === 'filter.resonance'}
@@ -2889,7 +2901,7 @@ export const Synth: React.FC = () => {
             <div className="pt-1">
               <MasterFXPanel 
                 fx={params.fx} 
-                onChange={(fx) => setParams(p => ({ ...p, fx }))} 
+                onChange={(fx) => recordParameterChange(p => ({ ...p, fx }))} 
                 onMidiLearn={handleMidiLearn}
                 learningParamId={learningParamId}
                 mappedCCs={rawMappedCCs}

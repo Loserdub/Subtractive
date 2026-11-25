@@ -701,9 +701,9 @@ export class AudioEngine {
     }
   }
 
-  private updateDelayTimes() {
+  private updateDelayTimes(time?: number) {
     if (!this.audioContext || !this.delayLeftNode || !this.delayRightNode) return;
-    const now = this.audioContext.currentTime;
+    const now = time ?? this.audioContext.currentTime;
     const t = Math.max(0.005, Math.min(3.0, this.getDelayTimeSeconds()));
     const tRight = this.params.fx.delay.pingPong ? Math.min(4.8, t * 1.5) : t;
     this.delayLeftNode.delayTime.setTargetAtTime(t, now, 0.01);
@@ -795,9 +795,12 @@ export class AudioEngine {
     if (this.delayDryGain && this.delayWetGain &&
         (!prev || prev.fx.delay !== newParams.fx.delay)) {
       const delayMix = this.params.fx.delay.enabled ? this.params.fx.delay.mix : 0;
+      const delayFeedback = Math.max(0, Math.min(0.98, Number.isFinite(this.params.fx.delay.feedback) ? this.params.fx.delay.feedback : 0.35));
       this.delayDryGain.gain.setTargetAtTime(1 - delayMix, now, 0.01);
       this.delayWetGain.gain.setTargetAtTime(delayMix, now, 0.01);
-      this.updateDelayTimes();
+      this.delayFeedbackLeft?.gain.setTargetAtTime(delayFeedback, now, 0.01);
+      this.delayFeedbackRight?.gain.setTargetAtTime(delayFeedback, now, 0.01);
+      this.updateDelayTimes(now);
     }
 
     // 4. Update Reverb

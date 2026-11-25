@@ -44,8 +44,10 @@ interface PerformWorkspaceProps {
 }
 
 function padPosition(params: SynthParameters) {
-  return { x: Math.max(0, Math.min(1, Math.log(params.filter.cutoff / 20) / Math.log(1000))),
-    y: Math.max(0, Math.min(1, params.fx.reverb.mix / 0.85)) };
+  const cutoff = Number.isFinite(params.filter.cutoff) ? Math.max(20, params.filter.cutoff) : 20;
+  const revMix = Number.isFinite(params.fx.reverb.mix) ? params.fx.reverb.mix : 0;
+  return { x: Math.max(0, Math.min(1, Math.log(cutoff / 20) / Math.log(1000))),
+    y: Math.max(0, Math.min(1, revMix / 0.85)) };
 }
 
 export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
@@ -84,6 +86,11 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   const [xyMode, setXyMode] = useState<'latch' | 'spring'>('latch');
   const padRef = useRef<HTMLDivElement>(null);
   const springAnimRef = useRef<number | null>(null);
+  const isXyDraggingRef = useRef(false);
+  const xyPosRef = useRef(xyPos);
+  const onSynthParamChangeRef = useRef(onSynthParamChange);
+  onSynthParamChangeRef.current = onSynthParamChange;
+  const lastSelfCommitRef = useRef<{ cutoff: number; revMix: number } | null>(null);
 
   // ── Momentary FX Backup States ───────────────────────────────────────────
   const prevDelayRef = useRef<{ feedback: number; mix: number; enabled: boolean } | null>(null);
@@ -105,25 +112,68 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
     const unsubscribe = useSceneStore.subscribe((next, previous) => {
       if (next.recallCount === previous.recallCount) return;
       stopGesture();
+      isXyDraggingRef.current = false;
       prevDelayRef.current = prevFilterRef.current = null;
+      lastSelfCommitRef.current = null;
       setIsDubActive(false);
       setIsFilterDropActive(false);
       setIsXyDragging(false);
-      setXyPos(padPosition(useSynthStore.getState().params));
+      const nextPos = padPosition(useSynthStore.getState().params);
+      xyPosRef.current = nextPos;
+      setXyPos(nextPos);
     });
-    return () => { stopGesture(); unsubscribe(); };
+    return () => {
+      stopGesture();
+      unsubscribe();
+      const restorePatch: Partial<SynthParameters> = {};
+      const current = useSynthStore.getState().params;
+      if (prevDelayRef.current) {
+        restorePatch.fx = {
+          ...current.fx,
+          delay: { ...current.fx.delay, ...prevDelayRef.current },
+        };
+        prevDelayRef.current = null;
+      }
+      if (prevFilterRef.current) {
+        restorePatch.filter = { ...current.filter, ...prevFilterRef.current };
+        prevFilterRef.current = null;
+      }
+      if (restorePatch.fx || restorePatch.filter) {
+        onSynthParamChangeRef.current(restorePatch);
+      }
+    };
   }, []);
+
+  useEffect(() => {
+    if (isXyDraggingRef.current || springAnimRef.current !== null) return;
+    const cutoff = synthParams.filter.cutoff;
+    const revMix = synthParams.fx.reverb.mix;
+    if (lastSelfCommitRef.current &&
+        lastSelfCommitRef.current.cutoff === cutoff &&
+        lastSelfCommitRef.current.revMix === revMix) {
+      return;
+    }
+    lastSelfCommitRef.current = null;
+    const next = padPosition(synthParams);
+    xyPosRef.current = next;
+    setXyPos(next);
+  }, [synthParams]);
 
   // Handle XY pad coordinate application to synth engine with audio fast-path
   const applyXyCoords = useCallback((nx: number, ny: number) => {
+    if (!Number.isFinite(nx) || !Number.isFinite(ny)) return;
+    const safeX = Math.max(0, Math.min(1, nx));
+    const safeY = Math.max(0, Math.min(1, ny));
+
     // X -> Cutoff (20Hz to 20000Hz log)
     const minCut = 20;
     const maxCut = 20000;
-    const cutoff = Math.round(minCut * Math.pow(maxCut / minCut, Math.max(0, Math.min(1, nx))));
+    const cutoff = Math.round(minCut * Math.pow(maxCut / minCut, safeX));
 
     // Y -> Master Reverb & Delay Space
-    const reverbMix = +(Math.max(0, Math.min(1, ny)) * 0.85).toFixed(3);
-    const delayMix = +(Math.max(0, Math.min(1, ny)) * 0.7).toFixed(3);
+    const reverbMix = +(safeY * 0.85).toFixed(3);
+    const delayMix = +(safeY * 0.7).toFixed(3);
+    lastSelfCommitRef.current = { cutoff, revMix: reverbMix };
 
     // Fast-path: immediately dispatch to audio thread with zero latency & zero React overhead
     if (audioEngine) {
@@ -132,23 +182,24 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
       audioEngine.setDelayMix(delayMix);
     }
 
+    const latest = useSynthStore.getState().params;
     // Schedule throttled React state commit on animation frame
     pendingPatchRef.current = {
       filter: {
-        ...synthParams.filter,
+        ...latest.filter,
         cutoff,
       },
       fx: {
-        ...synthParams.fx,
+        ...latest.fx,
         reverb: {
-          ...synthParams.fx.reverb,
+          ...latest.fx.reverb,
           mix: reverbMix,
-          enabled: ny > 0.05 ? true : synthParams.fx.reverb.enabled,
+          enabled: safeY > 0.05 ? true : latest.fx.reverb.enabled,
         },
         delay: {
-          ...synthParams.fx.delay,
+          ...latest.fx.delay,
           mix: delayMix,
-          enabled: ny > 0.05 ? true : synthParams.fx.delay.enabled,
+          enabled: safeY > 0.05 ? true : latest.fx.delay.enabled,
         }
       }
     };
@@ -156,57 +207,71 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
     if (!rafSyncRef.current) {
       rafSyncRef.current = requestAnimationFrame(() => {
         if (pendingPatchRef.current) {
-          onSynthParamChange(pendingPatchRef.current);
+          onSynthParamChangeRef.current(pendingPatchRef.current);
           pendingPatchRef.current = null;
         }
         rafSyncRef.current = null;
       });
     }
-  }, [synthParams, onSynthParamChange, audioEngine]);
+  }, [audioEngine]);
 
   // Pointer drag on XY Surface
   const handlePadPointerDown = (e: React.PointerEvent) => {
+    if (!e.isPrimary || e.button !== 0) return;
     e.preventDefault();
     if (!padRef.current) return;
+    const rect = padRef.current.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
     try {
       useSynthStore.getState().pushSnapshot();
     } catch {}
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+    isXyDraggingRef.current = true;
     setIsXyDragging(true);
 
-    if (springAnimRef.current) {
+    if (springAnimRef.current !== null) {
       cancelAnimationFrame(springAnimRef.current);
       springAnimRef.current = null;
     }
 
-    const rect = padRef.current.getBoundingClientRect();
     const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const ny = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height)); // bottom to top
-    setXyPos({ x: nx, y: ny });
+    const nextPos = { x: nx, y: ny };
+    xyPosRef.current = nextPos;
+    setXyPos(nextPos);
     applyXyCoords(nx, ny);
   };
 
   const handlePadPointerMove = (e: React.PointerEvent) => {
-    if (!isXyDragging || !padRef.current) return;
+    if (!isXyDraggingRef.current || !padRef.current) return;
     const rect = padRef.current.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
     const nx = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
     const ny = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
-    setXyPos({ x: nx, y: ny });
+    const nextPos = { x: nx, y: ny };
+    xyPosRef.current = nextPos;
+    setXyPos(nextPos);
     applyXyCoords(nx, ny);
   };
 
   const handlePadPointerUp = (e: React.PointerEvent) => {
+    if (!isXyDraggingRef.current) return;
+    isXyDraggingRef.current = false;
     setIsXyDragging(false);
     try {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+      if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
     } catch {}
 
     // Flush any pending React state patch immediately on pointer release
     if (pendingPatchRef.current) {
-      onSynthParamChange(pendingPatchRef.current);
+      onSynthParamChangeRef.current(pendingPatchRef.current);
       pendingPatchRef.current = null;
     }
-    if (rafSyncRef.current) {
+    if (rafSyncRef.current !== null) {
       cancelAnimationFrame(rafSyncRef.current);
       rafSyncRef.current = null;
     }
@@ -215,21 +280,25 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
       // Smoothly spring back to center (0.5, 0.5)
       const targetX = 0.5;
       const targetY = 0.5;
-      let curX = xyPos.x;
-      let curY = xyPos.y;
+      let curX = xyPosRef.current.x;
+      let curY = xyPosRef.current.y;
 
       const animateSpring = () => {
         curX += (targetX - curX) * 0.18;
         curY += (targetY - curY) * 0.18;
 
         if (Math.abs(curX - targetX) < 0.005 && Math.abs(curY - targetY) < 0.005) {
-          setXyPos({ x: targetX, y: targetY });
+          const settled = { x: targetX, y: targetY };
+          xyPosRef.current = settled;
+          setXyPos(settled);
           applyXyCoords(targetX, targetY);
           springAnimRef.current = null;
           return;
         }
 
-        setXyPos({ x: curX, y: curY });
+        const stepPos = { x: curX, y: curY };
+        xyPosRef.current = stepPos;
+        setXyPos(stepPos);
         applyXyCoords(curX, curY);
         springAnimRef.current = requestAnimationFrame(animateSpring);
       };
@@ -240,17 +309,19 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
 
   // ── Momentary FX Handlers ────────────────────────────────────────────────
   const handleDubFreezeDown = () => {
+    if (prevDelayRef.current) return;
+    const current = useSynthStore.getState().params;
     prevDelayRef.current = {
-      feedback: synthParams.fx.delay.feedback,
-      mix: synthParams.fx.delay.mix,
-      enabled: synthParams.fx.delay.enabled,
+      feedback: current.fx.delay.feedback,
+      mix: current.fx.delay.mix,
+      enabled: current.fx.delay.enabled,
     };
     setIsDubActive(true);
-    onSynthParamChange({
+    onSynthParamChangeRef.current({
       fx: {
-        ...synthParams.fx,
+        ...current.fx,
         delay: {
-          ...synthParams.fx.delay,
+          ...current.fx.delay,
           enabled: true,
           feedback: 0.98,
           mix: 0.85,
@@ -261,11 +332,12 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
 
   const handleDubFreezeUp = () => {
     if (prevDelayRef.current) {
-      onSynthParamChange({
+      const current = useSynthStore.getState().params;
+      onSynthParamChangeRef.current({
         fx: {
-          ...synthParams.fx,
+          ...current.fx,
           delay: {
-            ...synthParams.fx.delay,
+            ...current.fx.delay,
             ...prevDelayRef.current,
           }
         }
@@ -276,14 +348,16 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
   };
 
   const handleFilterDropDown = () => {
+    if (prevFilterRef.current) return;
+    const current = useSynthStore.getState().params;
     prevFilterRef.current = {
-      cutoff: synthParams.filter.cutoff,
-      resonance: synthParams.filter.resonance,
+      cutoff: current.filter.cutoff,
+      resonance: current.filter.resonance,
     };
     setIsFilterDropActive(true);
-    onSynthParamChange({
+    onSynthParamChangeRef.current({
       filter: {
-        ...synthParams.filter,
+        ...current.filter,
         cutoff: 75,
         resonance: 25,
       }
@@ -292,9 +366,10 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
 
   const handleFilterDropUp = () => {
     if (prevFilterRef.current) {
-      onSynthParamChange({
+      const current = useSynthStore.getState().params;
+      onSynthParamChangeRef.current({
         filter: {
-          ...synthParams.filter,
+          ...current.filter,
           ...prevFilterRef.current,
         }
       });
@@ -434,6 +509,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
             onPointerMove={handlePadPointerMove}
             onPointerUp={handlePadPointerUp}
             onPointerCancel={handlePadPointerUp}
+            onLostPointerCapture={handlePadPointerUp}
             className="flex-1 w-full min-h-[160px] my-1 rounded relative cursor-crosshair overflow-hidden touch-none select-none border border-[#1e283c]"
             style={{
               background: 'radial-gradient(ellipse at center, #0a1420 0%, #04070c 100%)',
@@ -483,7 +559,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
 
           <div className="flex items-center justify-between text-[8px] font-mono text-gray-400 px-1 pt-0.5">
             <span>Drag anywhere to sweep filters & space simultaneously</span>
-            <span className="text-[#00ff66]">{Math.round(synthParams.filter.cutoff)} Hz</span>
+            <span className="text-[#00ff66]">{Number.isFinite(synthParams.filter.cutoff) ? Math.round(synthParams.filter.cutoff) : 20} Hz</span>
           </div>
         </div>
 
@@ -508,7 +584,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
             <div className="flex flex-col items-center gap-1">
               <Knob
                 label="BRIGHT"
-                value={Math.log(Math.max(20, synthParams.filter.cutoff) / 20) / Math.log(1000)}
+                value={Math.log(Math.max(20, Number.isFinite(synthParams.filter.cutoff) ? synthParams.filter.cutoff : 20) / 20) / Math.log(1000)}
                 min={0}
                 max={1}
                 size={48}
@@ -523,7 +599,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
             <div className="flex flex-col items-center gap-1">
               <Knob
                 label="COLOR"
-                value={synthParams.filter.resonance / 36}
+                value={(Number.isFinite(synthParams.filter.resonance) ? synthParams.filter.resonance : 0) / 36}
                 min={0}
                 max={1}
                 size={48}
@@ -538,7 +614,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
             <div className="flex flex-col items-center gap-1">
               <Knob
                 label="SPACE"
-                value={synthParams.fx.reverb.mix / 0.8}
+                value={(Number.isFinite(synthParams.fx.reverb.mix) ? synthParams.fx.reverb.mix : 0) / 0.8}
                 min={0}
                 max={1}
                 size={48}
@@ -553,7 +629,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
             <div className="flex flex-col items-center gap-1">
               <Knob
                 label="PUNCH"
-                value={synthParams.subGain}
+                value={Number.isFinite(synthParams.subGain) ? synthParams.subGain : 0}
                 min={0}
                 max={1}
                 size={48}
@@ -577,6 +653,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 onPointerDown={handleDubFreezeDown}
                 onPointerUp={handleDubFreezeUp}
                 onPointerLeave={handleDubFreezeUp}
+                onPointerCancel={handleDubFreezeUp}
                 className={`py-2 px-2 rounded font-mono text-[9px] font-bold tracking-wider border uppercase transition-all select-none ${
                   isDubActive
                     ? 'bg-[#00ff66] text-black border-[#00ff66] shadow-[0_0_12px_#00ff66] scale-[0.98]'
@@ -591,6 +668,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 onPointerDown={handleFilterDropDown}
                 onPointerUp={handleFilterDropUp}
                 onPointerLeave={handleFilterDropUp}
+                onPointerCancel={handleFilterDropUp}
                 className={`py-2 px-2 rounded font-mono text-[9px] font-bold tracking-wider border uppercase transition-all select-none ${
                   isFilterDropActive
                     ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_12px_#ff3344] scale-[0.98]'
