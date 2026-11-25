@@ -30,8 +30,7 @@
   gap: 10px;
   border-top: 1px solid currentColor;
   padding-top: 0.65em;
-  font-family: "Space Mono", Consolas, monospace;
-  font-size: clamp(11px, 1.15vw, 18px);
+  font-size: clamp(12px, 1.26vw, 20px);
   line-height: 1.2;
 }
 .initialize-imprint {
@@ -68,8 +67,7 @@
 }
 .initialize-title p {
   margin: 0.6em 0 0;
-  font-family: "Space Mono", Consolas, monospace;
-  font-size: clamp(15px, min(1.85vw, 3.6vh), 34px);
+  font-size: clamp(17px, min(2.15vw, 4vh), 40px);
   line-height: 1.18;
   letter-spacing: -0.02em;
 }
@@ -83,11 +81,12 @@
   max-width: 100%;
   min-height: 48px;
   padding: 0.58em 1.05em 0.62em 0.77em;
-  border: 1px solid #e04d1f;
+  border: 1px solid #cc4920;
   border-radius: 2px;
   background: #ff6636;
   color: var(--ink);
-  font: 500 clamp(16px, min(4.6vw, 2vw), 32px)/1.05 "Space Mono", Consolas, monospace;
+  box-shadow: inset 2px 2px 0 #ffa080, inset -2px -2px 0 #d24a21, 0 3px 0 #92391d;
+  font: 600 clamp(20px, 2.35vw, 39px)/1.05 "Helvetica Neue", Helvetica, Arial, sans-serif;
   letter-spacing: -0.02em;
   cursor: pointer;
   transition: transform 90ms ease-out, background 90ms ease-out;
@@ -100,10 +99,11 @@
 }
 .initialize-action button:hover { background: #ff7448; }
 .initialize-action button:active, .initialize-action button:disabled {
-  transform: translateY(1px);
+  transform: translateY(2px);
+  box-shadow: inset 1px 1px 2px #ab401f, inset -1px -1px 0 #ffa080, 0 1px 0 #92391d;
   background: #f25828;
 }
-.initialize-action p { margin: 0.7em 0 0; font-family: "Space Mono", Consolas, monospace; font-size: clamp(12px, 1.1vw, 18px); line-height: 1.25; }
+.initialize-action p { margin: 0.7em 0 0; font-size: clamp(13px, 1.24vw, 20px); line-height: 1.25; }
 
 @media (max-width: 640px) and (orientation: portrait) {
   .initialize-stage { display: grid; grid-template-rows: auto minmax(90px, 1fr) auto; }
