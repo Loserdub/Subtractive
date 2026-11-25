@@ -818,6 +818,86 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
+   STUDIO PAPER — Archival Drafting Stock & Safety-Orange Signal
+   ══════════════════════════════════════════════════════════════════════ */
+[data-theme="studio-paper"] {
+  --chassis-bg:       #eeeae0;
+  --chassis-gradient: #eeeae0;
+  --panel-bg:         #e7e2d6;
+  --panel-bg-alt:     #dfd9cc;
+  --panel-gradient:   #e7e2d6;
+  --panel-border:     rgba(23, 24, 21, 0.24);
+  --panel-border-width: 1px;
+  --panel-inset-hi:   rgba(255, 255, 255, 0.45);
+  --panel-inset-lo:   rgba(23, 24, 21, 0.05);
+  --panel-shadow:     0 1px 0 rgba(23, 24, 21, 0.08);
+
+  --oled-bg:          #171815;
+  --oled-bg-grad:     #171815;
+  --oled-border:      #171815;
+  --oled-glow:        transparent;
+  --oled-text:        #eeeae0;
+  --oled-scanline:    rgba(255, 255, 255, 0.03);
+
+  --knob-track:       #cbc5b7;
+  --knob-ribbed:      #d8d2c4;
+  --knob-face-grad:   #eeeae0;
+  --knob-face-border: #171815;
+  --knob-hi:          rgba(255, 255, 255, 0.5);
+  --knob-lo:          rgba(23, 24, 21, 0.14);
+
+  --screw-grad:       #d6d0c2;
+  --screw-border:     rgba(23, 24, 21, 0.35);
+  --screw-line:       #171815;
+
+  --accent-cyan:      #0f6d55;
+  --accent-amber:     #ff6636;
+  --accent-emerald:   #1a7f4c;
+  --accent-red:       #c93828;
+
+  --text-primary:     #171815;
+  --text-secondary:   #5b5c55;
+  --text-muted:       #888980;
+  --text-label:       #3d3e38;
+
+  --btn-inactive-bg:      #e2ddd0;
+  --btn-inactive-border:  rgba(23, 24, 21, 0.28);
+  --btn-inactive-text:    #3d3e38;
+  --btn-hover-bg:         #d8d2c3;
+  --section-bg:           #e2ddd0;
+  --section-border:       rgba(23, 24, 21, 0.2);
+  --osc-bg:               #ebe6db;
+  --osc-border:           rgba(23, 24, 21, 0.22);
+  --waveform-bg:          #e9e4d9;
+  --waveform-border:      rgba(23, 24, 21, 0.24);
+
+  --key-white-grad:   #f8f6f0;
+  --key-white-active: #dcd6c7;
+  --key-black-grad:   #171815;
+  --key-black-active: #343630;
+
+  --wheel-bg:         #dcd6c7;
+  --wheel-border:     #171815;
+  --wheel-thumb:      #ff6636;
+
+  --tab-bar-bg:       #e2ddd0;
+  --tab-bar-border:   rgba(23, 24, 21, 0.25);
+  --tab-active-bg:    #ff6636;
+  --tab-active-border:#171815;
+  --tab-active-text:  #171815;
+  --tab-active-glow:  transparent;
+  --tab-inactive-text:#4d4e47;
+
+  --body-bg:          #eeeae0;
+  --body-text:        #171815;
+  --scrollbar-track:  #e2ddd0;
+  --scrollbar-thumb:  #b8b2a3;
+  --scrollbar-hover:  #8d8779;
+  --badge-bg:         #e2ddd0;
+  --badge-border:     rgba(23, 24, 21, 0.25);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
    FILE FOLDER SECTION TABS ("Layers of a Real File")
    ══════════════════════════════════════════════════════════════════════ */
 .file-tabs-rack {
@@ -1168,6 +1248,29 @@
 }
 [data-theme="cyberpunk-crt"] .synth-chassis {
   animation: crt-flicker 12s linear infinite;
+}
+
+[data-theme="studio-paper"] .synth-chassis {
+  box-shadow: none;
+}
+
+[data-theme="studio-paper"] .synth-panel {
+  box-shadow: 0 1px 0 rgba(23, 24, 21, 0.08);
+}
+
+[data-theme="studio-paper"] .oled-screen {
+  box-shadow: none;
+}
+
+[data-theme="studio-paper"] .oled-screen::before,
+[data-theme="studio-paper"] .oled-screen::after {
+  display: none;
+}
+
+[data-theme="studio-paper"] .synth-screw-chassis {
+  background: var(--screw-grad);
+  border-color: var(--screw-border);
+  box-shadow: none;
 }
 
 /* ══════════════════════════════════════════════════════════════════════

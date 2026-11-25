@@ -20,10 +20,10 @@ export const SkinPicker: React.FC = () => {
   }, [isOpen]);
 
   const categories = [
-    { id: 'svg-moving', label: 'Dynamic SVG Skins', icon: '✨' },
-    { id: 'minimal', label: 'Modern & Minimal', icon: '📐' },
-    { id: 'creative', label: 'Creative & Retrowave', icon: '⚡' },
-    { id: 'analog', label: 'Classic & Analog', icon: '🎛️' },
+    { id: 'minimal', label: 'Modern & Editorial', code: '01' },
+    { id: 'analog', label: 'Classic & Analog', code: '02' },
+    { id: 'svg-moving', label: 'Dynamic SVG Skins', code: '03' },
+    { id: 'creative', label: 'Creative & Retrowave', code: '04' },
   ] as const;
 
   return (
@@ -52,7 +52,7 @@ export const SkinPicker: React.FC = () => {
         />
         
         <div className="flex flex-col text-left">
-          <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 leading-none">
+          <span className="text-[7px] font-mono uppercase tracking-widest leading-none" style={{ color: 'var(--text-secondary)' }}>
             SKIN
           </span>
           <span className="text-[9px] font-mono font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>
@@ -64,16 +64,16 @@ export const SkinPicker: React.FC = () => {
           <span
             className="text-[7px] font-mono px-1 py-0.2 rounded-xs font-black uppercase tracking-wider"
             style={{
-              background: 'rgba(255,255,255,0.08)',
-              color: themeDefinition.chipBorder,
-              border: `1px solid ${themeDefinition.chipBorder}44`
+              background: 'var(--section-bg)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--section-border)'
             }}
           >
             {themeDefinition.badge}
           </span>
         )}
 
-        <span className={`text-[8px] text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>
+        <span className={`text-[8px] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} style={{ color: 'var(--text-secondary)' }}>
           ▼
         </span>
       </button>
@@ -81,25 +81,26 @@ export const SkinPicker: React.FC = () => {
       {/* Floating Theme Palette Drawer */}
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-md border shadow-2xl p-3 z-50 flex flex-col gap-3 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+          className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-md border p-3 z-50 flex flex-col gap-3 animate-in fade-in zoom-in-95 duration-150"
           style={{
             background: 'var(--panel-bg)',
             borderColor: 'var(--panel-border)',
-            boxShadow: '0 12px 36px rgba(0, 0, 0, 0.8), 0 0 20px var(--panel-border)'
+            boxShadow: '0 12px 28px rgba(0, 0, 0, 0.25)'
           }}
         >
           {/* Header */}
           <div className="flex items-center justify-between pb-2 border-b border-[var(--section-border)]">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs">🎨</span>
-              <span className="font-mono text-[10px] font-bold tracking-widest uppercase text-gray-200">
+              <span className="w-2 h-2 rounded-xs" style={{ background: 'var(--accent-amber)' }} />
+              <span className="font-mono text-[10px] font-bold tracking-widest uppercase" style={{ color: 'var(--text-primary)' }}>
                 CHASSIS SKINS & AESTHETICS
               </span>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-gray-400 hover:text-white font-mono text-xs px-1"
+              className="font-mono text-xs px-1 cursor-pointer"
+              style={{ color: 'var(--text-secondary)' }}
             >
               ✕
             </button>
@@ -113,8 +114,8 @@ export const SkinPicker: React.FC = () => {
               return (
                 <div key={cat.id} className="flex flex-col gap-1">
                   <div className="flex items-center gap-1.5 px-1">
-                    <span className="text-[10px]">{cat.icon}</span>
-                    <span className="text-[8px] font-mono uppercase tracking-wider text-gray-400 font-bold">
+                    <span className="text-[9px] font-mono font-bold" style={{ color: 'var(--text-secondary)' }}>{cat.code}</span>
+                    <span className="text-[9px] font-mono uppercase tracking-wider font-bold" style={{ color: 'var(--text-label)' }}>
                       {cat.label}
                     </span>
                   </div>
@@ -130,13 +131,10 @@ export const SkinPicker: React.FC = () => {
                             setTheme(t.id);
                             setIsOpen(false);
                           }}
-                          className={`flex items-center justify-between p-2 rounded-sm border transition-all text-left cursor-pointer group ${
-                            isSelected
-                              ? 'bg-[var(--section-bg)] border-[var(--tab-active-border)] shadow-md'
-                              : 'bg-black/20 border-white/5 hover:border-white/20 hover:bg-white/5'
-                          }`}
+                          className="flex items-center justify-between p-2 rounded-sm border transition-all text-left cursor-pointer group"
                           style={{
-                            boxShadow: isSelected ? `0 0 12px ${t.accentGlow}` : undefined
+                            background: isSelected ? 'var(--section-bg)' : 'var(--osc-bg)',
+                            borderColor: isSelected ? 'var(--tab-active-border)' : 'var(--section-border)',
                           }}
                         >
                           <div className="flex items-center gap-2.5">
@@ -145,7 +143,6 @@ export const SkinPicker: React.FC = () => {
                               style={{
                                 background: t.chipColor,
                                 borderColor: t.chipBorder,
-                                boxShadow: `0 0 8px ${t.chipBorder}`
                               }}
                             >
                               <div
@@ -156,23 +153,23 @@ export const SkinPicker: React.FC = () => {
 
                             <div className="flex flex-col">
                               <div className="flex items-center gap-1.5">
-                                <span className="font-mono text-[10px] font-bold text-gray-200 group-hover:text-white">
+                                <span className="font-mono text-[10px] font-bold" style={{ color: 'var(--text-primary)' }}>
                                   {t.name}
                                 </span>
                                 {t.badge && (
                                   <span
                                     className="text-[7px] font-mono px-1 py-0.2 rounded-xs font-bold"
                                     style={{
-                                      background: `${t.chipBorder}22`,
-                                      color: t.chipBorder,
-                                      border: `1px solid ${t.chipBorder}44`
+                                      background: 'var(--panel-bg)',
+                                      color: 'var(--text-label)',
+                                      border: '1px solid var(--section-border)'
                                     }}
                                   >
                                     {t.badge}
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[8px] font-mono text-gray-400 leading-tight">
+                              <span className="text-[8.5px] font-mono leading-tight" style={{ color: 'var(--text-secondary)' }}>
                                 {t.description}
                               </span>
                             </div>
@@ -180,7 +177,7 @@ export const SkinPicker: React.FC = () => {
 
                           {/* Selected Checkmark Indicator */}
                           {isSelected && (
-                            <span className="font-mono text-xs font-bold shrink-0 ml-2" style={{ color: t.chipBorder }}>
+                            <span className="font-mono text-xs font-bold shrink-0 ml-2" style={{ color: 'var(--accent-amber)' }}>
                               ✓
                             </span>
                           )}
@@ -195,7 +192,7 @@ export const SkinPicker: React.FC = () => {
 
           {/* Quick-Access Strip */}
           <div className="pt-2 border-t border-[var(--section-border)] flex items-center justify-between">
-            <span className="text-[7px] font-mono text-gray-500 uppercase tracking-widest">
+            <span className="text-[7px] font-mono uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
               QUICK CYCLING
             </span>
             <div className="flex items-center gap-1">
@@ -206,12 +203,11 @@ export const SkinPicker: React.FC = () => {
                   title={t.name}
                   onClick={() => setTheme(t.id)}
                   className={`w-3.5 h-3.5 rounded-full border transition-transform ${
-                    theme === t.id ? 'scale-125 border-white shadow-sm' : 'opacity-60 hover:opacity-100 hover:scale-110'
+                    theme === t.id ? 'scale-125' : 'opacity-70 hover:opacity-100 hover:scale-110'
                   }`}
                   style={{
                     background: t.chipColor,
-                    borderColor: theme === t.id ? '#ffffff' : t.chipBorder,
-                    boxShadow: theme === t.id ? `0 0 6px ${t.chipBorder}` : 'none'
+                    borderColor: theme === t.id ? 'var(--text-primary)' : t.chipBorder,
                   }}
                 />
               ))}

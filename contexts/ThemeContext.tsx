@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 export type SynthTheme = 
+  | 'studio-paper'
   | 'mono-dark'
   | 'obsidian-minimal'
   | 'solar-aurora'
@@ -25,6 +26,17 @@ export interface ThemeDefinition {
 }
 
 export const THEMES: ThemeDefinition[] = [
+  {
+    id: 'studio-paper',
+    label: 'PAPER',
+    name: 'Studio Paper',
+    chipColor: '#eeeae0',
+    chipBorder: '#ff6636',
+    accentGlow: 'rgba(255, 102, 54, 0.35)',
+    description: 'Warm drafting paper, hairline ink rules & safety-orange signal matching the initialize front page',
+    category: 'minimal',
+    badge: 'FIELD',
+  },
   {
     id: 'solar-aurora',
     label: 'AURORA',
@@ -133,7 +145,7 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'solar-aurora',
+  theme: 'studio-paper',
   setTheme: () => {},
   themeDefinition: THEMES[0],
 });
@@ -147,7 +159,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (stored === 'cyberpunk-crt') return 'tokyo-neon';
       if (stored && THEMES.some(t => t.id === stored)) return stored;
     } catch {}
-    return 'solar-aurora';
+    return 'studio-paper';
   });
 
   const setTheme = useCallback((newTheme: SynthTheme) => {

@@ -24,6 +24,7 @@ interface KnobProps {
   isLearning?: boolean;
   mappedCC?: number | null;
   onMidiLearn?: (paramId: string) => void;
+  onModDrop?: (source: 'lfo1' | 'lfo2') => void;
 }
 
 export const Knob: React.FC<KnobProps> = React.memo(({
@@ -48,11 +49,13 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   isLearning = false,
   mappedCC = null,
   onMidiLearn,
+  onModDrop,
 }) => {
   const knobRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef({ y: 0, x: 0, value: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isModDropTarget, setIsModDropTarget] = useState(false);
   const defaultValRef = useRef(defaultValue ?? value);
 
   // Modulation pip ref for zero-state-overhead 60 FPS animation
@@ -64,13 +67,13 @@ export const Knob: React.FC<KnobProps> = React.memo(({
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  // Color theme definitions
+  // Color theme definitions bound to active skin tokens
   const colorMap = {
-    cyan:    { stroke: '#10b981', glow: 'rgba(16, 185, 129, 0.6)',   text: 'text-[#10b981]' },
-    amber:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.6)',   text: 'text-[#ffaa00]' },
-    emerald: { stroke: '#00ff66', glow: 'rgba(0, 255, 102, 0.6)',   text: 'text-[#00ff66]' },
-    red:     { stroke: '#ff3344', glow: 'rgba(255, 51, 68, 0.6)',   text: 'text-[#ff3344]' },
-    white:   { stroke: '#e2e8f0', glow: 'rgba(226, 232, 240, 0.6)', text: 'text-gray-200' },
+    cyan:    { stroke: 'var(--accent-cyan, #10b981)',    glow: 'var(--accent-cyan, #10b981)',    text: '' },
+    amber:   { stroke: 'var(--accent-amber, #ffaa00)',   glow: 'var(--accent-amber, #ffaa00)',   text: '' },
+    emerald: { stroke: 'var(--accent-emerald, #00ff66)', glow: 'var(--accent-emerald, #00ff66)', text: '' },
+    red:     { stroke: 'var(--accent-red, #ff3344)',     glow: 'var(--accent-red, #ff3344)',     text: '' },
+    white:   { stroke: 'var(--text-primary, #e2e8f0)',   glow: 'var(--text-primary, #e2e8f0)',   text: '' },
   };
 
   const activeTheme = colorMap[color] || colorMap.cyan;
@@ -280,18 +283,30 @@ export const Knob: React.FC<KnobProps> = React.memo(({
       <div
         ref={knobRef}
         className={`relative flex items-center justify-center rounded-full cursor-ns-resize touch-none select-none shrink-0 ${
-          isLearning ? 'ring-2 ring-[#ffaa00] shadow-[0_0_12px_#ffaa00] animate-pulse' : ''
-        }`}
+          isLearning ? 'ring-2 ring-[var(--accent-amber)] animate-pulse' : ''
+        } ${isModDropTarget ? 'ring-2 ring-[var(--accent-amber)]' : ''}`}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onDoubleClick={handleDoubleClick}
+        onDragEnter={onModDrop ? (e) => { if (e.dataTransfer.types.includes('application/x-subtractive-lfo')) setIsModDropTarget(true); } : undefined}
+        onDragOver={onModDrop ? (e) => { if (e.dataTransfer.types.includes('application/x-subtractive-lfo')) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; } } : undefined}
+        onDragLeave={onModDrop ? () => setIsModDropTarget(false) : undefined}
+        onDrop={onModDrop ? (e) => {
+          setIsModDropTarget(false);
+          const src = e.dataTransfer.getData('application/x-subtractive-lfo');
+          if (src === 'lfo1' || src === 'lfo2') {
+            e.preventDefault();
+            onModDrop(src);
+          }
+        } : undefined}
         style={{ width: size, height: size }}
       >
         {/* MIDI Learn Pulsing Overlay */}
         {isLearning && (
           <div 
-            className="absolute inset-[-4px] rounded-full border border-[#ffaa00] animate-ping pointer-events-none z-30 opacity-75"
+            className="absolute inset-[-4px] rounded-full border animate-ping pointer-events-none z-30 opacity-75"
+            style={{ borderColor: 'var(--accent-amber)' }}
           />
         )}
         {/* Outer Ring & Arc SVG */}
@@ -311,19 +326,18 @@ export const Knob: React.FC<KnobProps> = React.memo(({
             strokeLinecap="round"
           />
 
-          {/* Dynamic Active Glowing Arc */}
+          {/* Dynamic Active Arc */}
           <circle
             cx={center}
             cy={center}
             r={radius}
             fill="none"
             stroke={activeTheme.stroke}
-            strokeWidth={strokeWidth + (isDragging ? 1 : 0)}
+            strokeWidth={strokeWidth + (isDragging ? 0.8 : 0)}
             strokeDasharray={`${arcLength} ${circumference}`}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
             style={{
-              filter: isDragging || isHovered ? `drop-shadow(0 0 4px ${activeTheme.stroke})` : 'none',
               transition: isDragging ? 'none' : 'stroke-dashoffset 0.05s ease-out'
             }}
           />
@@ -331,19 +345,17 @@ export const Knob: React.FC<KnobProps> = React.memo(({
           {/* Outer Dynamic Modulation Ring (Rendered when modulation is active) */}
           {hasMod && (
             <>
-              {/* Outer Mod Track */}
               <circle
                 cx={center}
                 cy={center}
                 r={modRadius}
                 fill="none"
-                stroke="rgba(255, 255, 255, 0.07)"
+                stroke="var(--section-border)"
                 strokeWidth={1.5}
                 strokeDasharray={`${modArcLength} ${modCircumference}`}
                 strokeLinecap="round"
               />
 
-              {/* Modulation Range Bracket Arc */}
               <circle
                 cx={center}
                 cy={center}
@@ -354,14 +366,12 @@ export const Knob: React.FC<KnobProps> = React.memo(({
                 strokeDasharray={`${modRangeDash} ${modCircumference}`}
                 strokeDashoffset={modRangeOffset}
                 strokeLinecap="round"
-                opacity={0.5}
+                opacity={0.55}
                 style={{
-                  filter: `drop-shadow(0 0 3px ${activeModTheme.stroke})`,
                   transition: isDragging ? 'none' : 'stroke-dasharray 0.05s ease-out, stroke-dashoffset 0.05s ease-out'
                 }}
               />
 
-              {/* Real-time Sweeping Modulation Arc */}
               <circle
                 ref={modSweepArcRef}
                 cx={center}
@@ -373,13 +383,13 @@ export const Knob: React.FC<KnobProps> = React.memo(({
                 strokeDasharray={`0 ${modCircumference}`}
                 strokeDashoffset={0}
                 strokeLinecap="round"
-                opacity={0.85}
+                opacity={0.9}
               />
             </>
           )}
         </svg>
 
-        {/* Real-time Sweeping Ghost Indicator Pip */}
+        {/* Real-time Sweeping Indicator Pip */}
         {hasMod && (
           <svg className="absolute inset-0 w-full h-full pointer-events-none">
             <g ref={modPipRef} transform={`rotate(${rotation}, ${center}, ${center})`}>
@@ -387,38 +397,32 @@ export const Knob: React.FC<KnobProps> = React.memo(({
                 cx={center}
                 cy={center - modRadius}
                 r={2}
-                fill="#ffffff"
+                fill="var(--text-primary)"
                 stroke={activeModTheme.stroke}
                 strokeWidth={1}
-                style={{ filter: `drop-shadow(0 0 4px ${activeModTheme.stroke})` }}
               />
             </g>
           </svg>
         )}
 
-        {/* CNC Knurled Aluminum Outer Perimeter Rim */}
+        {/* Machined Matte Dial Body */}
         <div 
-          className="absolute rounded-full pointer-events-none transition-all duration-150"
+          className="absolute rounded-full pointer-events-none transition-colors duration-150"
           style={{ 
             inset: hasMod ? '7px' : '5px',
-            background: isDragging || isHovered
-              ? 'repeating-conic-gradient(from 0deg, #161e2a 0deg 3.75deg, #38465c 3.75deg 7.5deg)'
-              : 'repeating-conic-gradient(from 0deg, #10151f 0deg 3.75deg, #263244 3.75deg 7.5deg)',
-            border: `1.5px solid ${isDragging || isHovered ? activeTheme.stroke : 'rgba(255,255,255,0.18)'}`,
-            boxShadow: isDragging || isHovered
-              ? `0 0 10px ${activeTheme.glow}, inset 0 1px 2px rgba(255,255,255,0.35), inset 0 -2px 4px rgba(0,0,0,0.9), 0 3px 6px rgba(0,0,0,0.8)`
-              : `inset 0 1px 2px rgba(255,255,255,0.20), inset 0 -2px 4px rgba(0,0,0,0.9), 0 3px 6px rgba(0,0,0,0.8)`
+            background: 'var(--knob-face-grad)',
+            border: `1.5px solid ${isDragging || isHovered ? activeTheme.stroke : 'var(--section-border)'}`,
+            boxShadow: 'inset 0 1px 0 var(--knob-hi), 0 1px 2px var(--knob-lo)'
           }}
         />
 
-        {/* Anisotropic Turned Aluminum Knob Face */}
+        {/* Inner Cap Well */}
         <div 
           className="absolute rounded-full pointer-events-none"
           style={{ 
-            inset: hasMod ? '21%' : '20%',
-            background: 'radial-gradient(circle at 35% 30%, rgba(255,255,255,0.15) 0%, transparent 40%), conic-gradient(from 45deg, #151c27 0deg, #2c384a 90deg, #121822 180deg, #2c384a 270deg, #151c27 360deg)',
-            border: `1px solid rgba(255,255,255,0.14)`,
-            boxShadow: `inset 0 1px 3px rgba(0,0,0,0.7), 0 1px 1px rgba(255,255,255,0.08)`
+            inset: hasMod ? '24%' : '23%',
+            background: 'var(--panel-bg-alt)',
+            border: '1px solid var(--section-border)',
           }}
         />
 
@@ -430,46 +434,37 @@ export const Knob: React.FC<KnobProps> = React.memo(({
             transition: isDragging ? 'none' : 'transform 0.05s ease-out'
           }}
         >
-          {/* CNC Milled Pointer Line with Illuminated Micro-LED Pip */}
+          {/* Flat Precision Pointer Line */}
           <div 
-            className="absolute top-[17%] left-1/2 -translate-x-1/2 flex flex-col items-center"
+            className="absolute top-[16%] left-1/2 -translate-x-1/2 flex flex-col items-center"
             style={{ 
-              width: size > 48 ? '3px' : '2px', 
-              height: `${size * (hasMod ? 0.22 : 0.24)}px`,
+              width: size > 48 ? '2.5px' : '2px', 
+              height: `${size * (hasMod ? 0.23 : 0.25)}px`,
             }}
           >
-            {/* Illuminated Micro-Pip at top tip */}
             <div 
-              className="w-1.5 h-1.5 -mb-0.5 rounded-full"
+              className="w-full flex-1 rounded-xs"
               style={{
-                background: isDragging || isHovered ? '#ffffff' : activeTheme.stroke,
-                boxShadow: isDragging || isHovered ? `0 0 6px #ffffff, 0 0 3px ${activeTheme.stroke}` : `0 0 3px ${activeTheme.stroke}`,
-              }}
-            />
-            {/* Needle Line */}
-            <div 
-              className="w-full flex-1 rounded-b-xs"
-              style={{
-                background: isDragging || isHovered ? activeTheme.stroke : 'rgba(255,255,255,0.85)',
-                boxShadow: isDragging || isHovered ? `0 0 6px ${activeTheme.stroke}` : '0 1px 1px rgba(0,0,0,0.9)'
+                background: isDragging || isHovered ? activeTheme.stroke : 'var(--text-primary)',
               }}
             />
           </div>
         </div>
 
-        {/* OLED Value Readout Tooltip on Hover / Drag */}
+        {/* Tabular Readout Tooltip on Hover / Drag */}
         <div 
-          className={`absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm text-[9px] font-mono-lcd shadow-[0_4px_10px_rgba(0,0,0,0.9)] pointer-events-none z-50 whitespace-nowrap transition-opacity duration-150 ${activeTheme.text} ${
+          className={`absolute -top-7 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-sm text-[9px] font-mono-lcd pointer-events-none z-50 whitespace-nowrap transition-opacity duration-150 ${
             isDragging || isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
           }`}
           style={{
             background: 'var(--oled-bg)',
             border: '1px solid var(--oled-border)',
+            color: 'var(--oled-text)',
           }}
         >
           {formatValue(value)}
           {hasMod && (
-            <span className="ml-1 text-[8px] text-[#00ff66] opacity-90">
+            <span className="ml-1 text-[8px] opacity-90" style={{ color: activeModTheme.stroke }}>
               [±{Math.round(modDepth * 50)}%]
             </span>
           )}
@@ -480,13 +475,16 @@ export const Knob: React.FC<KnobProps> = React.memo(({
       <div className="flex flex-col items-center mt-1.5 max-w-full overflow-hidden px-0.5">
         <span 
           className="text-[9px] md:text-[10px] font-semibold tracking-normal uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
-          style={{ color: isLearning ? '#ffaa00' : hasMod ? activeModTheme.stroke : 'var(--text-label)' }}
+          style={{ color: isLearning ? 'var(--accent-amber)' : hasMod ? activeModTheme.stroke : 'var(--text-label)' }}
           title={label}
         >
           {isLearning ? 'LEARN...' : label}
         </span>
         {mappedCC !== null && mappedCC !== undefined && (
-          <span className="text-[7px] font-mono font-bold text-[#ffaa00] bg-[#ffaa00]/10 border border-[#ffaa00]/40 rounded px-1 leading-none mt-0.5 shadow-[0_0_4px_rgba(255,170,0,0.3)]">
+          <span
+            className="text-[7px] font-mono font-bold rounded px-1 leading-none mt-0.5"
+            style={{ color: 'var(--accent-amber)', border: '1px solid var(--accent-amber)', background: 'var(--section-bg)' }}
+          >
             CC{mappedCC}
           </span>
         )}

@@ -73,19 +73,21 @@
   line-height: 1.18;
   letter-spacing: -0.02em;
 }
-.initialize-action { align-self: flex-start; }
+.initialize-action { align-self: flex-start; max-width: 100%; }
 .initialize-action button {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 0.72em;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 48px;
   padding: 0.58em 1.05em 0.62em 0.77em;
   border: 1px solid #e04d1f;
   border-radius: 2px;
   background: #ff6636;
   color: var(--ink);
-  font: 500 clamp(17px, 2vw, 32px)/1.05 "Space Mono", Consolas, monospace;
+  font: 500 clamp(16px, min(4.6vw, 2vw), 32px)/1.05 "Space Mono", Consolas, monospace;
   letter-spacing: -0.02em;
   cursor: pointer;
   transition: transform 90ms ease-out, background 90ms ease-out;

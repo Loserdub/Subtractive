@@ -13,6 +13,11 @@
 [data-theme="vintage-japanese"] .motion-lane {
   --signal-ink: color-mix(in srgb, var(--signal) 42%, var(--ink));
 }
+[data-theme="studio-paper"] .instrument-module,
+[data-theme="studio-paper"] .filter-routing,
+[data-theme="studio-paper"] .motion-lane {
+  --signal-ink: color-mix(in srgb, var(--signal) 65%, var(--ink));
+}
 .workspace-switch { display:flex; gap:2px; padding:3px; border:1px solid var(--section-border); border-radius:5px; background:var(--section-bg); }
 .workspace-switch button { border:0; border-radius:2px; padding:9px clamp(5px,.65vw,12px); background:transparent; color:var(--text-label); font:700 11px/1.1 Consolas,monospace; letter-spacing:.045em; cursor:pointer; }
 .workspace-switch button:hover:not([aria-pressed=true]) { color:var(--text-primary); background:var(--btn-hover-bg); }

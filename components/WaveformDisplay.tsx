@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import { Waveform } from '../types';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface WaveformDisplayProps {
   waveform?: Waveform;
@@ -31,6 +32,35 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   const animationRef = useRef<number>(0);
   const phaseRef = useRef<number>(0);
   const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'studio-paper' || theme === 'vintage-japanese';
+  const paletteRef = useRef({
+    bg: '#05080e',
+    grid: 'rgba(16, 185, 129, 0.08)',
+    stroke: color || '#10b981',
+    core: '#ffffff',
+    wash: 'rgba(4, 18, 12, 0.22)',
+    isLight: false,
+  });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const cs = getComputedStyle(el);
+    const bg = cs.getPropertyValue('--waveform-bg').trim() || '#05080e';
+    const ink = cs.getPropertyValue('--text-primary').trim() || '#171815';
+    const accentAmber = cs.getPropertyValue('--accent-amber').trim() || '#ff6636';
+    paletteRef.current = {
+      bg,
+      grid: isLightTheme ? 'rgba(23, 24, 21, 0.12)' : 'rgba(16, 185, 129, 0.08)',
+      stroke: isLightTheme ? ink : (colorRef.current || '#10b981'),
+      core: isLightTheme ? accentAmber : '#ffffff',
+      wash: isLightTheme ? bg : (colorRef.current?.startsWith('#ff') ? 'rgba(18, 12, 4, 0.24)' : 'rgba(4, 18, 12, 0.22)'),
+      isLight: isLightTheme,
+    };
+    gridCanvasRef.current = null;
+  }, [theme, color, isLightTheme]);
 
   // Peak hold array for 64-band logarithmic spectrum
   const peakHoldRef = useRef<Float32Array>(new Float32Array(64));
@@ -100,12 +130,13 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
       const centerY = height / 2;
       const centerX = width / 2;
       const currentMode = modeRef.current;
-      const themeColor = colorRef.current || '#10b981';
+      const pal = paletteRef.current;
+      const themeColor = pal.stroke;
       const ampScale = Math.max(0.1, amplitudeScaleRef.current);
       const isEnabled = enabledRef.current;
       const activePlay = isPlayingRef.current && isEnabled;
 
-      // ── Build / Update Static CRT Reticle Grid ──
+      // ── Build / Update Static Reticle Grid ──
       if (
         !gridCanvasRef.current ||
         gridCanvasRef.current.width !== width ||
@@ -116,11 +147,11 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
         gridCanvas.height = height;
         const gctx = gridCanvas.getContext('2d');
         if (gctx) {
-          gctx.fillStyle = '#05080e';
+          gctx.fillStyle = pal.bg;
           gctx.fillRect(0, 0, width, height);
 
           gctx.beginPath();
-          gctx.strokeStyle = 'rgba(16, 185, 129, 0.08)';
+          gctx.strokeStyle = pal.grid;
           gctx.lineWidth = 1 * dpr;
 
           // Center Crosshair
@@ -147,26 +178,24 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
 
           gctx.stroke();
 
-          // Authentic CRT Sub-Pixel Horizontal Scanline Raster
-          gctx.fillStyle = 'rgba(0, 0, 0, 0.20)';
-          for (let y = 0; y < height; y += Math.max(2, Math.round(3 * dpr))) {
-            gctx.fillRect(0, y, width, 1.2 * dpr);
+          if (!pal.isLight) {
+            // Subtle CRT horizontal scanline raster on dark skins
+            gctx.fillStyle = 'rgba(0, 0, 0, 0.20)';
+            for (let y = 0; y < height; y += Math.max(2, Math.round(3 * dpr))) {
+              gctx.fillRect(0, y, width, 1.2 * dpr);
+            }
           }
         }
         gridCanvasRef.current = gridCanvas;
       }
 
-      // ── Analog CRT Phosphor Persistence Wash with Color-Matched Afterglow ──
-      const phosphorWash = themeColor.startsWith('#ff')
-        ? 'rgba(18, 12, 4, 0.24)'
-        : 'rgba(4, 18, 12, 0.22)';
-      ctx.fillStyle = phosphorWash;
+      ctx.fillStyle = pal.isLight ? pal.bg : pal.wash;
       ctx.fillRect(0, 0, width, height);
 
       // Graticule grid overlay
       if (gridCanvasRef.current) {
         ctx.save();
-        ctx.globalAlpha = 0.15;
+        ctx.globalAlpha = pal.isLight ? 0.65 : 0.15;
         ctx.drawImage(gridCanvasRef.current, 0, 0);
         ctx.restore();
       }
@@ -205,12 +234,12 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
 
           // Core beam pass
           ctx.globalAlpha = 0.95;
-          ctx.lineWidth = 1.2 * dpr;
-          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.4 * dpr;
+          ctx.strokeStyle = pal.core;
           ctx.stroke(path);
           ctx.restore();
         } else {
-          // Resting Lissajous CRT point/orbit at center (does not spin when at rest, glows if on)
+          // Resting Lissajous point/orbit at center
           const path = new Path2D();
           const scale = Math.min(width, height) * (activePlay ? 0.36 : 0.26);
           const steps = 140;
@@ -226,17 +255,19 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
 
           ctx.save();
           if (isEnabled) {
-            ctx.shadowColor = themeColor;
-            ctx.shadowBlur = (activePlay ? 9 : 6) * dpr;
-            ctx.globalAlpha = activePlay ? 0.45 : 0.30;
-            ctx.strokeStyle = themeColor;
-            ctx.lineWidth = 3.5 * dpr;
-            ctx.stroke(path);
+            if (!pal.isLight) {
+              ctx.shadowColor = themeColor;
+              ctx.shadowBlur = (activePlay ? 9 : 6) * dpr;
+              ctx.globalAlpha = activePlay ? 0.45 : 0.30;
+              ctx.strokeStyle = themeColor;
+              ctx.lineWidth = 3.5 * dpr;
+              ctx.stroke(path);
+            }
 
             ctx.shadowBlur = 0;
-            ctx.globalAlpha = activePlay ? 0.95 : 0.75;
+            ctx.globalAlpha = activePlay ? 0.95 : 0.78;
             ctx.lineWidth = 1.4 * dpr;
-            ctx.strokeStyle = activePlay ? '#ffffff' : themeColor;
+            ctx.strokeStyle = activePlay ? pal.core : themeColor;
             ctx.stroke(path);
           } else {
             ctx.globalAlpha = 0.15;
@@ -289,16 +320,16 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
             const by = height - barH;
 
             const grad = ctx.createLinearGradient(0, height, 0, by);
-            grad.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
+            grad.addColorStop(0, pal.isLight ? 'rgba(23, 24, 21, 0.15)' : 'rgba(16, 185, 129, 0.15)');
             grad.addColorStop(0.65, themeColor);
-            grad.addColorStop(1, '#ffffff');
+            grad.addColorStop(1, pal.core);
 
             ctx.fillStyle = grad;
             ctx.fillRect(bx + 0.5, by, Math.max(1, barWidth - 1.2 * dpr), barH);
 
             if (peaks[b] > 2 * dpr) {
               const peakY = height - peaks[b];
-              ctx.fillStyle = '#ffffff';
+              ctx.fillStyle = pal.core;
               ctx.fillRect(bx + 0.5, peakY - 1 * dpr, Math.max(1, barWidth - 1.2 * dpr), 1.5 * dpr);
             }
           }
@@ -355,44 +386,48 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
             x += sliceWidth;
           }
 
-          // Outer Phosphor Bloom
+          // Outer Phosphor Bloom (dark skins only)
           ctx.save();
-          ctx.shadowColor = themeColor;
-          ctx.shadowBlur = 10 * dpr;
-          ctx.globalAlpha = 0.55;
-          ctx.strokeStyle = themeColor;
-          ctx.lineWidth = 4.5 * dpr;
-          ctx.lineJoin = 'round';
-          ctx.lineCap = 'round';
-          ctx.stroke(path);
+          if (!pal.isLight) {
+            ctx.shadowColor = themeColor;
+            ctx.shadowBlur = 10 * dpr;
+            ctx.globalAlpha = 0.55;
+            ctx.strokeStyle = themeColor;
+            ctx.lineWidth = 4.5 * dpr;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            ctx.stroke(path);
+          }
 
-          // Searing Hot-White Core Beam
-          ctx.shadowBlur = 2 * dpr;
+          // Core Beam
+          ctx.shadowBlur = pal.isLight ? 0 : 2 * dpr;
           ctx.globalAlpha = 0.95;
           ctx.lineWidth = 1.6 * dpr;
-          ctx.strokeStyle = '#ffffff';
+          ctx.strokeStyle = pal.isLight ? themeColor : pal.core;
           ctx.stroke(path);
           ctx.restore();
 
         } else if (analyser && !activePlay) {
-          // Resting analog CRT zero-crossing baseline (stationary horizontal beam with phosphor glow)
+          // Resting zero-crossing baseline
           const path = new Path2D();
           path.moveTo(0, centerY);
           path.lineTo(width, centerY);
 
           ctx.save();
           if (isEnabled) {
-            ctx.shadowColor = themeColor;
-            ctx.shadowBlur = 8 * dpr;
-            ctx.globalAlpha = 0.45;
-            ctx.strokeStyle = themeColor;
-            ctx.lineWidth = 3 * dpr;
-            ctx.stroke(path);
+            if (!pal.isLight) {
+              ctx.shadowColor = themeColor;
+              ctx.shadowBlur = 8 * dpr;
+              ctx.globalAlpha = 0.45;
+              ctx.strokeStyle = themeColor;
+              ctx.lineWidth = 3 * dpr;
+              ctx.stroke(path);
+            }
 
             ctx.shadowBlur = 0;
             ctx.globalAlpha = 0.85;
             ctx.lineWidth = 1.2 * dpr;
-            ctx.strokeStyle = '#ffffff';
+            ctx.strokeStyle = pal.isLight ? themeColor : pal.core;
             ctx.stroke(path);
           } else {
             ctx.globalAlpha = 0.15;
@@ -469,22 +504,23 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
               else path.lineTo(px, y);
             }
 
-            // Outer Ambient Phosphor Glow Pass (ALWAYS GLOWS WHEN ON, even at rest!)
+            // Core Waveform Pass
             ctx.save();
-            ctx.shadowColor = themeColor;
-            ctx.shadowBlur = (activePlay ? 9 : 6) * dpr;
-            ctx.globalAlpha = activePlay ? 0.45 : 0.35;
-            ctx.strokeStyle = themeColor;
-            ctx.lineWidth = 3.5 * dpr;
-            ctx.lineJoin = 'round';
-            ctx.lineCap = 'round';
-            ctx.stroke(path);
+            if (!pal.isLight) {
+              ctx.shadowColor = themeColor;
+              ctx.shadowBlur = (activePlay ? 9 : 6) * dpr;
+              ctx.globalAlpha = activePlay ? 0.45 : 0.35;
+              ctx.strokeStyle = themeColor;
+              ctx.lineWidth = 3.5 * dpr;
+              ctx.lineJoin = 'round';
+              ctx.lineCap = 'round';
+              ctx.stroke(path);
+            }
 
-            // Sharp Core Beam Pass
             ctx.shadowBlur = 0;
             ctx.globalAlpha = activePlay ? 1.0 : 0.90;
-            ctx.lineWidth = 1.4 * dpr;
-            ctx.strokeStyle = activePlay ? '#ffffff' : themeColor;
+            ctx.lineWidth = 1.5 * dpr;
+            ctx.strokeStyle = activePlay ? (pal.isLight ? themeColor : pal.core) : themeColor;
             ctx.stroke(path);
             ctx.restore();
 
@@ -522,19 +558,22 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
     <div ref={containerRef} className="w-full h-full min-w-0 min-h-0 relative overflow-hidden rounded-sm">
       <canvas 
         ref={canvasRef} 
-        className="w-full h-full rounded-sm border border-[#1a2838] block" 
+        className="w-full h-full rounded-sm border block"
+        style={{ borderColor: 'var(--waveform-border)' }}
       />
-      {/* CRT Glass Reflection & Curvature Vignette Overlay */}
-      <div 
-        className="pointer-events-none absolute inset-0 rounded-sm"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 65%, rgba(0, 0, 0, 0.45) 100%)',
-          boxShadow: 'inset 0 0 12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.10)',
-        }}
-      />
-      {/* Interactive CRT Bezel Mode Buttons */}
+      {!isLightTheme && (
+        <div 
+          className="pointer-events-none absolute inset-0 rounded-sm"
+          style={{
+            background: 'radial-gradient(ellipse at center, transparent 65%, rgba(0, 0, 0, 0.45) 100%)',
+            boxShadow: 'inset 0 0 12px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.10)',
+          }}
+        />
+      )}
       {showBezelControls && onModeChange && (
-        <div className="absolute top-1 right-1 flex items-center gap-0.5 z-20 bg-black/60 backdrop-blur-xs p-0.5 rounded border border-white/10">
+        <div className="absolute top-1 right-1 flex items-center gap-0.5 z-20 p-0.5 rounded border"
+          style={{ background: 'var(--panel-bg)', borderColor: 'var(--section-border)' }}
+        >
           {(['oscilloscope', 'spectrum', 'lissajous'] as const).map((m) => {
             const isSel = mode === m;
             const label = m === 'oscilloscope' ? 'SCOPE' : m === 'spectrum' ? 'FFT' : 'PHASE';
@@ -543,11 +582,13 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
                 key={m}
                 type="button"
                 onClick={() => onModeChange(m)}
-                className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded-xs transition-all ${
-                  isSel
-                    ? 'bg-[#10b981] text-black shadow-[0_0_5px_#10b981]'
-                    : 'text-gray-400 hover:text-white'
-                }`}
+                className="px-1.5 py-0.5 text-[7.5px] font-mono font-bold rounded-xs transition-all cursor-pointer"
+                style={isSel ? {
+                  background: 'var(--accent-amber)',
+                  color: 'var(--oled-bg)',
+                } : {
+                  color: 'var(--text-secondary)',
+                }}
               >
                 {label}
               </button>

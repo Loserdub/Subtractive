@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { FilterType } from '../types';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface FilterResponseCurveProps {
   cutoff: number; // 20 to 20000 Hz
@@ -93,37 +94,47 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
     return () => observer.disconnect();
   }, [height]);
 
-  const colors = {
-    amber: {
-      stroke: '#ffaa00',
-      halo: 'rgba(255, 170, 0, 0.25)',
-      fillTop: 'rgba(255, 170, 0, 0.16)',
-      fillBottom: 'rgba(255, 170, 0, 0.00)',
-      beam: '#ffd580',
-    },
-    cyan: {
-      stroke: '#00f0ff',
-      halo: 'rgba(0, 240, 255, 0.25)',
-      fillTop: 'rgba(0, 240, 255, 0.16)',
-      fillBottom: 'rgba(0, 240, 255, 0.00)',
-      beam: '#7df9ff',
-    },
-    emerald: {
-      stroke: '#00ff66',
-      halo: 'rgba(0, 255, 102, 0.25)',
-      fillTop: 'rgba(0, 255, 102, 0.16)',
-      fillBottom: 'rgba(0, 255, 102, 0.00)',
-      beam: '#99ffbb',
-    },
-    red: {
-      stroke: '#ff3344',
-      halo: 'rgba(255, 51, 68, 0.25)',
-      fillTop: 'rgba(255, 51, 68, 0.16)',
-      fillBottom: 'rgba(255, 51, 68, 0.00)',
-      beam: '#ff7788',
-    },
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'studio-paper' || theme === 'vintage-japanese';
+  const [resolvedColors, setResolvedColors] = useState({
+    stroke: '#ffaa00',
+    beam: '#ffd580',
+    grid: 'rgba(255, 255, 255, 0.08)',
+    zero: 'rgba(255, 255, 255, 0.2)',
+    label: 'rgba(255, 255, 255, 0.4)',
+    fillBg: '#04070c',
+  });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const cs = getComputedStyle(el);
+    const varMap = {
+      amber: cs.getPropertyValue('--accent-amber').trim() || '#ffaa00',
+      cyan: cs.getPropertyValue('--accent-cyan').trim() || '#00f0ff',
+      emerald: cs.getPropertyValue('--accent-emerald').trim() || '#00ff66',
+      red: cs.getPropertyValue('--accent-red').trim() || '#ff3344',
+    };
+    const stroke = varMap[color] || varMap.amber;
+    const textPrimary = cs.getPropertyValue('--text-primary').trim() || '#e2e8f0';
+    const waveformBg = cs.getPropertyValue('--waveform-bg').trim() || '#04070c';
+    setResolvedColors({
+      stroke,
+      beam: isLightTheme ? textPrimary : stroke,
+      grid: isLightTheme ? 'rgba(23, 24, 21, 0.10)' : 'rgba(255, 255, 255, 0.06)',
+      zero: isLightTheme ? 'rgba(23, 24, 21, 0.28)' : 'rgba(255, 255, 255, 0.18)',
+      label: isLightTheme ? 'rgba(23, 24, 21, 0.56)' : 'rgba(255, 255, 255, 0.35)',
+      fillBg: waveformBg,
+    });
+  }, [theme, color, isLightTheme]);
+
+  const themeColor = {
+    stroke: resolvedColors.stroke,
+    halo: 'transparent',
+    fillTop: resolvedColors.stroke,
+    fillBottom: resolvedColors.stroke,
+    beam: resolvedColors.beam,
   };
-  const themeColor = colors[color] || colors.amber;
 
   // Layout bounds in true 1:1 pixel coordinates
   const PADDING_LEFT = 26;
@@ -477,8 +488,12 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full rounded-sm overflow-hidden select-none oled-screen ${className}`}
-      style={{ height }}
+      className={`relative w-full rounded-sm overflow-hidden select-none border ${className}`}
+      style={{
+        height,
+        background: 'var(--waveform-bg)',
+        borderColor: 'var(--waveform-border)',
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setHoverPos(null); }}
     >
@@ -517,14 +532,14 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
                 y1={PADDING_TOP}
                 x2={x}
                 y2={dimensions.height - PADDING_BOTTOM}
-                stroke="rgba(255, 255, 255, 0.06)"
+                stroke={resolvedColors.grid}
                 strokeDasharray="2 3"
                 strokeWidth="1"
               />
               <text
                 x={x + 3}
                 y={dimensions.height - 6}
-                fill="rgba(255, 255, 255, 0.28)"
+                fill={resolvedColors.label}
                 fontSize="8"
                 fontFamily="'Space Mono', monospace"
               >
@@ -545,14 +560,14 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
                 y1={y}
                 x2={dimensions.width - PADDING_RIGHT}
                 y2={y}
-                stroke={isZero ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.04)'}
+                stroke={isZero ? resolvedColors.zero : resolvedColors.grid}
                 strokeWidth="1"
                 strokeDasharray={isZero ? undefined : '1 4'}
               />
               <text
                 x={4}
                 y={y + 3}
-                fill={isZero ? 'rgba(255, 255, 255, 0.45)' : 'rgba(255, 255, 255, 0.2)'}
+                fill={isZero ? resolvedColors.label : resolvedColors.label}
                 fontSize="7"
                 fontFamily="'Space Mono', monospace"
               >
@@ -572,11 +587,11 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
             stroke={themeColor.stroke}
             strokeWidth="1"
             strokeDasharray="2 2"
-            opacity="0.3"
+            opacity="0.35"
           />
         )}
 
-        {/* Dynamic Modulated Cutoff Sweep Laser (Sweeping 60 FPS in real time with LFO/Envelope) */}
+        {/* Dynamic Modulated Cutoff Sweep Line */}
         {dynamicModX !== null && (
           <g>
             <line
@@ -587,43 +602,41 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
               stroke={themeColor.beam}
               strokeWidth="1.2"
               strokeDasharray="3 2"
-              opacity="0.65"
+              opacity="0.75"
             />
-            {/* Pulsing locator pip at top of modulated beam */}
-            <circle cx={dynamicModX} cy={PADDING_TOP + 4} r="2.5" fill={themeColor.beam} opacity="0.8" />
+            <circle cx={dynamicModX} cy={PADDING_TOP + 4} r="2.5" fill={themeColor.beam} opacity="0.85" />
           </g>
         )}
 
-        {/* Dynamic Modulated Ghost Curve (Sweeping in real time with audio modulation) */}
+        {/* Dynamic Modulated Ghost Curve */}
         {modPathData && (
           <path
             d={modPathData.strokePath}
             fill="none"
             stroke={themeColor.beam}
-            strokeWidth="1"
+            strokeWidth="1.1"
             strokeDasharray="2 3"
-            opacity="0.4"
+            opacity="0.55"
           />
         )}
 
-        {/* High-Definition Area Fill */}
+        {/* Area Fill */}
         <path
           d={pathData.fillPath}
           fill={`url(#filter-grad-${color})`}
         />
 
-        {/* Core Razor-Sharp Vector Beam (1.5px laser line with clean micro drop-shadow) */}
+        {/* Core Precision Vector Curve */}
         <path
           d={pathData.strokePath}
           fill="none"
           stroke={themeColor.stroke}
-          strokeWidth="1.5"
+          strokeWidth="1.6"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ filter: `drop-shadow(0 0 2px ${themeColor.stroke}aa)` }}
         />
 
-        {/* Cutoff Vertical Laser Guideline */}
+        {/* Cutoff Vertical Guideline */}
         <line
           x1={nodeCoords.x}
           y1={PADDING_TOP}
@@ -632,12 +645,11 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
           stroke={themeColor.stroke}
           strokeWidth="1"
           strokeDasharray="2 3"
-          opacity={isDragging || isHovered ? 0.65 : 0.25}
+          opacity={isDragging || isHovered ? 0.65 : 0.3}
         />
 
         {/* Precision Laboratory Reticle Handle */}
         <g transform={`translate(${nodeCoords.x}, ${nodeCoords.y})`}>
-          {/* Active / Drag expand ring */}
           {(isDragging || isHovered) && (
             <circle
               r="12"
@@ -652,9 +664,9 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
           {/* Outer reticle ring */}
           <circle
             r="6"
-            fill="#04070c"
+            fill={resolvedColors.fillBg}
             stroke={themeColor.stroke}
-            strokeWidth="1.2"
+            strokeWidth="1.3"
           />
 
           {/* Reticle 4 Crosshair Micro Ticks */}
@@ -666,7 +678,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
           {/* Center core pip */}
           <circle
             r="1.8"
-            fill={isDragging ? '#ffffff' : themeColor.stroke}
+            fill={isDragging ? resolvedColors.beam : themeColor.stroke}
           />
 
           {/* Generous touch target */}
@@ -678,15 +690,15 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
       <div className="absolute top-1.5 left-2 pointer-events-none flex items-center gap-2">
         <span 
           className="text-[8px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-xs"
-          style={{ background: 'rgba(0,0,0,0.8)', color: themeColor.stroke, border: `1px solid ${themeColor.stroke}44` }}
+          style={{ background: 'var(--section-bg)', color: 'var(--text-primary)', border: '1px solid var(--section-border)' }}
         >
           {filterType.toUpperCase()}
         </span>
-        <span className="text-[8px] font-mono text-gray-400">
-          {formatFreq(cutoff)} • Q {resonance.toFixed(1)}
+        <span className="text-[8.5px] font-mono" style={{ color: 'var(--text-label)' }}>
+          {formatFreq(cutoff)} · Q {resonance.toFixed(1)}
           {dynamicModCutoff !== null && (
-            <span className="ml-1.5 text-white/90">
-              MOD: <strong style={{ color: themeColor.beam }}>{formatFreq(dynamicModCutoff)}</strong>
+            <span className="ml-1.5" style={{ color: 'var(--text-primary)' }}>
+              MOD: <strong style={{ color: themeColor.stroke }}>{formatFreq(dynamicModCutoff)}</strong>
             </span>
           )}
         </span>
@@ -695,21 +707,20 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
       {/* Floating Precision Readout Tooltip on Drag or Hover */}
       {(isDragging || (isHovered && hoverPos)) && (
         <div
-          className="absolute pointer-events-none z-30 px-2 py-0.5 rounded-xs text-[8px] font-mono-lcd shadow-lg uppercase backdrop-blur-sm"
+          className="absolute pointer-events-none z-30 px-2 py-0.5 rounded-xs text-[8px] font-mono-lcd uppercase"
           style={{
             left: `${nodeCoords.x}px`,
             top: '24px',
             transform: 'translate(-50%, 0)',
             background: 'var(--oled-bg)',
-            border: `1px solid ${themeColor.stroke}`,
-            color: themeColor.stroke,
-            boxShadow: `0 4px 12px rgba(0,0,0,0.8), 0 0 8px ${themeColor.halo}`
+            border: '1px solid var(--oled-border)',
+            color: 'var(--oled-text)',
           }}
         >
           <span>CUTOFF: {formatFreq(cutoff)}</span>
           <span className="ml-2 opacity-90">Q: {resonance.toFixed(1)}</span>
           {hoverFreq && hoverFreq !== cutoff && (
-            <span className="ml-2 text-gray-400">PTR: {formatFreq(hoverFreq)}</span>
+            <span className="ml-2 opacity-75">PTR: {formatFreq(hoverFreq)}</span>
           )}
         </div>
       )}

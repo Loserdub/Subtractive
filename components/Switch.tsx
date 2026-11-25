@@ -78,12 +78,12 @@ export const LEDButton: React.FC<LEDButtonProps> = React.memo(({
   size = 'md',
   className = ''
 }) => {
-  const activeStyles = {
-    cyan:    'bg-[#04261a] border-[#10b981] text-[#10b981] shadow-[0_0_12px_rgba(16,185,129,0.4)]',
-    amber:   'bg-[#3d2900] border-[#ffaa00] text-[#ffaa00] shadow-[0_0_12px_rgba(255,170,0,0.4)]',
-    emerald: 'bg-[#003d19] border-[#00ff66] text-[#00ff66] shadow-[0_0_12px_rgba(0,255,102,0.4)]',
-    red:     'bg-[#3d000a] border-[#ff3344] text-[#ff3344] shadow-[0_0_12px_rgba(255,51,68,0.4)]',
-    white:   'bg-[#334155] border-white text-white shadow-[0_0_12px_rgba(255,255,255,0.4)]',
+  const accentVars: Record<string, string> = {
+    cyan: 'var(--accent-cyan)',
+    amber: 'var(--accent-amber)',
+    emerald: 'var(--accent-emerald)',
+    red: 'var(--accent-red)',
+    white: 'var(--text-primary)',
   };
 
   const sizeClasses = {
@@ -92,22 +92,23 @@ export const LEDButton: React.FC<LEDButtonProps> = React.memo(({
     lg: 'px-4 py-2 text-xs gap-2',
   };
 
+  const accent = accentVars[color] || accentVars.cyan;
+
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`relative font-mono font-bold uppercase tracking-wider rounded-sm border transition-all duration-150 flex items-center justify-center active:scale-95 select-none ${sizeClasses[size]} ${
-        active ? activeStyles[color] : ''
-      } ${className}`}
-      style={!active ? {
+      className={`relative font-mono font-bold uppercase tracking-wider rounded-sm border transition-all duration-150 flex items-center justify-center active:scale-95 select-none ${sizeClasses[size]} ${className}`}
+      style={active ? {
+        background: accent,
+        borderColor: accent,
+        color: 'var(--oled-bg)',
+      } : {
         background: 'var(--btn-inactive-bg)',
         borderColor: 'var(--btn-inactive-border)',
         color: 'var(--btn-inactive-text)',
-        boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.05), 0 2px 4px rgba(0,0,0,0.4)',
-      } : undefined}
+      }}
     >
-      {/* Top Edge Highlight */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-white/10 rounded-t-sm pointer-events-none" />
       {icon && <span className="shrink-0">{icon}</span>}
       {label && <span>{label}</span>}
     </button>
