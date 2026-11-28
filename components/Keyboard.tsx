@@ -253,15 +253,15 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
   };
 
   return (
-    <div className="w-full flex flex-col synth-panel rounded p-1.5 gap-1.5 select-none">
+    <div className="keyboard-panel w-full flex flex-col synth-panel rounded p-1.5 gap-1.5 select-none">
       
       {/* ── Collapsed Micro-Bar (Ultra-Thin ~22px) ────────────────────── */}
       {isBarCollapsed ? (
-        <div className="w-full flex flex-wrap items-center justify-between px-2 py-1 bg-[#10141d] rounded-sm border border-[#1e2638] text-[8px] font-mono select-none gap-1.5">
+        <div className="w-full flex flex-wrap items-center justify-between px-2 py-1 bg-[var(--panel-bg-alt)] rounded-sm border border-[var(--section-border)] text-[8px] font-mono select-none gap-1.5">
           {/* Left: Key Range Selector + Typing Status */}
           <div className="flex items-center gap-1.5 shrink-0">
             {/* Range Mode */}
-            <div className="flex items-center rounded bg-[#090c12] border border-[#1c2436] p-0.5">
+            <div className="flex items-center rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] p-0.5">
               {(['1oct', '1.5oct', '2oct'] as KeyRangeMode[]).map((mode) => (
                 <button
                   key={mode}
@@ -269,8 +269,8 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   onClick={() => handleRangeModeChange(mode)}
                   className={`px-1.5 py-0.5 rounded-xs text-[7px] font-mono font-bold transition-all uppercase ${
                     rangeMode === mode
-                      ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                   title={`Key Width Zoom: ${mode === '1oct' ? '1 Octave (Wide Touch)' : mode === '1.5oct' ? '1.5 Octaves' : '2 Full Octaves'}`}
                 >
@@ -286,23 +286,23 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               title="Toggle Computer Keyboard Musical Typing (Hotkey: \)"
               className={`hidden sm:flex px-1.5 py-0.5 rounded items-center gap-1 transition-all ${
                 currentKeyboardMode
-                  ? 'bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/40'
-                  : 'bg-[#181d28] text-gray-500 border border-[#252d3d]'
+                  ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border border-[var(--signal)]'
+                  : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border border-[var(--section-border)]'
               }`}
             >
-              <span className="text-[9px]">⌨️</span>
+              <span className="text-[9px]">⌨</span>
               <span className="font-bold">{currentKeyboardMode ? currentLayout.toUpperCase() : 'OFF'}</span>
             </button>
           </div>
 
           {/* Center: Tactile Octave Stepper & Direct Octave Jump */}
           <div className="flex items-center gap-1 shrink-0">
-            <span className="text-gray-400 font-bold uppercase tracking-wider text-[7px]">OCT:</span>
+            <span className="text-[var(--text-secondary)] font-bold uppercase tracking-normal text-[7px]">OCT:</span>
             <button
               type="button"
               onClick={decrementOctave}
               disabled={currentOctave <= -2}
-              className="w-5 h-5 flex items-center justify-center rounded bg-[#181d28] border border-[#2e374a] text-gray-200 hover:text-white disabled:opacity-30 disabled:pointer-events-none text-[9px] font-bold"
+              className="w-5 h-5 flex items-center justify-center rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[var(--text-primary)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:pointer-events-none text-[9px] font-bold"
               title="Octave Down"
             >
               -
@@ -321,8 +321,8 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   onClick={() => setOctave(oct)}
                   className={`px-1.5 h-5 flex items-center justify-center rounded text-[8px] font-mono font-bold transition-all ${
                     currentOctave === oct
-                      ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
-                      : 'bg-[#181d28] text-gray-400 border border-[#242c3d] hover:text-white'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border border-[var(--section-border)] hover:text-[var(--text-primary)]'
                   }`}
                   title={`Jump to base ${label}`}
                 >
@@ -334,7 +334,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               type="button"
               onClick={incrementOctave}
               disabled={currentOctave >= 2}
-              className="w-5 h-5 flex items-center justify-center rounded bg-[#181d28] border border-[#2e374a] text-gray-200 hover:text-white disabled:opacity-30 disabled:pointer-events-none text-[9px] font-bold"
+              className="w-5 h-5 flex items-center justify-center rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[var(--text-primary)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:pointer-events-none text-[9px] font-bold"
               title="Octave Up"
             >
               +
@@ -347,7 +347,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               <button
                 type="button"
                 onClick={() => setSubOctaveOffset(prev => prev === 0 ? 1 : 0)}
-                className="px-1.5 py-0.5 rounded bg-[#131c2b] border border-[#23334d] text-[#38bdf8] text-[7.5px] font-bold uppercase"
+                className="px-1.5 py-0.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[var(--signal-ink)] text-[7.5px] font-bold uppercase"
                 title="Switch between Lower & Upper Octave"
               >
                 {subOctaveOffset === 0 ? 'LOW (C-C)' : 'HIGH (C-C)'}
@@ -357,7 +357,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               type="button"
               onClick={toggleBarCollapse}
               title="Expand Keyboard Toolbar (Wheels & Key Range)"
-              className="flex items-center gap-1 px-1.5 py-0.5 bg-[#181f2c] hover:bg-[#222b3d] text-[#10b981] border border-[#2b374e] rounded transition-all text-[8px] font-bold"
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-[var(--panel-bg-alt)] hover:bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] border border-[var(--section-border)] rounded transition-all text-[8px] font-bold"
             >
               <span>OPTIONS</span>
               <span className="text-[7px]">▼</span>
@@ -366,13 +366,13 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
         </div>
       ) : (
         /* ── Thin Expanded Toolbar (Touch-Ready Single Row) ─────────────── */
-        <div className="w-full flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 bg-[#121620] rounded-sm border border-[#222a3a] text-[8px] font-mono select-none">
+        <div className="w-full flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 bg-[var(--panel-bg-alt)] rounded-sm border border-[var(--section-border)] text-[8px] font-mono select-none">
           {/* Left: Key Width Zoom + Computer Typing Mode */}
           <div className="flex items-center gap-2 shrink-0">
             {/* Mobile Key Range Selector */}
             <div className="flex items-center gap-1">
-              <span className="text-[7px] font-mono text-gray-400 uppercase font-bold tracking-wider">VIEW:</span>
-              <div className="flex items-center rounded bg-[#080b11] border border-[#1e273a] p-0.5">
+              <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase font-bold tracking-normal">VIEW:</span>
+              <div className="flex items-center rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] p-0.5">
                 {(['1oct', '1.5oct', '2oct'] as KeyRangeMode[]).map((mode) => (
                   <button
                     key={mode}
@@ -380,8 +380,8 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                     onClick={() => handleRangeModeChange(mode)}
                     className={`px-2 py-0.5 rounded-xs text-[7.5px] font-mono font-bold transition-all uppercase ${
                       rangeMode === mode
-                        ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
-                        : 'text-gray-400 hover:text-white'
+                        ? 'bg-[var(--signal)] text-black '
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                     title={`Key Zoom: ${mode === '1oct' ? '1 Octave (Comfort Wide Touch)' : mode === '1.5oct' ? '1.5 Octaves' : '2 Full Octaves'}`}
                   >
@@ -396,7 +396,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               <button
                 type="button"
                 onClick={() => setSubOctaveOffset(prev => prev === 0 ? 1 : 0)}
-                className="px-2 py-0.5 rounded bg-[#0d1624] border border-[#1d2d47] text-[#38bdf8] hover:text-white text-[7.5px] font-bold uppercase transition-all"
+                className="px-2 py-0.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[var(--signal-ink)] hover:text-[var(--text-primary)] text-[7.5px] font-bold uppercase transition-all"
                 title="Switch between Lower & Upper Octave"
               >
                 {subOctaveOffset === 0 ? '◀ LOWER' : 'UPPER ▶'}
@@ -404,30 +404,30 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
             )}
 
             {/* Typing Mode Toggle (Desktop) */}
-            <div className="hidden lg:flex items-center gap-1.5 pl-2 border-l border-[#1e2638]">
+            <div className="hidden lg:flex items-center gap-1.5 pl-2 border-l border-[var(--section-border)]">
               <button
                 type="button"
                 onClick={toggleKeyboardMode}
                 title="Toggle Computer Keyboard Musical Typing (Hotkey: \)"
                 className={`h-5 px-2 text-[8px] font-mono font-bold rounded border flex items-center gap-1 transition-all ${
                   currentKeyboardMode
-                    ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/50 shadow-[0_0_6px_rgba(16,185,129,0.3)]'
-                    : 'bg-[#181d28] text-gray-500 border-[#2a3448]'
+                    ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)] '
+                    : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)]'
                 }`}
               >
-                <span className="text-[9px]">⌨️</span>
+                <span className="text-[9px]">⌨</span>
                 <span>{currentKeyboardMode ? 'TYPING ON' : 'TYPING OFF'}</span>
               </button>
 
               {currentKeyboardMode && (
-                <div className="flex items-center rounded p-0.5 bg-[#080a0f] border border-[#1e2638] h-5">
+                <div className="flex items-center rounded p-0.5 bg-[var(--panel-bg-alt)] border border-[var(--section-border)] h-5">
                   <button
                     type="button"
                     onClick={() => changeLayout('daw')}
                     className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded transition-all ${
                       currentLayout === 'daw'
-                        ? 'bg-[#10b981] text-black shadow-[0_0_4px_#10b981]'
-                        : 'text-gray-400 hover:text-white'
+                        ? 'bg-[var(--signal)] text-black '
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     DAW
@@ -437,8 +437,8 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                     onClick={() => changeLayout('classic')}
                     className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded transition-all ${
                       currentLayout === 'classic'
-                        ? 'bg-[#10b981] text-black shadow-[0_0_4px_#10b981]'
-                        : 'text-gray-400 hover:text-white'
+                        ? 'bg-[var(--signal)] text-black '
+                        : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     CLASSIC
@@ -450,12 +450,12 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
 
           {/* Center: Tactile Octave Shifter & Octave Direct Buttons */}
           <div className="flex items-center gap-1.5 shrink-0">
-            <span className="text-[7px] font-mono text-gray-400 uppercase tracking-wider font-bold">OCTAVE:</span>
+            <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase tracking-normal font-bold">OCTAVE:</span>
             <button
               type="button"
               onClick={decrementOctave}
               disabled={currentOctave <= -2}
-              className="w-5 h-5 flex items-center justify-center rounded bg-[#181d28] border border-[#2a3448] text-gray-200 hover:text-white text-[9px] font-bold disabled:opacity-30 disabled:pointer-events-none"
+              className="w-5 h-5 flex items-center justify-center rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[var(--text-primary)] hover:text-[var(--text-primary)] text-[9px] font-bold disabled:opacity-30 disabled:pointer-events-none"
               title="Octave Down"
             >
               -
@@ -474,8 +474,8 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   onClick={() => setOctave(oct)}
                   className={`px-1.5 h-5 flex items-center justify-center text-[8px] font-mono font-bold rounded border transition-all ${
                     currentOctave === oct
-                      ? 'bg-[#10b981] text-black border-[#10b981] shadow-[0_0_6px_#10b981]'
-                      : 'bg-[#181d28] text-gray-400 border-[#273244] hover:text-white'
+                      ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                      : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                   }`}
                   title={`Jump to base ${label}`}
                 >
@@ -487,7 +487,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               type="button"
               onClick={incrementOctave}
               disabled={currentOctave >= 2}
-              className="w-5 h-5 flex items-center justify-center rounded bg-[#181d28] border border-[#2a3448] text-gray-200 hover:text-white text-[9px] font-bold disabled:opacity-30 disabled:pointer-events-none"
+              className="w-5 h-5 flex items-center justify-center rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[var(--text-primary)] hover:text-[var(--text-primary)] text-[9px] font-bold disabled:opacity-30 disabled:pointer-events-none"
               title="Octave Up"
             >
               +
@@ -500,20 +500,20 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
             <div className="flex items-center gap-2">
               {/* Pitch Bend Wheel */}
               <div className="flex items-center gap-1">
-                <span className="text-[7px] font-mono text-gray-400 uppercase font-bold">PITCH</span>
+                <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase font-bold">PITCH</span>
                 <div 
-                  className="relative w-5 h-6 bg-[#07090e] border border-[#232b3c] rounded-xs cursor-ns-resize touch-none select-none shadow-[inset_0_2px_5px_rgba(0,0,0,0.9)] overflow-hidden"
+                  className="relative w-5 h-6 bg-[var(--panel-bg-alt)] border border-[var(--section-border)] rounded-xs cursor-ns-resize touch-none select-none  overflow-hidden"
                   onPointerDown={handlePitchWheelPointerDown}
                   title="Pitch Bend (Drag vertically, returns to center)"
                 >
                   <div 
                     className="absolute inset-0 opacity-40 pointer-events-none"
                     style={{
-                      background: 'repeating-linear-gradient(to bottom, #000 0px, #000 2px, #3a475d 2px, #3a475d 4px)'
+                      background: 'repeating-linear-gradient(to bottom, var(--text-primary) 0 1px, var(--text-secondary) 1px 3px)'
                     }}
                   />
                   <div 
-                    className="absolute left-0 right-0 h-1 bg-[#38bdf8] rounded-xs shadow-[0_0_5px_#38bdf8]"
+                    className="absolute left-0 right-0 h-1 bg-[var(--signal)] rounded-xs "
                     style={{ top: `${(1 - pitchVal) * 78}%` }}
                   />
                 </div>
@@ -521,20 +521,20 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
 
               {/* Mod Wheel */}
               <div className="flex items-center gap-1">
-                <span className="text-[7px] font-mono text-gray-400 uppercase font-bold">MOD</span>
+                <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase font-bold">MOD</span>
                 <div 
-                  className="relative w-5 h-6 bg-[#07090e] border border-[#232b3c] rounded-xs cursor-ns-resize touch-none select-none shadow-[inset_0_2px_5px_rgba(0,0,0,0.9)] overflow-hidden"
+                  className="relative w-5 h-6 bg-[var(--panel-bg-alt)] border border-[var(--section-border)] rounded-xs cursor-ns-resize touch-none select-none  overflow-hidden"
                   onPointerDown={handleModWheelPointerDown}
                   title="Modulation Wheel (Drag vertically)"
                 >
                   <div 
                     className="absolute inset-0 opacity-40 pointer-events-none"
                     style={{
-                      background: 'repeating-linear-gradient(to bottom, #000 0px, #000 2px, #3a475d 2px, #3a475d 4px)'
+                      background: 'repeating-linear-gradient(to bottom, var(--text-primary) 0 1px, var(--text-secondary) 1px 3px)'
                     }}
                   />
                   <div 
-                    className="absolute left-0 right-0 h-1 bg-[#10b981] rounded-xs shadow-[0_0_5px_#10b981]"
+                    className="absolute left-0 right-0 h-1 bg-[var(--signal)] rounded-xs "
                     style={{ top: `${(1 - modVal) * 78}%` }}
                   />
                 </div>
@@ -546,7 +546,7 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               type="button"
               onClick={toggleBarCollapse}
               title="Collapse Toolbar to Micro-Bar"
-              className="flex items-center gap-1 px-1.5 py-0.5 bg-[#181f2c] hover:bg-[#222b3d] text-gray-400 hover:text-[#10b981] border border-[#2b374e] rounded transition-all text-[8px] font-bold"
+              className="flex items-center gap-1 px-1.5 py-0.5 bg-[var(--panel-bg-alt)] hover:bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] hover:text-[var(--signal-ink)] border border-[var(--section-border)] rounded transition-all text-[8px] font-bold"
             >
               <span>HIDE</span>
               <span className="text-[7px]">▲</span>
@@ -563,14 +563,14 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
         onPointerUp={handleKeybedPointerUp}
         onPointerCancel={handleKeybedPointerUp}
         style={{ touchAction: 'none' }}
-        className="keybed-surface relative w-full h-40 sm:h-44 md:h-40 min-h-[155px] bg-[#06080c] p-1 rounded border border-[#1b2230] overflow-hidden shadow-[inset_0_2px_8px_rgba(0,0,0,0.9)] cursor-pointer"
+        className="keybed-surface relative w-full h-40 sm:h-44 md:h-40 min-h-[155px] bg-[var(--panel-bg-alt)] p-1 rounded border border-[var(--section-border)] overflow-hidden  cursor-pointer"
       >
         
         {/* Authentic Pro Red Felt Damper Bushing Strip */}
         <div 
           className="absolute top-1 left-1 right-1 h-2 z-30 pointer-events-none rounded-t-xs"
           style={{
-            background: 'linear-gradient(to bottom, #991b1b, #7f1d1d)',
+            background: 'var(--section-bg)',
             boxShadow: '0 1px 3px rgba(0,0,0,0.8), inset 0 1px 1px rgba(255,255,255,0.25)',
             borderBottom: '1px solid rgba(0,0,0,0.7)'
           }}
@@ -585,37 +585,33 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
               <div
                 key={key.midi}
                 data-midi={key.midi}
-                className={`flex-1 h-full rounded-b-sm relative flex flex-col justify-end items-center pb-2 transition-all duration-75 touch-none select-none ${
-                  isActive 
-                    ? 'bg-gradient-to-b from-[#cbd5e1] to-[#94a3b8] transform translate-y-[3px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]' 
-                    : 'bg-gradient-to-b from-[#f8fafc] via-[#e2e8f0] to-[#cbd5e1] hover:from-white hover:to-[#e2e8f0] shadow-[0_4px_6px_rgba(0,0,0,0.5)]'
-                }`}
+                className={`key-white flex-1 h-full rounded-b-sm relative flex flex-col justify-end items-center pb-2 transition-colors touch-none select-none ${isActive ? 'active' : ''}`}
               >
                 {/* Active Key Accent LED Glow */}
                 <div 
                   className={`w-full h-1.5 mb-1 rounded-full transition-all duration-100 ${
-                    isActive ? 'bg-[#10b981] shadow-[0_0_8px_#10b981]' : 'bg-transparent'
+                    isActive ? 'bg-[var(--signal)] ' : 'bg-transparent'
                   }`} 
                 />
 
                 {/* Keycap or Musical Note Label */}
                 {currentKeyboardMode && keyLabel ? (
                   <div className="flex flex-col items-center pointer-events-none mb-1">
-                    <span className="text-[10px] md:text-[11px] font-mono font-black text-black bg-[#10b981]/25 px-1 rounded shadow-sm border border-black/20">
+                    <span className="text-[10px] md:text-[11px] font-mono font-black text-black bg-[var(--signal-soft)] px-1 rounded  border border-[var(--section-border)]">
                       {keyLabel}
                     </span>
-                    <span className="text-[7.5px] font-mono text-gray-600 font-bold">
+                    <span className="text-[7.5px] font-mono text-[var(--text-secondary)] font-bold">
                       {key.note}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-[8.5px] font-mono text-gray-600 font-bold pointer-events-none mb-1">
+                  <span className="text-[8.5px] font-mono text-[var(--text-secondary)] font-bold pointer-events-none mb-1">
                     {key.note}
                   </span>
                 )}
                 
                 {/* Key bottom lip depth */}
-                <div className="absolute bottom-0 w-full h-2 bg-black/15 rounded-b-sm pointer-events-none" />
+                <div className="absolute bottom-0 w-full h-2 bg-[var(--section-bg)] rounded-b-sm pointer-events-none" />
               </div>
             );
           })}
@@ -639,29 +635,22 @@ export const Keyboard: React.FC<KeyboardProps> = React.memo(({
                   <div
                     key={blackKey.midi}
                     data-midi={blackKey.midi}
-                    className={`h-full w-full rounded-b-sm border-x border-b border-black/80 relative flex flex-col justify-end items-center pb-1.5 transition-all duration-75 touch-none select-none ${
-                      isActive 
-                        ? 'bg-gradient-to-b from-[#090b0f] to-[#1a202c] transform translate-y-[2px] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)]' 
-                        : 'bg-gradient-to-b from-[#222733] via-[#11141c] to-[#090b0f] hover:from-[#333a4d]'
-                    }`}
-                    style={{
-                      filter: isActive ? 'drop-shadow(1px 2px 3px rgba(0,0,0,0.9))' : 'drop-shadow(2px 5px 6px rgba(0,0,0,0.75))'
-                    }}
+                    className={`key-black h-full w-full rounded-b-sm relative flex flex-col justify-end items-center pb-1.5 transition-colors touch-none select-none ${isActive ? 'active' : ''}`}
                   >
                     {/* Active LED Light on Black key */}
                     <div 
                       className={`w-full h-1 mb-1 rounded-full transition-all duration-100 ${
-                        isActive ? 'bg-[#ffaa00] shadow-[0_0_8px_#ffaa00]' : 'bg-transparent'
+                        isActive ? 'bg-[var(--signal)] ' : 'bg-transparent'
                       }`} 
                     />
 
                     {/* Keycap or Musical Note Label on Black Key */}
                     {currentKeyboardMode && keyLabel ? (
-                      <span className="text-[9px] md:text-[10px] font-mono text-[#ffaa00] font-black pointer-events-none bg-black/60 px-1 rounded border border-[#ffaa00]/30 shadow-sm">
+                      <span className="text-[9px] md:text-[10px] font-mono text-[var(--signal-ink)] font-black pointer-events-none bg-[var(--section-bg)] px-1 rounded border border-[var(--signal)] ">
                         {keyLabel}
                       </span>
                     ) : (
-                      <span className="text-[7.5px] font-mono text-[#ffaa00]/80 font-bold pointer-events-none">
+                      <span className="text-[7.5px] font-mono text-[var(--signal-ink)] font-bold pointer-events-none">
                         {blackKey.note.replace(/[0-9]/g, '')}
                       </span>
                     )}

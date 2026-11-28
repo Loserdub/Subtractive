@@ -16,41 +16,43 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = React.memo(({
   size = 'md'
 }) => {
   const ledColors = {
-    cyan:    checked ? 'bg-[#10b981] shadow-[0_0_10px_#10b981]' : 'bg-[#042014]',
-    amber:   checked ? 'bg-[#ffaa00] shadow-[0_0_10px_#ffaa00]' : 'bg-[#442200]',
-    emerald: checked ? 'bg-[#00ff66] shadow-[0_0_10px_#00ff66]' : 'bg-[#003311]',
-    red:     checked ? 'bg-[#ff3344] shadow-[0_0_10px_#ff3344]' : 'bg-[#440011]',
+    cyan:    checked ? 'bg-[var(--signal)] ' : 'bg-[var(--panel-bg-alt)]',
+    amber:   checked ? 'bg-[var(--signal)] ' : 'bg-[var(--panel-bg-alt)]',
+    emerald: checked ? 'bg-[var(--signal)] ' : 'bg-[var(--panel-bg-alt)]',
+    red:     checked ? 'bg-[var(--signal)] ' : 'bg-[var(--panel-bg-alt)]',
   };
 
   return (
-    <div className="flex flex-col items-center gap-1.5 select-none">
+    <div className="toggle-switch select-none">
       <div className="flex items-center gap-2">
         {/* LED Light Bulb */}
-        <div className={`w-2 h-2 rounded-full border border-black/80 transition-all duration-200 ${ledColors[color]}`} />
+        <div className={`w-2 h-2 rounded-full border border-[var(--section-border)] transition-all duration-200 ${ledColors[color]}`} />
         <button
           type="button"
           onClick={() => onChange(!checked)}
-          className="relative w-10 h-5 rounded-full border shadow-[inset_0_2px_4px_rgba(0,0,0,0.8)] focus:outline-none transition-colors"
+          className="relative w-10 h-5 rounded-full border  focus:outline-none transition-colors"
           style={{
             background: 'var(--panel-bg-alt)',
             borderColor: 'var(--panel-border)',
           }}
           aria-label={label}
+          role="switch"
+          aria-checked={checked}
         >
           {/* Metal Toggle Lever */}
           <div
-            className={`absolute top-0.5 w-4 h-4 rounded-full bg-gradient-to-br from-[#e2e8f0] via-[#94a3b8] to-[#475569] border border-[#1e293b] shadow-[0_2px_4px_rgba(0,0,0,0.6)] transform transition-transform duration-150 ${
+            className={`absolute top-0.5 w-4 h-4 rounded-full bg-gradient-to-br from-[var(--panel-bg-alt)] via-[var(--panel-bg-alt)] to-[var(--panel-bg-alt)] border border-[var(--section-border)]  transform transition-transform duration-150 ${
               checked ? 'translate-x-5' : 'translate-x-0.5'
             }`}
           >
             <div className="w-full h-full rounded-full flex items-center justify-center">
-              <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--section-bg)]" />
             </div>
           </div>
         </button>
       </div>
       <span 
-        className="text-[9px] font-bold font-mono tracking-widest uppercase text-center leading-none"
+        className="text-[9px] font-bold font-mono tracking-normal uppercase text-center leading-none"
         style={{ color: 'var(--text-label)' }}
       >
         {label}
@@ -98,7 +100,8 @@ export const LEDButton: React.FC<LEDButtonProps> = React.memo(({
     <button
       type="button"
       onClick={onClick}
-      className={`relative font-mono font-bold uppercase tracking-wider rounded-sm border transition-all duration-150 flex items-center justify-center active:scale-95 select-none ${sizeClasses[size]} ${className}`}
+      aria-pressed={active}
+      className={`led-button relative rounded-sm border transition-all duration-150 flex items-center justify-center select-none ${sizeClasses[size]} ${className}`}
       style={active ? {
         background: accent,
         borderColor: accent,

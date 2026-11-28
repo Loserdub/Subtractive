@@ -51,6 +51,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   onMidiLearn,
   onModDrop,
 }) => {
+  size = Math.max(40, size);
   const knobRef = useRef<HTMLDivElement>(null);
   const dragStartRef = useRef({ y: 0, x: 0, value: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -173,7 +174,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
 
   // Base arc radius
   const radius = hasMod ? center - 5.5 : center - 4;
-  const strokeWidth = hasMod ? 2.5 : 3;
+  const strokeWidth = 1.2;
   const circumference = 2 * Math.PI * radius;
   const arcLength = circumference * 0.75;
   const dashOffset = arcLength * (1 - percent);
@@ -245,18 +246,22 @@ export const Knob: React.FC<KnobProps> = React.memo(({
   const formatValue = (val: number) => {
     if (unit === 'Hz') {
       if (val >= 1000) return `${(val / 1000).toFixed(1)}k Hz`;
-      return `${Math.round(val)} Hz`;
+      return `${val > 0 && val < 1 ? val.toFixed(2) : Math.round(val)} Hz`;
     }
-    if (unit === 's' || unit === 'ms') {
-      if (val < 1) return `${Math.round(val * 1000)}ms`;
-      return `${val.toFixed(2)}s`;
+    if (unit === 'ms') return `${Math.round(val)} ms`;
+    if (unit === 's') {
+      if (val < 1) return `${Math.round(val * 1000)} ms`;
+      return `${val.toFixed(2)} s`;
     }
     if (unit === '%') {
-      return `${Math.round(val * (max === 1 ? 100 : 1))}%`;
+      return `${Math.round(val * (max <= 1 ? 100 : 1))}%`;
     }
     if (unit === 'cents') {
       return `${Math.round(val)} cents`;
     }
+    if (unit === 'ct') return `${val > 0 ? '+' : ''}${Math.round(val)} ct`;
+    if (unit === 'BPM') return `${Math.round(val)}`;
+    if (unit === 'dB') return `${Math.round(val)} dB`;
     if (Math.abs(val) >= 1000) return `${(val / 1000).toFixed(1)}k`;
     if (val === 0) return '0';
     if (Math.abs(val) < 1) return val.toFixed(2);
@@ -273,8 +278,8 @@ export const Knob: React.FC<KnobProps> = React.memo(({
 
   return (
     <div 
-      className="flex flex-col items-center justify-center select-none group min-w-0 relative" 
-      style={{ minWidth: Math.max(size + 6, 36), maxWidth: Math.max(size + 24, 68) }}
+      className="knob-control group"
+      style={{ minWidth: size + 12, maxWidth: Math.max(size + 30, 76) }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onContextMenu={handleContextMenu}
@@ -282,7 +287,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
     >
       <div
         ref={knobRef}
-        className={`relative flex items-center justify-center rounded-full cursor-ns-resize touch-none select-none shrink-0 ${
+        className={`knob-dial relative flex items-center justify-center rounded-full cursor-ns-resize touch-none select-none shrink-0 ${
           isLearning ? 'ring-2 ring-[var(--accent-amber)] animate-pulse' : ''
         } ${isModDropTarget ? 'ring-2 ring-[var(--accent-amber)]' : ''}`}
         onPointerDown={handlePointerDown}
@@ -311,9 +316,17 @@ export const Knob: React.FC<KnobProps> = React.memo(({
         )}
         {/* Outer Ring & Arc SVG */}
         <svg 
+          viewBox={`0 0 ${size} ${size}`}
           className="absolute inset-0 w-full h-full pointer-events-none"
           style={{ transform: 'rotate(135deg)' }}
         >
+          {Array.from({ length: 11 }, (_, i) => {
+            const angle = i / 10 * Math.PI * 1.5;
+            return <line key={i}
+              x1={center + (center - 1) * Math.cos(angle)} y1={center + (center - 1) * Math.sin(angle)}
+              x2={center + (center - 2.5) * Math.cos(angle)} y2={center + (center - 2.5) * Math.sin(angle)}
+              stroke="var(--knob-track)" strokeWidth="0.7" />;
+          })}
           {/* Base Track Arc Background */}
           <circle
             cx={center}
@@ -333,7 +346,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
             r={radius}
             fill="none"
             stroke={activeTheme.stroke}
-            strokeWidth={strokeWidth + (isDragging ? 0.8 : 0)}
+            strokeWidth={strokeWidth + (isDragging ? 0.3 : 0)}
             strokeDasharray={`${arcLength} ${circumference}`}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
@@ -391,7 +404,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
 
         {/* Real-time Sweeping Indicator Pip */}
         {hasMod && (
-          <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          <svg viewBox={`0 0 ${size} ${size}`} className="absolute inset-0 w-full h-full pointer-events-none">
             <g ref={modPipRef} transform={`rotate(${rotation}, ${center}, ${center})`}>
               <circle
                 cx={center}
@@ -411,14 +424,14 @@ export const Knob: React.FC<KnobProps> = React.memo(({
           style={{ 
             inset: hasMod ? '7px' : '5px',
             background: 'var(--knob-face-grad)',
-            border: `1.5px solid ${isDragging || isHovered ? activeTheme.stroke : 'var(--section-border)'}`,
+            border: `1px solid ${isDragging || isHovered ? activeTheme.stroke : 'var(--panel-border)'}`,
             boxShadow: 'inset 0 1px 0 var(--knob-hi), 0 1px 2px var(--knob-lo)'
           }}
         />
 
         {/* Inner Cap Well */}
         <div 
-          className="absolute rounded-full pointer-events-none"
+          className="knob-cap absolute rounded-full pointer-events-none"
           style={{ 
             inset: hasMod ? '24%' : '23%',
             background: 'var(--panel-bg-alt)',
@@ -438,7 +451,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
           <div 
             className="absolute top-[16%] left-1/2 -translate-x-1/2 flex flex-col items-center"
             style={{ 
-              width: size > 48 ? '2.5px' : '2px', 
+              width: '1.2px',
               height: `${size * (hasMod ? 0.23 : 0.25)}px`,
             }}
           >
@@ -472,9 +485,9 @@ export const Knob: React.FC<KnobProps> = React.memo(({
       </div>
 
       {/* Label Underneath with MIDI Learn indicator and CC tag */}
-      <div className="flex flex-col items-center mt-1.5 max-w-full overflow-hidden px-0.5">
+      <div className="knob-label flex flex-col items-center max-w-full px-0.5">
         <span 
-          className="text-[9px] md:text-[10px] font-semibold tracking-normal uppercase font-mono text-center leading-tight select-none max-w-full truncate px-0.5"
+          className="text-center leading-tight select-none max-w-full"
           style={{ color: isLearning ? 'var(--accent-amber)' : hasMod ? activeModTheme.stroke : 'var(--text-label)' }}
           title={label}
         >
@@ -489,6 +502,7 @@ export const Knob: React.FC<KnobProps> = React.memo(({
           </span>
         )}
       </div>
+      <output className="knob-value">{formatValue(value)}</output>
     </div>
   );
 });

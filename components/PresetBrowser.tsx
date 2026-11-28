@@ -31,15 +31,15 @@ const CATEGORIES = [
 type CategoryTab = typeof CATEGORIES[number];
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  Bass: { bg: 'bg-[#ffaa00]/10', text: 'text-[#ffaa00]', border: 'border-[#ffaa00]/40' },
-  Lead: { bg: 'bg-[#10b981]/10', text: 'text-[#10b981]', border: 'border-[#10b981]/40' },
-  Pad: { bg: 'bg-[#00ff66]/10', text: 'text-[#00ff66]', border: 'border-[#00ff66]/40' },
-  Pluck: { bg: 'bg-[#d946ef]/10', text: 'text-[#d946ef]', border: 'border-[#d946ef]/40' },
-  Keys: { bg: 'bg-[#a855f7]/10', text: 'text-[#a855f7]', border: 'border-[#a855f7]/40' },
-  Arp: { bg: 'bg-[#ff3344]/10', text: 'text-[#ff3344]', border: 'border-[#ff3344]/40' },
-  FX: { bg: 'bg-[#facc15]/10', text: 'text-[#facc15]', border: 'border-[#facc15]/40' },
-  User: { bg: 'bg-[#38bdf8]/10', text: 'text-[#38bdf8]', border: 'border-[#38bdf8]/40' },
-  Basic: { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-600/40' },
+  Bass: { bg: 'bg-[var(--signal-soft)]', text: 'text-[var(--signal-ink)]', border: 'border-[var(--signal)]' },
+  Lead: { bg: 'bg-[var(--signal-soft)]', text: 'text-[var(--signal-ink)]', border: 'border-[var(--signal)]' },
+  Pad: { bg: 'bg-[var(--signal-soft)]', text: 'text-[var(--signal-ink)]', border: 'border-[var(--signal)]' },
+  Pluck: { bg: 'bg-[var(--signal-soft)]', text: 'text-[var(--signal-ink)]', border: 'border-[var(--signal)]' },
+  Keys: { bg: 'bg-[var(--signal-soft)]', text: 'text-[var(--signal-ink)]', border: 'border-[var(--signal)]' },
+  Arp: { bg: 'bg-[var(--signal-soft)]', text: 'text-[var(--signal-ink)]', border: 'border-[var(--signal)]' },
+  FX: { bg: 'bg-[var(--signal-soft)]', text: 'text-[var(--signal-ink)]', border: 'border-[var(--signal)]' },
+  User: { bg: 'bg-[var(--signal-soft)]', text: 'text-[var(--signal-ink)]', border: 'border-[var(--signal)]' },
+  Basic: { bg: 'bg-[var(--section-bg)]', text: 'text-[var(--text-secondary)]', border: 'border-[var(--section-border)]' },
 };
 
 export const PresetBrowser: React.FC<PresetBrowserProps> = ({
@@ -333,17 +333,17 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
     <div 
       className={`fixed z-50 animate-fade-in select-none ${
         isDocked
-          ? 'inset-y-0 right-0 w-full sm:w-[500px] xl:w-[580px] bg-black/60 backdrop-blur-xs flex flex-col pointer-events-auto'
-          : 'inset-0 flex items-center justify-center p-2 md:p-6 bg-black/80 backdrop-blur-sm'
+          ? 'inset-y-0 right-0 w-full sm:w-[500px] xl:w-[580px] bg-[var(--section-bg)] backdrop-blur-xs flex flex-col pointer-events-auto'
+          : 'inset-0 flex items-center justify-center p-2 md:p-6 bg-[var(--section-bg)] backdrop-blur-sm'
       }`}
       onClick={(e) => {
         if (e.target === e.currentTarget && !isDocked) onClose();
       }}
     >
       <div 
-        className={`synth-panel flex flex-col overflow-hidden relative shadow-2xl ${
+        className={`synth-panel flex flex-col overflow-hidden relative  ${
           isDocked
-            ? 'w-full h-full rounded-none sm:rounded-l-lg border-l border-[#243048] shadow-[-16px_0_40px_rgba(0,0,0,0.85)]'
+            ? 'w-full h-full rounded-none sm:rounded-l-lg border-l border-[var(--section-border)] '
             : 'w-full max-w-5xl h-[90vh] max-h-[850px] rounded-md'
         }`}
       >
@@ -356,19 +356,19 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
         {/* ── Header ── */}
         <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b shrink-0 gap-2" style={{ borderColor: 'var(--section-border)', background: 'var(--section-bg)' }}>
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-sm bg-[#10b981] text-black font-brand font-black flex items-center justify-center transform skew-x-[-6deg] text-sm sm:text-base shadow-[0_0_10px_#10b981] shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-sm bg-[var(--signal)] text-black font-brand font-black flex items-center justify-center transform skew-x-[-6deg] text-sm sm:text-base  shrink-0">
               P
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5 sm:gap-2">
-                <h2 className="text-xs sm:text-base font-brand font-black tracking-widest uppercase text-white truncate">
+                <h2 className="text-xs sm:text-base font-brand font-black tracking-normal uppercase text-[var(--text-primary)] truncate">
                   PRESET VAULT
                 </h2>
-                <span className="text-[8px] sm:text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#10b981]/15 border border-[#10b981]/40 text-[#10b981] shrink-0">
+                <span className="text-[8px] sm:text-[9px] font-mono px-1.5 py-0.5 rounded bg-[var(--signal-soft)] border border-[var(--signal)] text-[var(--signal-ink)] shrink-0">
                   {allPresets.length} PATCHES
                 </span>
               </div>
-              <p className="text-[8px] sm:text-[9px] font-mono text-gray-400 hidden sm:block truncate">
+              <p className="text-[8px] sm:text-[9px] font-mono text-[var(--text-secondary)] hidden sm:block truncate">
                 Studio Factory Soundbank • User Patches • Lossless Import/Export
               </p>
             </div>
@@ -378,7 +378,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
             {/* Dock / Expand Toggle Button (Desktop & Tablet) */}
             <button
               onClick={handleToggleDock}
-              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-[#141b28] text-gray-300 border border-[#2b3548] hover:border-[#10b981] hover:text-white active:scale-95 transition-all flex items-center gap-1 hidden md:flex"
+              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-normal bg-[var(--panel-bg-alt)] text-[var(--text-primary)] border border-[var(--section-border)] hover:border-[var(--signal)] hover:text-[var(--text-primary)] active:scale-95 transition-all flex items-center gap-1 hidden md:flex"
               title={isDocked ? "Expand to Full Modal Vault" : "Dock to Side Drawer (Live Synth & Audition View)"}
             >
               <span>{isDocked ? '🗖' : '◧'}</span>
@@ -388,7 +388,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
             {/* Save Current Patch Button */}
             <button
               onClick={() => setIsSaveModalOpen(true)}
-              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-[#10b981]/15 text-[#10b981] border border-[#10b981] hover:bg-[#10b981]/25 active:scale-95 transition-all flex items-center gap-1"
+              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-normal bg-[var(--signal-soft)] text-[var(--signal-ink)] border border-[var(--signal)] hover:bg-[var(--signal-soft)] active:scale-95 transition-all flex items-center gap-1"
               title="Save current synthesizer parameters as a preset"
             >
               <span>+</span>
@@ -399,7 +399,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
             {/* Import Button */}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider bg-[#141b28] text-gray-300 border border-[#2b3548] hover:border-[#10b981] hover:text-white active:scale-95 transition-all flex items-center gap-1"
+              className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-normal bg-[var(--panel-bg-alt)] text-[var(--text-primary)] border border-[var(--section-border)] hover:border-[var(--signal)] hover:text-[var(--text-primary)] active:scale-95 transition-all flex items-center gap-1"
               title="Import Presets from JSON"
             >
               <span>📥</span>
@@ -416,7 +416,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded text-gray-400 hover:text-white hover:bg-red-500/20 hover:border-red-500 border border-transparent transition-all font-mono text-sm active:scale-95"
+              className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--signal-soft)] hover:border-[var(--signal)] border border-transparent transition-all font-mono text-sm active:scale-95"
               title="Close (Esc)"
             >
               ✕
@@ -434,12 +434,12 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by patch name, author, tag..."
-              className="w-full bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-3 py-1.5 text-xs font-mono text-[#10b981] placeholder-gray-500 outline-none transition-all pr-8"
+              className="w-full bg-[var(--panel-bg-alt)] border border-[var(--section-border)] focus:border-[var(--signal)] rounded px-3 py-1.5 text-xs font-mono text-[var(--signal-ink)] placeholder-gray-500 outline-none transition-all pr-8"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs font-mono p-1"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-mono p-1"
               >
                 ✕
               </button>
@@ -455,14 +455,14 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                 <button
                   key={category}
                   onClick={() => setSelectedCategory(category)}
-                  className={`px-2.5 py-1 sm:py-1.5 rounded text-[9.5px] sm:text-[10px] font-mono font-bold tracking-wider uppercase transition-all whitespace-nowrap flex items-center gap-1 shrink-0 ${
+                  className={`px-2.5 py-1 sm:py-1.5 rounded text-[9.5px] sm:text-[10px] font-mono font-bold tracking-normal uppercase transition-all whitespace-nowrap flex items-center gap-1 shrink-0 ${
                     isActive
-                      ? 'bg-[#10b981] text-black shadow-[0_0_8px_#10b981]'
-                      : 'bg-[#0e131e] text-gray-400 hover:text-gray-200 border border-[#1e2638]'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--section-border)]'
                   }`}
                 >
                   {category === 'Favorites' ? '★ Favs' : category}
-                  <span className={`text-[8px] px-1 rounded ${isActive ? 'bg-black/20 text-black font-black' : 'bg-black/40 text-gray-400'}`}>
+                  <span className={`text-[8px] px-1 rounded ${isActive ? 'bg-[var(--section-bg)] text-black font-black' : 'bg-[var(--section-bg)] text-[var(--text-secondary)]'}`}>
                     {count}
                   </span>
                 </button>
@@ -474,7 +474,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
         {/* ── Main Presets Grid / List ── */}
         <div className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5 content-start">
           {filteredPresets.length === 0 ? (
-            <div className="col-span-full h-48 flex flex-col items-center justify-center text-gray-500 font-mono text-xs">
+            <div className="col-span-full h-48 flex flex-col items-center justify-center text-[var(--text-secondary)] font-mono text-xs">
               <span className="text-2xl mb-2">🔍</span>
               No presets found matching "{searchQuery}" in {selectedCategory}
             </div>
@@ -495,8 +495,8 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   }}
                   className={`p-2.5 sm:p-3 rounded border transition-all cursor-pointer flex flex-col justify-between group relative touch-manipulation select-none ${
                     isSelected
-                      ? 'bg-[#10b981]/15 border-[#10b981] shadow-[0_0_12px_rgba(16,185,129,0.25)] ring-1 ring-[#10b981]/50'
-                      : 'bg-[#0c1018] border-[#1c2436] hover:border-[#10b981]/60 hover:bg-[#111722]'
+                      ? 'bg-[var(--signal-soft)] border-[var(--signal)]  ring-1 ring-[var(--signal)]'
+                      : 'bg-[var(--panel-bg-alt)] border-[var(--section-border)] hover:border-[var(--signal)] hover:bg-[var(--panel-bg-alt)]'
                   }`}
                 >
                   {/* Top Row: Favorite + Name + Category Badge + Active Indicator */}
@@ -506,25 +506,25 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                         type="button"
                         onClick={(e) => toggleFavorite(idOrName, e)}
                         className={`w-6 h-6 flex items-center justify-center rounded text-sm transition-transform active:scale-125 touch-manipulation shrink-0 ${
-                          isFav ? 'text-[#ffaa00] drop-shadow-[0_0_6px_#ffaa00]' : 'text-gray-600 hover:text-gray-400'
+                          isFav ? 'text-[var(--signal-ink)] ' : 'text-[var(--text-secondary)] hover:text-[var(--text-secondary)]'
                         }`}
                         title={isFav ? 'Remove Favorite' : 'Mark Favorite'}
                       >
                         ★
                       </button>
-                      <span className={`font-mono text-xs sm:text-sm font-bold truncate ${isSelected ? 'text-[#10b981]' : 'text-white'}`}>
+                      <span className={`font-mono text-xs sm:text-sm font-bold truncate ${isSelected ? 'text-[var(--signal-ink)]' : 'text-[var(--text-primary)]'}`}>
                         {patch.name}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
                       {isSelected ? (
-                        <span className="text-[7.5px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-[#10b981] text-black shadow-[0_0_6px_#10b981] flex items-center gap-1">
+                        <span className="text-[7.5px] font-mono font-bold uppercase px-1.5 py-0.5 rounded bg-[var(--signal)] text-black  flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
                           ACTIVE
                         </span>
                       ) : (
-                        <span className="hidden sm:inline text-[7px] font-mono font-bold uppercase px-1.5 py-0.5 rounded text-gray-500 bg-white/5 border border-white/10 group-hover:text-[#10b981] group-hover:border-[#10b981]/40 transition-colors">
+                        <span className="hidden sm:inline text-[7px] font-mono font-bold uppercase px-1.5 py-0.5 rounded text-[var(--text-secondary)] bg-[var(--section-bg)] border border-[var(--section-border)] group-hover:text-[var(--signal-ink)] group-hover:border-[var(--signal)] transition-colors">
                           LOAD ▶
                         </span>
                       )}
@@ -535,16 +535,16 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   </div>
 
                   {/* Middle Row: Description */}
-                  <p className="text-[9.5px] sm:text-[10px] font-mono text-gray-400 line-clamp-2 mb-2 leading-relaxed">
+                  <p className="text-[9.5px] sm:text-[10px] font-mono text-[var(--text-secondary)] line-clamp-2 mb-2 leading-relaxed">
                     {patch.description || 'Rich analog modeling synthesizer patch.'}
                   </p>
 
                   {/* Bottom Row: Tags & Actions */}
-                  <div className="flex items-center justify-between pt-1 border-t border-[#182030] text-[8px] font-mono">
+                  <div className="flex items-center justify-between pt-1 border-t border-[var(--section-border)] text-[8px] font-mono">
                     <div className="flex items-center gap-1 overflow-hidden">
-                      <span className="text-gray-500 truncate">{patch.author || 'Subtractive'}</span>
+                      <span className="text-[var(--text-secondary)] truncate">{patch.author || 'Subtractive'}</span>
                       {patch.tags?.slice(0, 2).map(tag => (
-                        <span key={tag} className="text-gray-400 bg-black/40 px-1 rounded truncate">
+                        <span key={tag} className="text-[var(--text-secondary)] bg-[var(--section-bg)] px-1 rounded truncate">
                           #{tag}
                         </span>
                       ))}
@@ -554,7 +554,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                       {/* Export button */}
                       <button
                         onClick={(e) => handleExportPreset(patch, e)}
-                        className="text-gray-400 hover:text-[#10b981] px-1 py-0.5 rounded"
+                        className="text-[var(--text-secondary)] hover:text-[var(--signal-ink)] px-1 py-0.5 rounded"
                         title="Export this preset (.json)"
                       >
                         💾
@@ -564,7 +564,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                       {isUserPatch && (
                         <button
                           onClick={(e) => handleDeleteUserPatch(idOrName, patch.name, e)}
-                          className="text-gray-500 hover:text-red-400 px-1 py-0.5 rounded"
+                          className="text-[var(--text-secondary)] hover:text-[var(--signal-ink)] px-1 py-0.5 rounded"
                           title="Delete user patch"
                         >
                           🗑
@@ -580,24 +580,24 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
 
         {/* ── Footer ── */}
         <div className="p-2.5 sm:p-3 border-t flex items-center justify-between shrink-0 text-[9.5px] sm:text-[10px] font-mono gap-2" style={{ borderColor: 'var(--section-border)', background: 'var(--section-bg)' }}>
-          <div className="flex items-center gap-3 text-gray-400 min-w-0">
-            <span className="truncate">Showing <b className="text-white">{filteredPresets.length}</b> of {allPresets.length}</span>
-            <span className="hidden md:inline text-gray-600">•</span>
-            <span className="hidden md:inline">Use <kbd className="bg-black/40 px-1 rounded text-[#10b981]">↑</kbd> <kbd className="bg-black/40 px-1 rounded text-[#10b981]">↓</kbd> to audition patches</span>
+          <div className="flex items-center gap-3 text-[var(--text-secondary)] min-w-0">
+            <span className="truncate">Showing <b className="text-[var(--text-primary)]">{filteredPresets.length}</b> of {allPresets.length}</span>
+            <span className="hidden md:inline text-[var(--text-secondary)]">•</span>
+            <span className="hidden md:inline">Use <kbd className="bg-[var(--section-bg)] px-1 rounded text-[var(--signal-ink)]">↑</kbd> <kbd className="bg-[var(--section-bg)] px-1 rounded text-[var(--signal-ink)]">↓</kbd> to audition patches</span>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
             {userPresets.length > 0 && (
               <button
                 onClick={handleExportAll}
-                className="hidden sm:inline text-[9px] font-mono text-gray-400 hover:text-[#10b981] transition-all"
+                className="hidden sm:inline text-[9px] font-mono text-[var(--text-secondary)] hover:text-[var(--signal-ink)] transition-all"
               >
                 📦 Backup User Library ({userPresets.length})
               </button>
             )}
             <button
               onClick={onClose}
-              className="px-4 sm:px-5 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-[#10b981] text-black shadow-[0_0_10px_#10b981] hover:opacity-95 active:scale-95 transition-all"
+              className="px-4 sm:px-5 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-normal bg-[var(--signal)] text-black  hover:opacity-95 active:scale-95 transition-all"
             >
               Done
             </button>
@@ -606,21 +606,21 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
 
         {/* ── Save Patch Sub-Modal ── */}
         {isSaveModalOpen && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fade-in">
+          <div className="absolute inset-0 z-50 flex items-center justify-center p-4 bg-[var(--section-bg)] backdrop-blur-sm animate-fade-in">
             <form
               onSubmit={handleSaveUserPatch}
-              className="synth-panel max-w-md w-full p-5 rounded-sm border border-[#10b981] shadow-2xl relative flex flex-col gap-3"
+              className="synth-panel max-w-md w-full p-5 rounded-sm border border-[var(--signal)]  relative flex flex-col gap-3"
               style={{ background: 'var(--panel-bg)' }}
             >
-              <h3 className="font-brand font-black text-sm tracking-wider uppercase text-white">
+              <h3 className="font-brand font-black text-sm tracking-normal uppercase text-[var(--text-primary)]">
                 SAVE AS USER PATCH
               </h3>
-              <p className="text-[10px] font-mono text-gray-400">
+              <p className="text-[10px] font-mono text-[var(--text-secondary)]">
                 Store your current dials, envelopes, and master FX rack settings into your custom preset library.
               </p>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-mono uppercase text-gray-400">Patch Name *</label>
+                <label className="text-[9px] font-mono uppercase text-[var(--text-secondary)]">Patch Name *</label>
                 <input
                   type="text"
                   required
@@ -628,55 +628,55 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                   value={saveName}
                   onChange={(e) => setSaveName(e.target.value)}
                   placeholder="e.g. My Heavy Reese"
-                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2.5 py-1.5 text-xs font-mono text-[#10b981] outline-none"
+                  className="bg-[var(--panel-bg-alt)] border border-[var(--section-border)] focus:border-[var(--signal)] rounded px-2.5 py-1.5 text-xs font-mono text-[var(--signal-ink)] outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-mono uppercase text-gray-400">Category</label>
+                  <label className="text-[9px] font-mono uppercase text-[var(--text-secondary)]">Category</label>
                   <select
                     value={saveCategory}
                     onChange={(e) => setSaveCategory(e.target.value)}
-                    className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2 py-1.5 text-xs font-mono text-white outline-none cursor-pointer"
+                    className="bg-[var(--panel-bg-alt)] border border-[var(--section-border)] focus:border-[var(--signal)] rounded px-2 py-1.5 text-xs font-mono text-[var(--text-primary)] outline-none cursor-pointer"
                   >
                     {['Bass', 'Lead', 'Pad', 'Pluck', 'Keys', 'Arp', 'FX', 'User'].map(cat => (
-                      <option key={cat} value={cat} className="bg-[#080c14] text-white">{cat}</option>
+                      <option key={cat} value={cat} className="bg-[var(--panel-bg-alt)] text-[var(--text-primary)]">{cat}</option>
                     ))}
                   </select>
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-mono uppercase text-gray-400">Author</label>
+                  <label className="text-[9px] font-mono uppercase text-[var(--text-secondary)]">Author</label>
                   <input
                     type="text"
                     value={saveAuthor}
                     onChange={(e) => setSaveAuthor(e.target.value)}
                     placeholder="Your Name"
-                    className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
+                    className="bg-[var(--panel-bg-alt)] border border-[var(--section-border)] focus:border-[var(--signal)] rounded px-2.5 py-1.5 text-xs font-mono text-[var(--text-primary)] outline-none"
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-mono uppercase text-gray-400">Description</label>
+                <label className="text-[9px] font-mono uppercase text-[var(--text-secondary)]">Description</label>
                 <input
                   type="text"
                   value={saveDescription}
                   onChange={(e) => setSaveDescription(e.target.value)}
                   placeholder="e.g. Dual saws with heavy drive and sub punch"
-                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
+                  className="bg-[var(--panel-bg-alt)] border border-[var(--section-border)] focus:border-[var(--signal)] rounded px-2.5 py-1.5 text-xs font-mono text-[var(--text-primary)] outline-none"
                 />
               </div>
 
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-mono uppercase text-gray-400">Tags (comma-separated)</label>
+                <label className="text-[9px] font-mono uppercase text-[var(--text-secondary)]">Tags (comma-separated)</label>
                 <input
                   type="text"
                   value={saveTags}
                   onChange={(e) => setSaveTags(e.target.value)}
                   placeholder="e.g. reese, dnb, heavy, detuned"
-                  className="bg-[#080c14] border border-[#1e2638] focus:border-[#10b981] rounded px-2.5 py-1.5 text-xs font-mono text-white outline-none"
+                  className="bg-[var(--panel-bg-alt)] border border-[var(--section-border)] focus:border-[var(--signal)] rounded px-2.5 py-1.5 text-xs font-mono text-[var(--text-primary)] outline-none"
                 />
               </div>
 
@@ -684,13 +684,13 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsSaveModalOpen(false)}
-                  className="px-3 py-1.5 rounded text-xs font-mono text-gray-400 hover:text-white"
+                  className="px-3 py-1.5 rounded text-xs font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-wider bg-[#10b981] text-black shadow-[0_0_10px_#10b981]"
+                  className="px-4 py-1.5 rounded text-xs font-mono font-bold uppercase tracking-normal bg-[var(--signal)] text-black "
                 >
                   Save Patch
                 </button>
@@ -701,7 +701,7 @@ export const PresetBrowser: React.FC<PresetBrowserProps> = ({
 
         {/* ── Toast Notification Banner ── */}
         {notification && (
-          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded bg-[#10b981] text-black font-mono text-xs font-bold shadow-[0_0_16px_#10b981] z-50 animate-bounce">
+          <div className="absolute bottom-16 left-1/2 -translate-x-1/2 px-4 py-2 rounded bg-[var(--signal)] text-black font-mono text-xs font-bold  z-50 animate-bounce">
             {notification}
           </div>
         )}

@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full overflow-hidden select-none" data-theme="mono-dark">
+<html lang="en" class="h-full overflow-hidden select-none" data-theme="studio-paper">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#080a0e" />
+    <meta name="theme-color" content="#eeeae0" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -390,14 +390,14 @@
     </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
-              mono: ['"Space Mono"', 'monospace'],
+              mono: ['"IBM Plex Mono"', 'monospace'],
               sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
             }
           }
@@ -406,7 +406,7 @@
     </script>
     <link rel="stylesheet" href="/index.css">
   </head>
-  <body class="bg-[#090b0e] text-gray-200 h-full overflow-hidden font-sans antialiased touch-none">
+  <body class="bg-[var(--chassis-bg)] text-[var(--text-primary)] h-full overflow-hidden font-sans antialiased touch-none">
     <div id="root" class="h-full w-full overflow-hidden"></div>
     <script type="module" src="/index.tsx"></script>
     <script>

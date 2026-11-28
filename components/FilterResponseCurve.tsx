@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { FilterType } from '../types';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface FilterResponseCurveProps {
   cutoff: number; // 20 to 20000 Hz
@@ -94,11 +93,10 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
     return () => observer.disconnect();
   }, [height]);
 
-  const { theme } = useTheme();
-  const isLightTheme = theme === 'studio-paper' || theme === 'vintage-japanese';
+  const isLightTheme = true;
   const [resolvedColors, setResolvedColors] = useState({
-    stroke: '#ffaa00',
-    beam: '#ffd580',
+    stroke: 'var(--signal)',
+    beam: 'var(--signal)',
     grid: 'rgba(255, 255, 255, 0.08)',
     zero: 'rgba(255, 255, 255, 0.2)',
     label: 'rgba(255, 255, 255, 0.4)',
@@ -110,10 +108,10 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
     if (!el) return;
     const cs = getComputedStyle(el);
     const varMap = {
-      amber: cs.getPropertyValue('--accent-amber').trim() || '#ffaa00',
-      cyan: cs.getPropertyValue('--accent-cyan').trim() || '#00f0ff',
-      emerald: cs.getPropertyValue('--accent-emerald').trim() || '#00ff66',
-      red: cs.getPropertyValue('--accent-red').trim() || '#ff3344',
+      amber: cs.getPropertyValue('--accent-amber').trim() || 'var(--signal)',
+      cyan: cs.getPropertyValue('--accent-cyan').trim() || 'var(--signal)',
+      emerald: cs.getPropertyValue('--accent-emerald').trim() || 'var(--signal)',
+      red: cs.getPropertyValue('--accent-red').trim() || 'var(--signal)',
     };
     const stroke = varMap[color] || varMap.amber;
     const textPrimary = cs.getPropertyValue('--text-primary').trim() || '#e2e8f0';
@@ -126,7 +124,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
       label: isLightTheme ? 'rgba(23, 24, 21, 0.56)' : 'rgba(255, 255, 255, 0.35)',
       fillBg: waveformBg,
     });
-  }, [theme, color, isLightTheme]);
+  }, [color, isLightTheme]);
 
   const themeColor = {
     stroke: resolvedColors.stroke,
@@ -689,7 +687,7 @@ export const FilterResponseCurve: React.FC<FilterResponseCurveProps> = ({
       {/* Header Overlay Badge: Filter Mode & Status */}
       <div className="absolute top-1.5 left-2 pointer-events-none flex items-center gap-2">
         <span 
-          className="text-[8px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-xs"
+          className="text-[8px] font-mono font-bold tracking-normal uppercase px-1.5 py-0.5 rounded-xs"
           style={{ background: 'var(--section-bg)', color: 'var(--text-primary)', border: '1px solid var(--section-border)' }}
         >
           {filterType.toUpperCase()}

@@ -6,12 +6,12 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "landscape-primary",
-  "background_color": "#080a0e",
-  "theme_color": "#080a0e",
+  "background_color": "#eeeae0",
+  "theme_color": "#eeeae0",
   "categories": ["music", "multimedia", "utilities"],
   "icons": [
     {
-      "src": "vite.svg",
+      "src": "icon.svg",
       "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

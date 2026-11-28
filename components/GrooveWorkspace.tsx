@@ -67,43 +67,38 @@ const TRACK_CONFIG: Record<DrumTrackName, {
   borderColor: string;
   activeBg: string;
   accentBg: string;
-  glow: string;
 }> = {
   kick: {
     label: 'KICK (BD)',
-    badgeColor: '#10b981',
-    textColor: 'text-[#10b981]',
-    borderColor: 'border-[#10b981]',
-    activeBg: 'bg-[#04261a] border-[#10b981] text-[#10b981]',
-    accentBg: 'bg-[#10b981] text-black shadow-[0_0_12px_#10b981]',
-    glow: 'rgba(16, 185, 129, 0.4)',
+    badgeColor: 'var(--signal)',
+    textColor: 'text-[var(--signal-ink)]',
+    borderColor: 'border-[var(--signal)]',
+    activeBg: 'bg-[var(--signal-soft)] border-[var(--signal)] text-[var(--signal-ink)]',
+    accentBg: 'bg-[var(--signal)] text-black ',
   },
   snare: {
     label: 'SNARE (SD)',
-    badgeColor: '#ff3344',
-    textColor: 'text-[#ff3344]',
-    borderColor: 'border-[#ff3344]',
-    activeBg: 'bg-[#47000d] border-[#ff3344] text-[#ff3344]',
-    accentBg: 'bg-[#ff3344] text-white shadow-[0_0_12px_#ff3344]',
-    glow: 'rgba(255, 51, 68, 0.4)',
+    badgeColor: 'var(--signal)',
+    textColor: 'text-[var(--signal-ink)]',
+    borderColor: 'border-[var(--signal)]',
+    activeBg: 'bg-[var(--signal-soft)] border-[var(--signal)] text-[var(--signal-ink)]',
+    accentBg: 'bg-[var(--signal)] text-[var(--text-primary)] ',
   },
   hihat: {
     label: 'HI-HAT (CH)',
-    badgeColor: '#00ff66',
-    textColor: 'text-[#00ff66]',
-    borderColor: 'border-[#00ff66]',
-    activeBg: 'bg-[#00471f] border-[#00ff66] text-[#00ff66]',
-    accentBg: 'bg-[#00ff66] text-black shadow-[0_0_12px_#00ff66]',
-    glow: 'rgba(0, 255, 102, 0.4)',
+    badgeColor: 'var(--signal)',
+    textColor: 'text-[var(--signal-ink)]',
+    borderColor: 'border-[var(--signal)]',
+    activeBg: 'bg-[var(--signal-soft)] border-[var(--signal)] text-[var(--signal-ink)]',
+    accentBg: 'bg-[var(--signal)] text-black ',
   },
   crash: {
     label: 'CRASH (CY)',
-    badgeColor: '#ffaa00',
-    textColor: 'text-[#ffaa00]',
-    borderColor: 'border-[#ffaa00]',
-    activeBg: 'bg-[#473000] border-[#ffaa00] text-[#ffaa00]',
-    accentBg: 'bg-[#ffaa00] text-black shadow-[0_0_12px_#ffaa00]',
-    glow: 'rgba(255, 170, 0, 0.4)',
+    badgeColor: 'var(--signal)',
+    textColor: 'text-[var(--signal-ink)]',
+    borderColor: 'border-[var(--signal)]',
+    activeBg: 'bg-[var(--signal-soft)] border-[var(--signal)] text-[var(--signal-ink)]',
+    accentBg: 'bg-[var(--signal)] text-black ',
   },
 };
 
@@ -325,14 +320,14 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
       >
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1.5">
-            <span className="text-[8px] font-mono uppercase tracking-widest text-[#10b981] font-bold">SYNTH TONE</span>
-            <span className="text-[10px] font-mono-lcd text-gray-300 font-bold max-w-[140px] truncate">
+            <span className="text-[8px] font-mono uppercase tracking-normal text-[var(--signal-ink)] font-bold">SYNTH TONE</span>
+            <span className="text-[10px] font-mono-lcd text-[var(--text-primary)] font-bold max-w-[140px] truncate">
               {selectedPresetName}
             </span>
             <button
               type="button"
               onClick={onOpenPresetBrowser}
-              className="text-[8px] font-mono text-[#10b981] hover:underline px-1 py-0.5 bg-[#0a1018] rounded border border-[#10b981]/30"
+              className="text-[8px] font-mono text-[var(--signal-ink)] hover:underline px-1 py-0.5 bg-[var(--panel-bg-alt)] rounded border border-[var(--signal)]"
             >
               [BROWSE]
             </button>
@@ -341,7 +336,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
           <button
             type="button"
             onClick={() => onSwitchWorkspace('synth')}
-            className="text-[8px] font-mono text-gray-400 hover:text-white px-2 py-0.5 rounded border border-[#26334a] bg-[#121824] flex items-center gap-1"
+            className="text-[8px] font-mono text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-0.5 rounded border border-[var(--section-border)] bg-[var(--panel-bg-alt)] flex items-center gap-1"
           >
             <span>FULL LAB</span>
             <span>↗</span>
@@ -350,7 +345,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
           <button
             type="button"
             onClick={() => onSwitchWorkspace('arp')}
-            className="text-[8px] font-mono text-[#00e5ff] hover:text-white px-2 py-0.5 rounded border border-[#00e5ff]/30 bg-[#0c1618] flex items-center gap-1 transition-all"
+            className="text-[8px] font-mono text-[var(--signal-ink)] hover:text-[var(--text-primary)] px-2 py-0.5 rounded border border-[var(--signal)] bg-[var(--panel-bg-alt)] flex items-center gap-1 transition-all"
           >
             <span>ARP</span>
             <span>↗</span>
@@ -359,7 +354,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
           <button
             type="button"
             onClick={() => onSwitchWorkspace('seq')}
-            className="text-[8px] font-mono text-[#00ff66] hover:text-white px-2 py-0.5 rounded border border-[#00ff66]/30 bg-[#0c1618] flex items-center gap-1 transition-all"
+            className="text-[8px] font-mono text-[var(--signal-ink)] hover:text-[var(--text-primary)] px-2 py-0.5 rounded border border-[var(--signal)] bg-[var(--panel-bg-alt)] flex items-center gap-1 transition-all"
           >
             <span>MELODIC SEQ</span>
             <span>↗</span>
@@ -424,7 +419,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
             onClick={onDrumPlayToggle || onPlayToggle}
             color={isDrumQueued ? 'amber' : (isDrumPlaying ?? isPlaying) ? 'emerald' : 'cyan'}
             size="md"
-            className={`px-3 py-1.5 text-xs font-bold font-mono tracking-wider shrink-0 ${isDrumQueued ? 'animate-pulse' : ''}`}
+            className={`px-3 py-1.5 text-xs font-bold font-mono tracking-normal shrink-0 ${isDrumQueued ? 'animate-pulse' : ''}`}
           />
           {onSeqPlayToggle && (
             <LEDButton
@@ -433,7 +428,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
               onClick={onSeqPlayToggle}
               color={isSeqQueued ? 'amber' : isSeqPlaying ? 'cyan' : 'emerald'}
               size="md"
-              className={`px-3 py-1.5 text-xs font-bold font-mono tracking-wider shrink-0 ${isSeqQueued ? 'animate-pulse' : ''}`}
+              className={`px-3 py-1.5 text-xs font-bold font-mono tracking-normal shrink-0 ${isSeqQueued ? 'animate-pulse' : ''}`}
             />
           )}
 
@@ -461,16 +456,16 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
 
           {/* Bank Selectors */}
           <div className="flex flex-col items-center gap-0.5 ml-1">
-            <span className="text-[7px] uppercase font-mono tracking-widest text-gray-400">Bank</span>
-            <div className="flex gap-1 p-0.5 rounded-sm bg-[#0a0f18] border border-[#20293d]">
+            <span className="text-[7px] uppercase font-mono tracking-normal text-[var(--text-secondary)]">Bank</span>
+            <div className="flex gap-1 p-0.5 rounded-sm bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
               {[0, 1, 2, 3].map((bankIndex) => (
                 <button
                   key={bankIndex}
                   onClick={() => onBankSelect(bankIndex)}
                   className={`w-6 h-6 rounded-sm font-mono font-bold text-[10px] transition-all flex items-center justify-center ${
                     currentBank === bankIndex
-                      ? 'bg-[#ffaa00] text-black shadow-[0_0_8px_#ffaa00]'
-                      : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#28344c]'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--section-border)]'
                   }`}
                 >
                   {String.fromCharCode(65 + bankIndex)}
@@ -482,13 +477,13 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
 
         {/* Right: Beat Pattern Presets & Real-Time Step Display */}
         <div className="flex items-center gap-2 pr-1 sm:pr-2 flex-wrap sm:flex-nowrap">
-          <div className="flex items-center p-0.5 rounded bg-[#0a0f18] border border-[#20293d] gap-1">
-            <span className="text-[7px] font-mono text-gray-500 uppercase px-1 hidden lg:inline">BEAT PRESETS:</span>
+          <div className="flex items-center p-0.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] gap-1">
+            <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase px-1 hidden lg:inline">BEAT PRESETS:</span>
             <button
               type="button"
               onClick={handlePresetFourOnFloor}
               title="Classic 4-on-the-Floor (House / Techno)"
-              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-[#10b981] hover:bg-[#1a2436] border border-[#10b981]/30 transition-all"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-normal uppercase bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] hover:bg-[var(--panel-bg-alt)] border border-[var(--signal)] transition-all"
             >
               4-FLOOR
             </button>
@@ -496,7 +491,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
               type="button"
               onClick={handlePresetBreakbeat}
               title="Syncopated Breakbeat Groove"
-              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-[#00ff66] hover:bg-[#1a2436] border border-[#00ff66]/30 transition-all"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-normal uppercase bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] hover:bg-[var(--panel-bg-alt)] border border-[var(--signal)] transition-all"
             >
               BREAKS
             </button>
@@ -504,7 +499,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
               type="button"
               onClick={handlePresetTrap}
               title="Modern Half-Time Trap / Hip-Hop Beat"
-              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-[#ffaa00] hover:bg-[#1a2436] border border-[#ffaa00]/30 transition-all"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-normal uppercase bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] hover:bg-[var(--panel-bg-alt)] border border-[var(--signal)] transition-all"
             >
               TRAP
             </button>
@@ -512,7 +507,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
               type="button"
               onClick={handlePresetRandomizeAll}
               title="Randomize All Drum Tracks"
-              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-cyan-300 hover:bg-[#1a2436] border border-cyan-500/30 transition-all"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-normal uppercase bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] hover:bg-[var(--panel-bg-alt)] border border-[var(--signal)] transition-all"
             >
               RANDOM
             </button>
@@ -520,7 +515,7 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
               type="button"
               onClick={handleClearAll}
               title="Clear All Tracks"
-              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-wider uppercase bg-[#141b27] text-red-400 hover:bg-[#201018] border border-red-500/30 transition-all"
+              className="px-2 py-1 rounded-sm text-[8px] font-mono font-bold tracking-normal uppercase bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] hover:bg-[var(--panel-bg-alt)] border border-[var(--signal)] transition-all"
             >
               CLR ALL
             </button>
@@ -528,12 +523,12 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
 
           <div className="oled-screen px-2.5 py-1 rounded hidden sm:flex items-center gap-3">
             <div className="flex flex-col">
-              <span className="text-[6px] font-mono text-gray-500 uppercase">TIMING</span>
-              <span className="text-[9px] font-mono-lcd text-[#00ff66]">WORKER</span>
+              <span className="text-[6px] font-mono text-[var(--text-secondary)] uppercase">TIMING</span>
+              <span className="text-[9px] font-mono-lcd text-[var(--signal-ink)]">WORKER</span>
             </div>
             <div className="flex flex-col">
-              <span className="text-[6px] font-mono text-gray-500 uppercase">STEP</span>
-              <span className="text-[10px] font-mono-lcd text-[#10b981]">
+              <span className="text-[6px] font-mono text-[var(--text-secondary)] uppercase">STEP</span>
+              <span className="text-[10px] font-mono-lcd text-[var(--signal-ink)]">
                 {activeStep !== null ? `${String(activeStep + 1).padStart(2, '0')}/16` : 'IDLE'}
               </span>
             </div>
@@ -544,14 +539,14 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
       {/* ── 4-Track Roland TR-808/909 Drum Matrix (Sole Focus of Groove Workspace) ── */}
       <div className="synth-panel rounded p-2.5 flex flex-col gap-2 flex-1 min-h-0 relative">
 
-          <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[#202b3d]">
+          <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[var(--section-border)]">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#10b981] shadow-[0_0_8px_#10b981]" />
-              <span className="text-[10px] font-mono font-black tracking-widest uppercase text-white">
+              <div className="w-2 h-2 rounded-full bg-[var(--signal)] " />
+              <span className="text-[10px] font-mono font-black tracking-normal uppercase text-[var(--text-primary)]">
                 16-STEP 4-TRACK DRUM MATRIX
               </span>
             </div>
-            <span className="text-[8px] font-mono text-gray-400">
+            <span className="text-[8px] font-mono text-[var(--text-secondary)]">
               Click: OFF → NORM → ACC (●) • Alt/Right-Click: RATCHET (2x–4x) • LEN: Polyrhythm
             </span>
           </div>
@@ -567,19 +562,18 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                 <div 
                   key={track}
                   className={`flex items-center gap-3 p-2 rounded-sm border transition-all ${
-                    isMuted ? 'opacity-40 border-[#222c3c] bg-[#0c1018]' : 'border-[#1e2a3c] bg-[#0d131f] hover:border-[#2a3c56]'
+                    isMuted ? 'opacity-40 border-[var(--section-border)] bg-[var(--panel-bg-alt)]' : 'border-[var(--section-border)] bg-[var(--panel-bg-alt)] hover:border-[var(--section-border)]'
                   }`}
                 >
                   {/* Track Channel Strip (Header + Mute/Solo + Knobs + VU Meter) */}
-                  <div className="w-80 shrink-0 flex items-center justify-between pr-2 border-r border-[#202b3d] gap-2">
+                  <div className="w-80 shrink-0 flex items-center justify-between pr-2 border-r border-[var(--section-border)] gap-2">
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleAudition(track)}
                           title={`Audition ${config.label}`}
-                          className={`px-1.5 py-0.5 rounded font-mono text-[9px] font-black tracking-wider uppercase border border-current transition-all hover:scale-105 active:scale-95 ${config.textColor}`}
-                          style={{ textShadow: `0 0 8px ${config.glow}` }}
+                          className={`px-1.5 py-0.5 rounded font-mono text-[9px] font-black tracking-normal uppercase border border-current transition-all hover:scale-105 active:scale-95 ${config.textColor}`}
                         >
                           ▶ {config.label}
                         </button>
@@ -590,8 +584,8 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                           onClick={() => toggleMute(track)}
                           className={`px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition-all ${
                             isMuted
-                              ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_6px_#ff3344]'
-                              : 'bg-[#182030] text-gray-400 border-[#2b3952] hover:text-white'
+                              ? 'bg-[var(--signal)] text-[var(--text-primary)] border-[var(--signal)] '
+                              : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                           }`}
                         >
                           M
@@ -601,8 +595,8 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                           onClick={() => toggleSolo(track)}
                           className={`px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border transition-all ${
                             isSolo
-                              ? 'bg-[#ffaa00] text-black border-[#ffaa00] shadow-[0_0_6px_#ffaa00]'
-                              : 'bg-[#182030] text-gray-400 border-[#2b3952] hover:text-white'
+                              ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                              : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                           }`}
                         >
                           S
@@ -614,21 +608,21 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                         <button
                           type="button"
                           onClick={() => handleFillTrack(track)}
-                          className="text-[7px] font-mono text-gray-400 hover:text-cyan-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
+                          className="text-[7px] font-mono text-[var(--text-secondary)] hover:text-[var(--signal-ink)] px-1 py-0.5 bg-[var(--panel-bg-alt)] rounded border border-[var(--section-border)]"
                         >
                           FILL
                         </button>
                         <button
                           type="button"
                           onClick={() => handleRandomizeTrack(track)}
-                          className="text-[7px] font-mono text-gray-400 hover:text-amber-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
+                          className="text-[7px] font-mono text-[var(--text-secondary)] hover:text-[var(--signal-ink)] px-1 py-0.5 bg-[var(--panel-bg-alt)] rounded border border-[var(--section-border)]"
                         >
                           RND
                         </button>
                         <button
                           type="button"
                           onClick={() => handleClearTrack(track)}
-                          className="text-[7px] font-mono text-gray-400 hover:text-red-300 px-1 py-0.5 bg-[#121824] rounded border border-[#202b3e]"
+                          className="text-[7px] font-mono text-[var(--text-secondary)] hover:text-[var(--signal-ink)] px-1 py-0.5 bg-[var(--panel-bg-alt)] rounded border border-[var(--section-border)]"
                         >
                           CLR
                         </button>
@@ -707,21 +701,21 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                       const isDownbeat = index % 4 === 0;
                       const stepGroup = Math.floor(index / 4);
 
-                      let btnStyle = 'bg-[#101520] border-[#1e273a] text-gray-500';
+                      let btnStyle = 'bg-[var(--panel-bg-alt)] border-[var(--section-border)] text-[var(--text-secondary)]';
                       if (isBeyondLength) {
-                        btnStyle = 'opacity-25 bg-[#090d15] border-dashed border-[#1a2336] text-gray-700';
+                        btnStyle = 'opacity-25 bg-[var(--panel-bg-alt)] border-dashed border-[var(--section-border)] text-[var(--text-secondary)]';
                       } else if (isAccent) {
                         btnStyle = isCurrentStep 
-                          ? 'bg-white text-black border-white shadow-[0_0_12px_white]' 
+                          ? 'bg-[var(--signal-ink)] text-[var(--panel-bg)] border-[var(--signal-ink)]'
                           : config.accentBg;
                       } else if (isNormal) {
                         btnStyle = isCurrentStep 
-                          ? 'bg-[#10b981] text-black border-white shadow-[0_0_10px_#10b981]' 
+                          ? 'bg-[var(--signal)] text-black border-white '
                           : config.activeBg;
                       } else if (isCurrentStep) {
-                        btnStyle = 'bg-[#3b475e] border-white shadow-[0_0_6px_rgba(255,255,255,0.4)]';
+                        btnStyle = 'bg-[var(--panel-bg-alt)] border-white ';
                       } else if (stepGroup % 2 === 0) {
-                        btnStyle = 'bg-[#121927] border-[#222d42] hover:bg-[#182236]';
+                        btnStyle = 'bg-[var(--panel-bg-alt)] border-[var(--section-border)] hover:bg-[var(--panel-bg-alt)]';
                       }
 
                       return (
@@ -750,18 +744,18 @@ export const GrooveWorkspace: React.FC<GrooveWorkspaceProps> = React.memo(({
                           <div 
                             className={`w-2.5 h-1 rounded-full transition-all ${
                               isBeyondLength
-                                ? 'bg-black/30'
+                                ? 'bg-[var(--section-bg)]'
                                 : isAccent
-                                  ? 'bg-white shadow-[0_0_8px_white]'
+                                  ? 'bg-white '
                                   : isNormal 
-                                    ? 'bg-white/80 shadow-[0_0_5px_white]' 
-                                    : 'bg-black/50'
+                                    ? 'bg-[var(--section-bg)] '
+                                    : 'bg-[var(--section-bg)]'
                             }`} 
                           />
 
                           {/* Ratchet Sub-burst Badge */}
                           {ratchet > 1 && !isBeyondLength && (
-                            <span className="px-1 py-0.2 rounded-2xs font-mono font-black text-[6.5px] leading-tight bg-[#00ffff] text-black shadow-[0_0_6px_#00ffff]">
+                            <span className="px-1 py-0.2 rounded-2xs font-mono font-black text-[6.5px] leading-tight bg-[var(--signal)] text-black ">
                               {ratchet}x
                             </span>
                           )}

@@ -19,7 +19,6 @@ import { PowerPanel } from './PowerPanel';
 import { EnvelopeEditor } from './EnvelopeEditor';
 import { AudioRecorder } from '../services/AudioRecorder';
 import { MidiManager } from '../services/MidiManager';
-import { useTheme, THEMES } from '../contexts/ThemeContext';
 import { ErrorBoundary } from './ErrorBoundary';
 import { ModulationFlowHUD } from './ModulationFlowHUD';
 
@@ -28,12 +27,11 @@ const PresetBrowser = lazy(() => import('./PresetBrowser').then(m => ({ default:
 const MelodicSequencer = lazy(() => import('./MelodicSequencer').then(m => ({ default: m.MelodicSequencer })));
 const GrooveWorkspace = lazy(() => import('./GrooveWorkspace').then(m => ({ default: m.GrooveWorkspace })));
 const PerformWorkspace = lazy(() => import('./PerformWorkspace').then(m => ({ default: m.PerformWorkspace })));
-const SkinPicker = lazy(() => import('./SkinPicker').then(m => ({ default: m.SkinPicker })));
 
 const WorkspaceLoadingFallback: React.FC = () => (
-  <div className="w-full h-64 flex flex-col items-center justify-center gap-3 rounded bg-[#090d16]/70 border border-[#1e2a3c]">
-    <div className="w-5 h-5 rounded-full border-2 border-[#10b981] border-t-transparent animate-spin" />
-    <span className="text-[9px] font-mono tracking-widest uppercase text-gray-400">Loading Module...</span>
+  <div className="w-full h-64 flex flex-col items-center justify-center gap-3 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
+    <div className="w-5 h-5 rounded-full border-2 border-[var(--signal)] border-t-transparent animate-spin" />
+    <span className="text-[9px] font-mono tracking-normal uppercase text-[var(--text-secondary)]">Loading Module...</span>
   </div>
 );
 
@@ -58,32 +56,13 @@ const Panel: React.FC<PanelProps> = ({ title, badgeColor = 'cyan', children, cla
 const RecordButton: React.FC<{
   onToggleRecord: () => void;
   disabled?: boolean;
-  isMobile?: boolean;
-}> = React.memo(({ onToggleRecord, disabled, isMobile }) => {
+}> = React.memo(({ onToggleRecord, disabled }) => {
   const isRecording = useSynthStore(s => s.isRecording);
   const recordingSeconds = useSynthStore(s => s.recordingSeconds);
   const m = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
   const s = (recordingSeconds % 60).toString().padStart(2, '0');
   const timeStr = `${m}:${s}`;
 
-  if (isMobile) {
-    return (
-      <button
-        type="button"
-        onClick={onToggleRecord}
-        disabled={disabled}
-        title={isRecording ? "Stop Lossless Recording" : "Record Master Bus (24-bit WAV)"}
-        className={`px-1.5 py-0.5 rounded font-mono text-[7px] font-bold tracking-wider flex items-center gap-1 border transition-all shrink-0 ${
-          isRecording
-            ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_8px_#ff3344] animate-pulse'
-            : 'bg-[#121620] text-gray-400 border-[#222c3c] hover:text-[#ff3344]'
-        }`}
-      >
-        <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white' : 'bg-[#ff3344]'}`} />
-        <span>{isRecording ? timeStr : 'REC'}</span>
-      </button>
-    );
-  }
 
   return (
     <button
@@ -91,13 +70,13 @@ const RecordButton: React.FC<{
       onClick={onToggleRecord}
       disabled={disabled}
       title={isRecording ? "Stop & Download Master Lossless 24-bit WAV" : "Record Master Bus to Lossless 24-bit WAV"}
-      className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold tracking-wider flex items-center gap-1.5 border transition-all ${
+      className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold tracking-normal flex items-center gap-1.5 border transition-all ${
         isRecording
-          ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_8px_#ff3344] animate-pulse'
-          : 'bg-[#101622] text-gray-400 border-[#222e42] hover:text-[#ff3344] hover:border-[#ff3344]/60'
+          ? 'bg-[var(--signal)] text-[var(--text-primary)] border-[var(--signal)]  animate-pulse'
+          : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--signal-ink)] hover:border-[var(--signal)]'
       }`}
     >
-      <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white' : 'bg-[#ff3344]'}`} />
+      <div className={`w-1.5 h-1.5 rounded-full ${isRecording ? 'bg-white' : 'bg-[var(--signal)]'}`} />
       <span>{isRecording ? `STOP ${timeStr}` : '● REC 24-BIT'}</span>
     </button>
   );
@@ -108,25 +87,22 @@ const WORKSPACE_TABS: Array<{
   idx: string;
   label: string;
   sublabel: string;
-  icon: string;
-  color: string;
-  glow: string;
   hotkey: string;
 }> = [
-  { id: 'synth',   idx: '01', label: 'SYNTH',   sublabel: 'SOUND LAB',   icon: '🎛️', color: '#10b981', glow: 'rgba(16, 185, 129, 0.45)', hotkey: '1' },
-  { id: 'fx',      idx: '02', label: 'FX',      sublabel: 'STUDIO RACK', icon: '⚡', color: '#ff3344', glow: 'rgba(255, 51, 68, 0.45)',   hotkey: '2' },
-  { id: 'arp',     idx: '03', label: 'ARP',     sublabel: 'POLY ARP',    icon: '♩',  color: '#00e5ff', glow: 'rgba(0, 229, 255, 0.45)',  hotkey: '3' },
-  { id: 'seq',     idx: '04', label: 'SEQ',     sublabel: '16-ST MOTION',icon: '🎼', color: '#00ff66', glow: 'rgba(0, 255, 102, 0.45)',  hotkey: '4' },
-  { id: 'groove',  idx: '05', label: 'GROOVE',  sublabel: 'DRUM MATRIX', icon: '🥁', color: '#ffaa00', glow: 'rgba(255, 170, 0, 0.45)',    hotkey: '5' },
-  { id: 'perform', idx: '06', label: 'PERFORM', sublabel: 'LIVE DECK',   icon: '🎚️', color: '#38bdf8', glow: 'rgba(56, 189, 248, 0.45)',  hotkey: '6' },
+  { id: 'synth',   idx: '01', label: 'SYNTH',   sublabel: 'SOUND LAB', hotkey: '1' },
+  { id: 'fx',      idx: '02', label: 'FX',      sublabel: 'STUDIO RACK',   hotkey: '2' },
+  { id: 'arp',     idx: '03', label: 'ARP',     sublabel: 'POLY ARP', hotkey: '3' },
+  { id: 'seq',     idx: '04', label: 'SEQ',     sublabel: '16-ST MOTION',  hotkey: '4' },
+  { id: 'groove',  idx: '05', label: 'GROOVE',  sublabel: 'DRUM MATRIX',    hotkey: '5' },
+  { id: 'perform', idx: '06', label: 'PERFORM', sublabel: 'LIVE DECK',  hotkey: '6' },
 ];
 
 const TransportClockDisplay: React.FC = React.memo(() => {
   const runningStep = useSynthStore(s => s.runningStep);
   return (
-    <div className="oled-screen px-2.5 py-0.5 rounded-xs flex items-center gap-2 border border-[#1e2a3c]">
-      <span className="text-[7px] font-mono text-gray-400 uppercase tracking-widest">CLOCK</span>
-      <span className="font-mono-lcd text-xs font-bold text-[#00ff66] whitespace-nowrap">
+    <div className="oled-screen px-2.5 py-0.5 rounded-xs flex items-center gap-2 border border-[var(--section-border)]">
+      <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase tracking-normal">CLOCK</span>
+      <span className="font-mono-lcd text-xs font-bold text-[var(--signal-ink)] whitespace-nowrap">
         {runningStep !== null 
           ? `BAR 01 : STEP ${String((runningStep % 16) + 1).padStart(2, '0')}`
           : 'STOPPED'}
@@ -145,15 +121,15 @@ const TransportStepLeds: React.FC<{ isDrumPlaying: boolean; isSeqPlaying: boolea
           className={`w-2 h-2.5 rounded-xs transition-all ${
             runningStep !== null && runningStep % 16 === idx
               ? isDrumPlaying && isSeqPlaying
-                ? 'bg-[#00ff66] shadow-[0_0_8px_#00ff66]'
+                ? 'bg-[var(--signal)] '
                 : isDrumPlaying
-                ? 'bg-[#10b981] shadow-[0_0_8px_#10b981]'
+                ? 'bg-[var(--signal)] '
                 : isSeqPlaying
-                ? 'bg-[#00e5ff] shadow-[0_0_8px_#00e5ff]'
-                : 'bg-white shadow-[0_0_8px_#ffffff]'
+                ? 'bg-[var(--signal)] '
+                : 'bg-white '
               : idx % 4 === 0
-              ? 'bg-[#1a2333] border border-[#2b3a54]'
-              : 'bg-[#0e1420]'
+              ? 'bg-[var(--panel-bg-alt)] border border-[var(--section-border)]'
+              : 'bg-[var(--panel-bg-alt)]'
           }`}
         />
       ))}
@@ -162,7 +138,6 @@ const TransportStepLeds: React.FC<{ isDrumPlaying: boolean; isSeqPlaying: boolea
 });
 
 export const Synth: React.FC = () => {
-  const { theme, setTheme } = useTheme();
   // Centralized Zustand Store Subscriptions
   const params = useSynthStore(s => s.params);
   const setParams = useSynthStore(s => s.setParams);
@@ -1072,29 +1047,29 @@ export const Synth: React.FC = () => {
 
     return (
       <div 
-        className="flex flex-col p-2 rounded-sm w-full min-w-0 relative shadow-sm border" 
+        className="oscillator-strip flex flex-col p-2 rounded-sm w-full min-w-0 relative border"
         style={{ borderColor: 'var(--osc-border)', background: 'var(--osc-bg)' }}
       >
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-1 mb-1.5 border-b" style={{ borderColor: 'var(--osc-border)' }}>
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-mono font-bold tracking-wider" style={{ color: 'var(--text-label)' }}>
+            <span className="text-[10px] font-mono font-bold tracking-normal" style={{ color: 'var(--text-label)' }}>
               {label}
             </span>
             {/* Analog thermal drift / voice activity micro-indicator */}
             <div 
               className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
                 oscParams.enabled && isAnyNoteActive 
-                  ? 'bg-[#10b981] shadow-[0_0_6px_#10b981] animate-pulse' 
+                  ? 'bg-[var(--signal)]  animate-pulse'
                   : oscParams.enabled 
-                  ? 'bg-[#10b981]/40' 
-                  : 'bg-gray-700'
+                  ? 'bg-[var(--signal-soft)]'
+                  : 'bg-[var(--section-bg)]'
               }`} 
               title={oscParams.enabled ? "VCO Active (Analog Thermal Drift Active)" : "VCO Powered Down"}
             />
           </div>
           <ToggleSwitch 
-            label="" 
+            label={`${label} power`}
             checked={oscParams.enabled} 
             onChange={() => toggleOsc(oscKey)} 
             color="cyan"
@@ -1116,10 +1091,10 @@ export const Synth: React.FC = () => {
                   onClick={() => setOscWaveform(oscKey, w)} 
                   className={`p-1 rounded-xs transition-all flex items-center justify-center h-5 w-5 ${
                     isActive 
-                      ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]' 
-                      : 'text-gray-500 hover:text-gray-200'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
-                  title={w.toUpperCase()}
+                  title={w.toUpperCase()} aria-label={`${label} ${w} waveform`} aria-pressed={isActive}
                 >
                   <Icon className="w-3.5 h-3.5"/>
                 </button>
@@ -1130,10 +1105,10 @@ export const Synth: React.FC = () => {
           {/* LCD Waveform Screen */}
           <div className="oled-screen rounded-sm px-1.5 py-1 flex-1 flex flex-col justify-between min-h-[46px] min-w-0">
             <div className="flex items-center justify-between w-full">
-              <span className="font-mono-lcd text-[8px] uppercase tracking-wider text-[#10b981] truncate">
+              <span className="font-mono-lcd text-[8px] uppercase tracking-normal text-[var(--signal-ink)] truncate">
                 {oscParams.waveform}
               </span>
-              <span className="font-mono-lcd text-[8px] text-gray-400">
+              <span className="font-mono-lcd text-[8px] text-[var(--text-secondary)]">
                 {Math.round(oscParams.gain * 100)}%
               </span>
             </div>
@@ -1143,15 +1118,15 @@ export const Synth: React.FC = () => {
                 enabled={oscParams.enabled}
                 isPlaying={isAnyNoteActive && oscParams.enabled} 
                 amplitudeScale={oscParams.gain}
-                color="#10b981"
+                color='var(--signal)'
               />
             </div>
           </div>
         </div>
 
         {/* Vintage Octave Footage Selector Rocker: 16', 8', 4', 2' */}
-        <div className="flex items-center justify-between gap-1 w-full px-1 py-0.5 mb-1.5 rounded-xs bg-[#090c12] border border-[#1d2636]">
-          <span className="text-[7px] font-mono text-gray-400 font-bold uppercase tracking-wider">OCT</span>
+        <div className="flex items-center justify-between gap-1 w-full px-1 py-0.5 mb-1.5 rounded-xs bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
+          <span className="text-[7px] font-mono text-[var(--text-secondary)] font-bold uppercase tracking-normal">OCT</span>
           <div className="flex items-center gap-0.5">
             {[
               { label: "16'", oct: -1 },
@@ -1167,8 +1142,8 @@ export const Synth: React.FC = () => {
                   onClick={() => setFootage(f.oct)}
                   className={`px-1.5 py-0.5 text-[7.5px] font-mono font-bold rounded-xs transition-all ${
                     isSelected
-                      ? 'bg-[#10b981] text-black shadow-[0_0_5px_#10b981]'
-                      : 'text-gray-400 hover:text-white bg-[#121822]'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--panel-bg-alt)]'
                   }`}
                   title={`${f.label} Footage (${f.oct > 0 ? `+${f.oct}` : f.oct} Octave)`}
                 >
@@ -1262,328 +1237,57 @@ export const Synth: React.FC = () => {
   }
 
   return (
-    <div className="h-full w-full flex flex-col overflow-hidden p-1 md:p-2 gap-1 md:gap-1.5 relative" style={{ background: 'var(--chassis-bg)' }}>
-      {/* Precision Chassis Machine Bolts at Outer Corners */}
-      <div className="synth-screw-chassis absolute top-1 left-1 pointer-events-none z-30 hidden sm:block" />
-      <div className="synth-screw-chassis absolute top-1 right-1 pointer-events-none z-30 hidden sm:block" />
-      <div className="synth-screw-chassis absolute bottom-1 left-1 pointer-events-none z-30 hidden sm:block" />
-      <div className="synth-screw-chassis absolute bottom-1 right-1 pointer-events-none z-30 hidden sm:block" />
-      
-      {/* ── Top Header ── */}
-      <header className="synth-panel p-1.5 md:p-2 rounded shrink-0">
-
-        {/* Mobile header: Ergonomic 2-row layout with spacious preset station */}
-        <div className="flex md:hidden flex-col gap-1.5">
-          {/* Row 1: Logo + Status + Lossless REC + VU + Vol Knob + Skin Picker */}
-          <div className="flex items-center justify-between gap-1.5">
-            {/* Logo */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <div className="w-6 h-6 bg-[#10b981] text-black font-brand font-black text-xs flex items-center justify-center rounded-xs transform skew-x-[-6deg] shrink-0 shadow-[0_0_8px_#10b981]">
-                S
-              </div>
-              <h1 className="font-brand font-bold text-xs text-white tracking-wider uppercase leading-none">
-                SUBTRACTIVE
-              </h1>
-              <span className={`mobile-midi text-[7px] font-mono uppercase tracking-wide truncate max-w-[80px] ${
-                midiStatus.startsWith('MIDI:') && !midiStatus.includes('Keyboard') && !midiStatus.includes('Keys')
-                  ? 'text-[#00ff66]'
-                  : midiStatus.includes('Error') || midiStatus.includes('Locked')
-                  ? 'text-[#ff3344]'
-                  : 'text-gray-500'
-              }`}>
-                {midiStatus}
-              </span>
-            </div>
-
-            {/* Right: REC + VU + Vol + Theme */}
-            <div className="flex items-center gap-1.5 shrink-0">
-              <RecordButton onToggleRecord={toggleRecording} disabled={!isStarted} isMobile />
-              <VUMeter className="mobile-levels" getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
-              <Knob 
-                label="Vol" 
-                value={params.masterGain ?? 0.8} 
-                min={0} 
-                max={1} 
-                size={28} 
-                onChange={v => setParams(p => patchParams(p, { masterGain: v }))} 
-                unit="%"
-                color="emerald"
-                modActive={params.lfo.target === 'amp' && params.lfo.depth > 0}
-                modDepth={params.lfo.depth}
-                modColor="emerald"
-                lfoRate={params.lfo.rate}
-                lfoWaveform={params.lfo.waveform}
-                paramId="masterGain"
-                isLearning={learningParamId === 'masterGain'}
-                mappedCC={mappedCCs['masterGain'] ?? null}
-                onMidiLearn={handleMidiLearn}
-              />
-              <div className="pl-1" style={{ borderLeft: '1px solid var(--panel-border)' }}>
-                <Suspense fallback={null}>
-                  <SkinPicker />
-                </Suspense>
-              </div>
+    <div className="instrument-shell h-full w-full flex flex-col overflow-hidden relative" style={{ background: 'var(--chassis-bg)' }}>
+      <header className="instrument-header">
+        <div className="instrument-imprint"><span>Trust Node Logic</span><span>Instrument / V2.0</span></div>
+        <div className="instrument-toolbar">
+          <div className="instrument-brand"><h1>Subtractive</h1><p>Polyphonic synthesizer &amp; rhythm sequencer</p></div>
+          <div className="preset-station">
+            <span className="control-caption">Presets</span>
+            <div className="preset-readout">
+              <button type="button" onClick={handlePrevPreset} title="Previous Preset" aria-label="Previous preset">‹</button>
+              <button type="button" onClick={() => setIsPresetBrowserOpen(true)} title="Open Preset Browser">{selectedPresetName}</button>
+              <button type="button" onClick={handleNextPreset} title="Next Preset" aria-label="Next preset">›</button>
             </div>
           </div>
-
-          {/* Row 2: Ergonomic Preset Station (Easy to tap, audition & maneuver) */}
-          <div className="oled-screen px-2 py-1 rounded flex items-center justify-between gap-1.5 shadow-inner">
-            {/* Prev Preset Stepper Button */}
-            <button
-              type="button"
-              onClick={handlePrevPreset}
-              title="Previous Preset"
-              className="w-7 h-7 flex items-center justify-center rounded bg-[#121824] hover:bg-[#1b2538] active:scale-95 border border-[#232f44] text-gray-300 hover:text-white text-xs font-mono transition-all shrink-0"
-            >
-              ◀
-            </button>
-
-            {/* Tap-to-Browse Preset Display / Dropdown */}
-            <div 
-              onClick={() => setIsPresetBrowserOpen(true)}
-              className="flex-1 min-w-0 flex flex-col items-center justify-center cursor-pointer group px-1 py-0.5 rounded hover:bg-white/[0.04] transition-all"
-              title="Tap to Open Preset Vault"
-            >
-              <div className="flex items-center gap-1.5 w-full justify-center">
-                <span className="text-[7px] font-mono text-gray-400 uppercase tracking-widest font-bold">PATCH:</span>
-                <span className="text-[7px] font-mono text-[#10b981] group-hover:underline">TAP TO BROWSE ↗</span>
-              </div>
-              <div className="text-[11px] font-mono-lcd text-[#10b981] font-bold truncate max-w-full text-center drop-shadow-[0_0_4px_rgba(16,185,129,0.5)]">
-                {selectedPresetName}
-              </div>
-            </div>
-
-            {/* Next Preset Stepper Button */}
-            <button
-              type="button"
-              onClick={handleNextPreset}
-              title="Next Preset"
-              className="w-7 h-7 flex items-center justify-center rounded bg-[#121824] hover:bg-[#1b2538] active:scale-95 border border-[#232f44] text-gray-300 hover:text-white text-xs font-mono transition-all shrink-0"
-            >
-              ▶
-            </button>
-
-            {/* Preset Action Utilities: VAULT, A/B Slot, Undo, Redo */}
-            <div className="flex items-center gap-1 pl-1 border-l border-[#1a273b] shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsPresetBrowserOpen(true)}
-                className="px-2 py-1 rounded font-mono text-[7.5px] font-bold tracking-wider bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/50 hover:bg-[#10b981]/25 active:scale-95 transition-all shadow-[0_0_6px_rgba(16,185,129,0.2)]"
-              >
-                VAULT
-              </button>
-              <button
-                type="button"
-                onClick={togglePatchSlot}
-                title={`A/B Slot: ${patchSlot}`}
-                className={`w-6 h-6 flex items-center justify-center rounded text-[7.5px] font-mono font-bold border transition-all ${
-                  patchSlot === 'A'
-                    ? 'bg-[#10b981]/25 text-[#10b981] border-[#10b981]/60'
-                    : 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00]/60'
-                }`}
-              >
-                {patchSlot}
-              </button>
-              <button
-                type="button"
-                onClick={undo}
-                disabled={!canUndo}
-                title="Undo (Ctrl+Z)"
-                className={`w-6 h-6 flex items-center justify-center rounded text-[8.5px] font-mono font-bold ${
-                  canUndo ? 'text-[#00f0ff] hover:bg-white/5' : 'text-gray-600 opacity-30 pointer-events-none'
-                }`}
-              >
-                ↶
-              </button>
-              <button
-                type="button"
-                onClick={redo}
-                disabled={!canRedo}
-                title="Redo (Ctrl+Y)"
-                className={`w-6 h-6 flex items-center justify-center rounded text-[8.5px] font-mono font-bold ${
-                  canRedo ? 'text-[#00f0ff] hover:bg-white/5' : 'text-gray-600 opacity-30 pointer-events-none'
-                }`}
-              >
-                ↷
-              </button>
-            </div>
+          <div className="header-actions" aria-label="Patch tools">
+            <button type="button" onClick={() => setIsPresetBrowserOpen(true)}>Library / Save</button>
+            <button type="button" onClick={undo} disabled={!canUndo} title="Undo Parameter Change (Ctrl+Z)" aria-label="Undo parameter change">↶</button>
+            <button type="button" onClick={redo} disabled={!canRedo} title="Redo Parameter Change (Ctrl+Y)" aria-label="Redo parameter change">↷</button>
+            <button type="button" onClick={togglePatchSlot} title="Compare A/B sound variations" className="compare-slot">A / B <b>{patchSlot}</b></button>
+            <button type="button" onClick={copyActiveToOtherSlot} title="Copy active patch to other slot">Copy</button>
+          </div>
+          <div className="header-status" title={midiStatus}>
+            <span className="status-dot" />{midiStatus}
+            <small className="block mt-1">{activeNotes.size} voices · {params.voiceMode} · {Math.round(params.filter.cutoff)} Hz</small>
+          </div>
+          <div className="master-station">
+            <Knob label="Master" value={params.masterGain ?? 0.8} min={0} max={1} size={34}
+              onChange={v => setParams(p => patchParams(p, { masterGain: v }))} unit="%" color="amber"
+              modActive={params.lfo.target === 'amp' && params.lfo.depth > 0} modDepth={params.lfo.depth}
+              modColor="emerald" lfoRate={params.lfo.rate} lfoWaveform={params.lfo.waveform}
+              paramId="masterGain" isLearning={learningParamId === 'masterGain'} mappedCC={mappedCCs['masterGain'] ?? null} onMidiLearn={handleMidiLearn} />
+            <VUMeter className="master-meter" getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
           </div>
         </div>
-
-        {/* Desktop header: full layout */}
-        <div className="hidden md:flex flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 bg-[#10b981] text-black font-brand font-black text-base flex items-center justify-center rounded-sm transform skew-x-[-6deg]">
-              S
-            </div>
-            <div>
-              <h1 className="font-brand font-bold text-base text-white tracking-widest uppercase leading-none">
-                SUBTRACTIVE
-              </h1>
-              <p className="text-[8px] font-mono text-gray-400 tracking-widest uppercase mt-0.5">
-                ANALOG MODELING SYNTH
-              </p>
-            </div>
-          </div>
-
-          {/* Physical File Folder Section Tabs ("Layers of a Real File") */}
-          <nav aria-label="Instrument workspaces" className="workspace-switch">
-            {WORKSPACE_TABS.map(tab => <button key={tab.id} type="button" aria-pressed={workspaceMode === tab.id}
-              title={tab.sublabel + ' (' + tab.hotkey + ')'} onClick={() => handleWorkspaceModeChange(tab.id)}>
-              {tab.label}
-            </button>)}
-          </nav>
-
-          <div className="hidden xl:flex oled-screen px-3 py-1.5 rounded-sm items-center gap-3.5 flex-1 min-w-0 justify-between shadow-inner">
-            {/* Patch History & Sound Compare */}
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                type="button"
-                onClick={undo}
-                disabled={!canUndo}
-                title="Undo Parameter Change (Ctrl+Z)"
-                className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all ${
-                  canUndo 
-                    ? 'text-[#00f0ff] hover:bg-[#00f0ff]/10 hover:text-white cursor-pointer' 
-                    : 'text-gray-600 cursor-not-allowed opacity-30'
-                }`}
-              >
-                ↶
-              </button>
-              <button
-                type="button"
-                onClick={redo}
-                disabled={!canRedo}
-                title="Redo Parameter Change (Ctrl+Y / Cmd+Shift+Z)"
-                className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-bold transition-all ${
-                  canRedo 
-                    ? 'text-[#00f0ff] hover:bg-[#00f0ff]/10 hover:text-white cursor-pointer' 
-                    : 'text-gray-600 cursor-not-allowed opacity-30'
-                }`}
-              >
-                ↷
-              </button>
-              <button
-                type="button"
-                onClick={togglePatchSlot}
-                title={`A/B Sound Comparison (Active: Slot ${patchSlot}) — Click to toggle variation`}
-                className={`px-1.5 py-0.5 rounded text-[8px] font-mono font-black border transition-all flex items-center gap-0.5 ${
-                  patchSlot === 'A'
-                    ? 'bg-[#10b981]/25 text-[#10b981] border-[#10b981]/70 shadow-[0_0_6px_rgba(16,185,129,0.3)]'
-                    : 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00]/70 shadow-[0_0_6px_rgba(255,170,0,0.3)]'
-                }`}
-              >
-                <span>SLOT {patchSlot}</span>
-              </button>
-              <button
-                type="button"
-                onClick={copyActiveToOtherSlot}
-                title={`Copy Slot ${patchSlot} parameters to alternate slot`}
-                className="px-1 py-0.5 rounded text-[7.5px] font-mono text-gray-400 hover:text-white hover:bg-white/5 border border-transparent hover:border-gray-600 transition-all"
-              >
-                {patchSlot === 'A' ? 'A➔B' : 'B➔A'}
-              </button>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[7px] font-mono text-gray-400 uppercase">Mode / Cutoff</span>
-              <span className="text-[#ffaa00] font-mono-lcd text-xs whitespace-nowrap">
-                {params.voiceMode.substring(0, 4).toUpperCase()} • {Math.round(params.filter.cutoff)}Hz
-              </span>
-            </div>
-            <div className="hidden lg:flex flex-col">
-              <span className="text-[7px] font-mono text-gray-400 uppercase">Voices</span>
-              <span className="text-[#00ff66] font-mono-lcd text-xs whitespace-nowrap">{activeNotes.size} Active</span>
-            </div>
-            {/* MIDI Status readout */}
-            <div className="hidden xl:flex flex-col">
-              <span className="text-[7px] font-mono text-gray-400 uppercase">MIDI</span>
-              <span className={`font-mono-lcd text-xs whitespace-nowrap ${
-                midiStatus.startsWith('MIDI:') && !midiStatus.includes('Keyboard') && !midiStatus.includes('Keys')
-                  ? 'text-[#00ff66]'
-                  : midiStatus.includes('Error') || midiStatus.includes('Locked')
-                  ? 'text-[#ff3344]'
-                  : 'text-gray-400'
-              }`}>{midiStatus}</span>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setIsKeyboardMode(v => !v)}
-                title="Toggle Computer Keyboard Musical Typing Mode (Hotkey: \)"
-                className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold tracking-wider flex items-center gap-1.5 border transition-all ${
-                  isKeyboardMode
-                    ? 'bg-[#10b981]/15 text-[#10b981] border-[#10b981]/60 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                    : 'bg-[#101622] text-gray-500 border-[#222e42] hover:text-gray-300'
-                }`}
-              >
-                <span className="text-[10px]">⌨️</span>
-                <span>{isKeyboardMode ? 'KEYS: ON' : 'KEYS: OFF'}</span>
-                <div className={`w-1.5 h-1.5 rounded-full ${isKeyboardMode ? 'bg-[#00ff66] shadow-[0_0_6px_#00ff66]' : 'bg-gray-600'}`} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsKeybedVisible(v => {
-                  const next = !v;
-                  try { localStorage.setItem('subtractive_keybed_visible', String(next)); } catch {}
-                  return next;
-                })}
-                title="Toggle Piano Keybed Dock (Show / Hide Keybed)"
-                className={`px-2 py-0.5 rounded font-mono text-[9px] font-bold tracking-wider flex items-center gap-1.5 border transition-all ${
-                  isKeybedVisible
-                    ? 'bg-[#10b981]/15 text-[#10b981] border-[#10b981]/60 shadow-[0_0_8px_rgba(16,185,129,0.3)]'
-                    : 'bg-[#101622] text-gray-500 border-[#222e42] hover:text-gray-300'
-                }`}
-              >
-                <span>🎹 {isKeybedVisible ? 'KEYBED' : 'KEYBED'}</span>
-              </button>
-              <RecordButton onToggleRecord={toggleRecording} disabled={!isStarted} />
-              <LEDButton label="OSC" active={visualizerMode === 'oscilloscope'} onClick={() => setVisualizerMode('oscilloscope')} color="cyan" size="sm" className="text-[8px] px-1.5 py-0.5" />
-              <LEDButton label="FFT" active={visualizerMode === 'spectrum'} onClick={() => setVisualizerMode('spectrum')} color="amber" size="sm" className="text-[8px] px-1.5 py-0.5" />
-              <LEDButton label="VEC" active={visualizerMode === 'lissajous'} onClick={() => setVisualizerMode('lissajous')} color="emerald" size="sm" className="text-[8px] px-1.5 py-0.5" />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <VUMeter getPeakLevels={() => audioEngine.current?.getPeakLevels?.() || { left: 0, right: 0 }} />
-            <Knob 
-              label="Vol" 
-              value={params.masterGain ?? 0.8} 
-              min={0} 
-              max={1} 
-              size={34} 
-              onChange={v => setParams(p => patchParams(p, { masterGain: v }))} 
-              unit="%" 
-              color="emerald"
-              modActive={params.lfo.target === 'amp' && params.lfo.depth > 0}
-              modDepth={params.lfo.depth}
-              modColor="emerald"
-              lfoRate={params.lfo.rate}
-              lfoWaveform={params.lfo.waveform}
-              paramId="masterGain"
-              isLearning={learningParamId === 'masterGain'}
-              mappedCC={mappedCCs['masterGain'] ?? null}
-              onMidiLearn={handleMidiLearn}
-            />
-            {/* Desktop Skin & Aesthetics Palette */}
-            <div className="pl-2" style={{ borderLeft: '1px solid var(--panel-border)' }}>
-              <Suspense fallback={null}>
-                <SkinPicker />
-              </Suspense>
-            </div>
-          </div>
-        </div>
+        <nav aria-label="Instrument workspaces" className="workspace-switch">
+          {WORKSPACE_TABS.map(tab => <button key={tab.id} type="button" aria-pressed={workspaceMode === tab.id}
+            title={tab.sublabel + ' (' + tab.hotkey + ')'} onClick={() => handleWorkspaceModeChange(tab.id)}>
+            <span>{tab.idx}</span> {tab.label}
+          </button>)}
+        </nav>
       </header>
 
       {/* ── Mobile Tab Bar (< md) ── finger-safe 44px height tabs ── */}
-      <div className="md:hidden shrink-0 flex items-stretch gap-1 px-1.5 py-1 rounded-sm overflow-x-auto scrollbar-none" style={{ background: 'var(--tab-bar-bg)', border: '1px solid var(--tab-bar-border)' }}>
+      <div className="mobile-navigation md:hidden shrink-0 flex items-stretch gap-1 px-1.5 py-1 rounded-sm overflow-x-auto scrollbar-none" style={{ background: 'var(--tab-bar-bg)', border: '1px solid var(--tab-bar-border)' }}>
         {[
           { id: 'vco',   label: 'VCO',   icon: '〜' },
           { id: 'vcf',   label: 'VCF',   icon: '⌘' },
           { id: 'env',   label: 'ENV',   icon: '△' },
           { id: 'fx',    label: 'FX',    icon: '★' },
           { id: 'arp',   label: 'ARP',   icon: '♩' },
-          { id: 'seq',   label: 'SEQ',   icon: '🎼' },
-          { id: 'drums', label: 'DRUMS', icon: '🥁' },
+          { id: 'seq',   label: 'SEQ',   icon: '▦' },
+          { id: 'drums', label: 'DRUMS', icon: '≋' },
           { id: 'perform', label: 'PERFORM', icon: '◈' },
           { id: 'keys',  label: 'KEYS',  icon: '♪' },
         ].map((tab) => (
@@ -1601,7 +1305,7 @@ export const Synth: React.FC = () => {
 
       {/* ── Universal Dual Transport & Master Sync Bar (Accessible Always) ── */}
       <div 
-        className="shrink-0 flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-sm border shadow-sm transition-all"
+        className="transport-bar shrink-0 flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-sm border transition-all"
         style={{ background: 'var(--panel-bg)', borderColor: 'var(--panel-border)' }}
       >
         {/* Left: Dual Independent Transports + Preset Dropdown in Open Space */}
@@ -1611,16 +1315,16 @@ export const Synth: React.FC = () => {
             type="button"
             onClick={handleDrumPlayToggle}
             title={isDrumQueued ? "Drums Armed: Syncing to downbeat" : isDrumPlaying ? "Stop Drum Beat" : "Start Drum Beat (Quantized Sync)"}
-            className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider flex items-center gap-1.5 border transition-all ${
+            className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-normal flex items-center gap-1.5 border transition-all ${
               isDrumQueued
-                ? 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_10px_#ffaa00] animate-pulse'
+                ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)]  animate-pulse'
                 : isDrumPlaying
-                ? 'bg-[#10b981] text-black border-[#10b981] shadow-[0_0_10px_#10b981]'
-                : 'bg-[#121824] text-gray-400 hover:text-white border-[#222f44]'
+                ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--section-border)]'
             }`}
           >
             <div className={`w-1.5 h-1.5 rounded-full ${
-              isDrumQueued ? 'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]' : isDrumPlaying ? 'bg-black' : 'bg-gray-500'
+              isDrumQueued ? 'bg-[var(--signal)] ' : isDrumPlaying ? 'bg-black' : 'bg-[var(--section-bg)]'
             }`} />
             <span>{isDrumQueued ? 'DRUM: SYNCING' : isDrumPlaying ? '■ STOP DRUM' : '▶ START DRUM'}</span>
           </button>
@@ -1630,76 +1334,39 @@ export const Synth: React.FC = () => {
             type="button"
             onClick={handleSeqPlayToggle}
             title={isSeqQueued ? "Sequencer Armed: Syncing to downbeat" : isSeqPlaying ? "Stop Melodic Sequencer" : "Start Melodic Sequencer (Quantized Sync)"}
-            className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-wider flex items-center gap-1.5 border transition-all ${
+            className={`px-2.5 py-1 rounded-xs font-mono text-[9px] font-black tracking-normal flex items-center gap-1.5 border transition-all ${
               isSeqQueued
-                ? 'bg-[#ffaa00]/25 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_10px_#ffaa00] animate-pulse'
+                ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)]  animate-pulse'
                 : isSeqPlaying
-                ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_10px_#00e5ff]'
-                : 'bg-[#121824] text-gray-400 hover:text-white border-[#222f44]'
+                ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-[var(--section-border)]'
             }`}
           >
             <div className={`w-1.5 h-1.5 rounded-full ${
-              isSeqQueued ? 'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]' : isSeqPlaying ? 'bg-black' : 'bg-gray-500'
+              isSeqQueued ? 'bg-[var(--signal)] ' : isSeqPlaying ? 'bg-black' : 'bg-[var(--section-bg)]'
             }`} />
             <span>{isSeqQueued ? 'SEQ: SYNCING' : isSeqPlaying ? '■ STOP SEQ' : '▶ START SEQ'}</span>
           </button>
 
+          <RecordButton onToggleRecord={toggleRecording} disabled={!isStarted} />
+          <button type="button" className="dock-toggle" aria-pressed={isKeyboardMode} onClick={() => setIsKeyboardMode(v => !v)} title="Toggle Computer Keyboard Musical Typing Mode">Typing</button>
+          <button type="button" className="dock-toggle" aria-pressed={isKeybedVisible} onClick={() => {
+            setIsKeybedVisible(!isKeybedVisible);
+            try { localStorage.setItem('subtractive_keybed_visible', String(!isKeybedVisible)); } catch {}
+          }}>Keybed</button>
           {/* Panic / All Stop */}
           {(isDrumPlaying || isSeqPlaying || isDrumQueued || isSeqQueued) && (
             <button
               type="button"
               onClick={handleStopAll}
               title="Stop All Transports (Drums & Melodic Sequencer)"
-              className="px-2 py-1 rounded-xs font-mono text-[8px] font-black tracking-wider bg-[#ff3344]/15 text-[#ff3344] border border-[#ff3344]/50 hover:bg-[#ff3344] hover:text-white transition-all"
+              className="px-2 py-1 rounded-xs font-mono text-[8px] font-black tracking-normal bg-[var(--signal-soft)] text-[var(--signal-ink)] border border-[var(--signal)] hover:bg-[var(--signal)] hover:text-[var(--text-primary)] transition-all"
             >
               STOP ALL
             </button>
           )}
 
-          {/* Preset / Patch Dropdown & Browser (To the right of the drum player on desktop) */}
-          <div className="hidden md:flex items-center gap-1.5 pl-2 ml-1 border-l border-[#1e2a3c] bg-[#070b13] px-2 py-0.5 rounded-xs border border-[#1a273b]">
-            <span className="text-[7.5px] font-mono uppercase text-gray-400 font-bold tracking-wider">PATCH</span>
-            <select
-              value={selectedPresetName}
-              onChange={(e) => {
-                loadPreset(e.target.value);
-                e.currentTarget.blur();
-              }}
-              className="bg-transparent text-[#10b981] font-mono-lcd text-xs focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[160px] truncate"
-            >
-              {[...SYNTH_PRESETS, ...userPresets].map(p => (
-                <option key={p.name} value={p.name} className="bg-[#0c121c] text-[#10b981]">
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <div className="flex items-center gap-0.5 border-l border-[#1e2a3c] pl-1">
-              <button
-                type="button"
-                onClick={handlePrevPreset}
-                title="Previous Preset"
-                className="px-1 py-0.5 rounded text-[8px] font-mono text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-              >
-                ◀
-              </button>
-              <button
-                type="button"
-                onClick={handleNextPreset}
-                title="Next Preset"
-                className="px-1 py-0.5 rounded text-[8px] font-mono text-gray-400 hover:text-white hover:bg-white/5 transition-all"
-              >
-                ▶
-              </button>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsPresetBrowserOpen(true)}
-              title="Open Preset Browser"
-              className="px-1.5 py-0.5 rounded font-mono text-[7.5px] font-bold tracking-wider text-[#10b981] hover:bg-[#10b981]/15 border border-[#10b981]/40 ml-0.5 transition-all shrink-0"
-            >
-              BROWSE
-            </button>
-          </div>
+
         </div>
 
         {/* Center: Live Clock & Bar Counter + Quantize Mode */}
@@ -1707,8 +1374,8 @@ export const Synth: React.FC = () => {
           <TransportClockDisplay />
 
           {/* Quantize Sync Mode Selector */}
-          <div className="flex items-center gap-0.5 bg-[#0a0f18] p-0.5 rounded border border-[#1e2a3c]">
-            <span className="text-[7px] font-mono uppercase text-gray-500 px-1">SYNC</span>
+          <div className="flex items-center gap-0.5 bg-[var(--panel-bg-alt)] p-0.5 rounded border border-[var(--section-border)]">
+            <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)] px-1">SYNC</span>
             {(['bar', 'beat', 'instant'] as TransportQuantizeMode[]).map((mode) => (
               <button
                 key={mode}
@@ -1717,8 +1384,8 @@ export const Synth: React.FC = () => {
                 title={`Sync Mode: ${mode === 'bar' ? 'Wait for 1 Bar / 16-step measure' : mode === 'beat' ? 'Wait for 1 Beat / 4 steps' : 'Instant (No delay)'}`}
                 className={`px-1.5 py-0.5 text-[7px] font-mono font-bold rounded-xs transition-all uppercase ${
                   quantizeMode === mode
-                    ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                    : 'text-gray-400 hover:text-white'
+                    ? 'bg-[var(--signal)] text-black '
+                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                 }`}
               >
                 {mode === 'bar' ? '1 BAR' : mode === 'beat' ? '1 BEAT' : 'INST'}
@@ -1736,7 +1403,7 @@ export const Synth: React.FC = () => {
           <Knob label="Swing" value={swing} min={0} max={100} size={26} onChange={setSwing} unit="%" color="emerald" />
           
           <div className="flex items-center gap-0.5 pl-2" style={{ borderLeft: '1px solid var(--panel-border)' }}>
-            <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400 mr-1 hidden sm:inline">BANK</span>
+            <span className="text-[7px] font-mono uppercase tracking-normal text-[var(--text-secondary)] mr-1 hidden sm:inline">BANK</span>
             {[0, 1, 2, 3].map(b => (
               <button
                 key={b}
@@ -1744,8 +1411,8 @@ export const Synth: React.FC = () => {
                 onClick={() => setCurrentBankIndex(b)}
                 className={`w-5 h-5 rounded-xs font-mono font-bold text-[8px] transition-all ${
                   currentBankIndex === b
-                    ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                    : 'bg-[#141b27] text-gray-400 hover:text-white border border-[#20293d]'
+                    ? 'bg-[var(--signal)] text-black '
+                    : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--section-border)]'
                 }`}
               >
                 {String.fromCharCode(65 + b)}
@@ -1756,7 +1423,7 @@ export const Synth: React.FC = () => {
       </div>
 
       {/* ── Main Synth Modules Layout ── */}
-      <main className="flex-1 min-h-0 overflow-hidden flex flex-col gap-1.5">
+      <main className="instrument-workspace flex-1 min-h-0 overflow-hidden flex flex-col gap-1.5">
 
         {/* ════════════════════ DESKTOP LAYOUT (md+) ════════════════════ */}
         {workspaceMode === 'groove' ? (
@@ -1813,23 +1480,23 @@ export const Synth: React.FC = () => {
           </ErrorBoundary>
         ) : workspaceMode === 'fx' ? (
           <ErrorBoundary fallbackTitle="Studio FX Rack" onReset={() => handleWorkspaceModeChange('synth')}>
-            <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
+            <div className="synth-workspace hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
               {/* Master FX Signal Visualizer */}
               <div className="oled-screen p-2 rounded-sm h-20 w-full flex flex-col justify-between shrink-0">
                 <div className="flex items-center justify-between px-1 mb-1">
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344]" />
-                    <span className="font-mono-lcd text-[9px] uppercase tracking-widest text-[#ff3344] font-bold">
+                    <div className="w-1.5 h-1.5 rounded-full bg-[var(--signal)] " />
+                    <span className="font-mono-lcd text-[9px] uppercase tracking-normal text-[var(--signal-ink)] font-bold">
                       MASTER FX SIGNAL CHAIN
                     </span>
-                    <span className="font-mono-lcd text-[8px] text-gray-400">
+                    <span className="font-mono-lcd text-[8px] text-[var(--text-secondary)]">
                       [DRIVE / TAPE] ➔ [JUNO CHORUS] ➔ [STEREO DELAY] ➔ [PLATE REVERB] ➔ [VCA BUS COMP] ➔ [MASTER BUS]
                     </span>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
-                    <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
-                    <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
+                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>OSC</button>
+                    <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'spectrum'     ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>FFT</button>
+                    <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'lissajous'    ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>VEC</button>
                   </div>
                 </div>
                 <div className="flex-1 w-full min-h-0">
@@ -1838,7 +1505,7 @@ export const Synth: React.FC = () => {
                     stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
                     enabled={true}
                     isPlaying={isAnyNoteActive} 
-                    color="#ff3344" 
+                    color='var(--signal)'
                     mode={visualizerMode} 
                   />
                 </div>
@@ -1858,7 +1525,7 @@ export const Synth: React.FC = () => {
           </ErrorBoundary>
         ) : workspaceMode === 'arp' ? (
           <ErrorBoundary fallbackTitle="Poly Arpeggiator Console" onReset={() => handleWorkspaceModeChange('synth')}>
-            <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
+            <div className="synth-workspace hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
               {/* Arpeggiator Console Stage */}
               <div className="flex flex-col xl:flex-row gap-2.5 flex-1 min-h-0 items-stretch">
                 {/* Dedicated Poly Arpeggiator Console Panel */}
@@ -1877,14 +1544,14 @@ export const Synth: React.FC = () => {
                 {/* Arp Synth Tone & Performance Companion Panel */}
                 <div className="xl:w-4/12 flex flex-col min-h-0 synth-panel rounded p-3 justify-between">
                   <div>
-                    <div className="w-full flex items-center justify-between px-2.5 py-1 mb-2 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+                    <div className="w-full flex items-center justify-between px-2.5 py-1 mb-2 rounded-sm border  shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
                       <div className="flex items-center gap-1.5 overflow-hidden">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] shadow-[0_0_6px_#00e5ff] shrink-0" />
-                        <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>
+                        <div className="w-1.5 h-1.5 rounded-full bg-[var(--signal)]  shrink-0" />
+                        <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-normal uppercase truncate" style={{ color: 'var(--text-primary)' }}>
                           ARP REALTIME TONE & FX SHAPING
                         </span>
                       </div>
-                      <span className="text-[8px] font-mono text-[#00e5ff]">POLY MODE</span>
+                      <span className="text-[8px] font-mono text-[var(--signal-ink)]">POLY MODE</span>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2.5 p-2 rounded-sm mb-3" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
@@ -1960,18 +1627,18 @@ export const Synth: React.FC = () => {
                     </div>
 
                     <div className="p-2.5 rounded-sm flex flex-col gap-1.5" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
-                      <span className="text-[8px] font-mono uppercase font-bold text-gray-300">Arpeggiator Quick Guide</span>
-                      <p className="text-[8px] font-mono text-gray-400 leading-relaxed">
+                      <span className="text-[8px] font-mono uppercase font-bold text-[var(--text-primary)]">Arpeggiator Quick Guide</span>
+                      <p className="text-[8px] font-mono text-[var(--text-secondary)] leading-relaxed">
                         Hold keys on the keyboard to generate cascading polyphonic patterns. Choose modes (Up, Down, Converge, Random) and dial in swing and ratchets for expressive performance.
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#1e2a3c]">
+                  <div className="flex items-center gap-2 pt-2 border-t border-[var(--section-border)]">
                     <button
                       type="button"
                       onClick={() => handleWorkspaceModeChange('seq')}
-                      className="flex-1 text-[8px] font-mono text-[#00ff66] hover:text-white px-2 py-1.5 rounded border border-[#00ff66]/40 bg-[#0c1618] flex items-center justify-center gap-1 transition-all"
+                      className="flex-1 text-[8px] font-mono text-[var(--signal-ink)] hover:text-[var(--text-primary)] px-2 py-1.5 rounded border border-[var(--signal)] bg-[var(--panel-bg-alt)] flex items-center justify-center gap-1 transition-all"
                     >
                       <span>OPEN 16-STEP MELODIC SEQ</span>
                       <span>↗</span>
@@ -1979,7 +1646,7 @@ export const Synth: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleWorkspaceModeChange('groove')}
-                      className="flex-1 text-[8px] font-mono text-[#ffaa00] hover:text-white px-2 py-1.5 rounded border border-[#ffaa00]/40 bg-[#16120c] flex items-center justify-center gap-1 transition-all"
+                      className="flex-1 text-[8px] font-mono text-[var(--signal-ink)] hover:text-[var(--text-primary)] px-2 py-1.5 rounded border border-[var(--signal)] bg-[var(--panel-bg-alt)] flex items-center justify-center gap-1 transition-all"
                     >
                       <span>OPEN 4-TRACK GROOVE</span>
                       <span>↗</span>
@@ -1991,7 +1658,7 @@ export const Synth: React.FC = () => {
           </ErrorBoundary>
         ) : workspaceMode === 'seq' ? (
           <ErrorBoundary fallbackTitle="16-Step Melodic Sequencer" onReset={() => handleWorkspaceModeChange('synth')}>
-            <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
+            <div className="synth-workspace hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
               <div className="flex-none flex flex-col gap-2">
                 <div>
                   <Suspense fallback={<WorkspaceLoadingFallback />}>
@@ -2013,10 +1680,10 @@ export const Synth: React.FC = () => {
                 <div className="mt-2 p-2 rounded-sm border flex flex-wrap items-center justify-center xl:justify-between gap-2.5 shrink-0" style={{ background: 'var(--panel-bg-alt)', borderColor: 'var(--panel-border)' }}>
                   
                   {/* Left: Quick Filter & Tone Shaping */}
-                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#090d16] border border-[#1e2a3c] shrink-0">
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] shrink-0">
                     <div className="flex flex-col pr-1">
-                      <span className="text-[7.5px] font-mono uppercase font-bold text-gray-400">VCF TONE</span>
-                      <span className="text-[9px] font-mono font-bold text-[#ffaa00] uppercase">{params.filter.type || 'LP'}</span>
+                      <span className="text-[7.5px] font-mono uppercase font-bold text-[var(--text-secondary)]">VCF TONE</span>
+                      <span className="text-[9px] font-mono font-bold text-[var(--signal-ink)] uppercase">{params.filter.type || 'LP'}</span>
                     </div>
                     <Knob
                       label="Cutoff"
@@ -2053,10 +1720,10 @@ export const Synth: React.FC = () => {
                   </div>
 
                   {/* Center: Envelope Dynamics */}
-                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[#090d16] border border-[#1e2a3c] shrink-0">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] shrink-0">
                     <div className="flex flex-col pr-1">
-                      <span className="text-[7.5px] font-mono uppercase font-bold text-gray-400">AMP ADSR</span>
-                      <span className="text-[9px] font-mono font-bold text-[#00f0ff] uppercase">ENV</span>
+                      <span className="text-[7.5px] font-mono uppercase font-bold text-[var(--text-secondary)]">AMP ADSR</span>
+                      <span className="text-[9px] font-mono font-bold text-[var(--signal-ink)] uppercase">ENV</span>
                     </div>
                     <Knob
                       label="Attack"
@@ -2101,7 +1768,7 @@ export const Synth: React.FC = () => {
                   </div>
 
                   {/* Right: Master FX & Quick Navigation */}
-                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[#090d16] border border-[#1e2a3c] shrink-0">
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] shrink-0">
                     <Knob
                       label="Drive"
                       value={params.fx?.drive?.enabled ? params.fx.drive.amount : 0}
@@ -2146,14 +1813,14 @@ export const Synth: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleWorkspaceModeChange('synth')}
-                        className="text-[8px] font-mono text-[#00f0ff] hover:text-white px-2 py-1 rounded border border-[#00f0ff]/30 bg-[#0c1618] flex items-center justify-center gap-1 transition-all"
+                        className="text-[8px] font-mono text-[var(--signal-ink)] hover:text-[var(--text-primary)] px-2 py-1 rounded border border-[var(--signal)] bg-[var(--panel-bg-alt)] flex items-center justify-center gap-1 transition-all"
                       >
                         <span>SYNTH LAB ↗</span>
                       </button>
                       <button
                         type="button"
                         onClick={() => handleWorkspaceModeChange('groove')}
-                        className="text-[8px] font-mono text-[#ffaa00] hover:text-white px-2 py-1 rounded border border-[#ffaa00]/30 bg-[#16120c] flex items-center justify-center gap-1 transition-all"
+                        className="text-[8px] font-mono text-[var(--signal-ink)] hover:text-[var(--text-primary)] px-2 py-1 rounded border border-[var(--signal)] bg-[var(--panel-bg-alt)] flex items-center justify-center gap-1 transition-all"
                       >
                         <span>GROOVE ↗</span>
                       </button>
@@ -2166,13 +1833,13 @@ export const Synth: React.FC = () => {
           </ErrorBoundary>
         ) : (
           <ErrorBoundary fallbackTitle="Synth Sound Design Lab" onReset={() => handleWorkspaceModeChange('synth')}>
-            <div className="hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
+            <div className="synth-workspace hidden md:flex flex-col flex-1 min-h-0 gap-2.5 pt-1 overflow-y-auto pr-0.5">
 
               {/* Upper row: VCO Panel — 4 Oscillators & Voice Controls */}
               <div className="flex flex-col">
-                <Panel title="VCO — 4-OSCILLATOR ARRAY & VOICE ENGINE" badgeColor="cyan" className="w-full">
+                <Panel title="01 / Oscillators" badgeColor="cyan" className="w-full">
                   {/* Voice Mode & Tone Controls Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 w-full p-2 rounded-sm shrink-0 mb-2" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
+                  <div className="voice-controls flex flex-wrap items-center justify-between gap-2 w-full p-2 rounded-sm shrink-0 mb-2" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                     <div className="flex flex-col items-center gap-0.5">
                       <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
                       <div className="flex gap-1">
@@ -2258,7 +1925,7 @@ export const Synth: React.FC = () => {
                     />
                   </div>
                   {/* Oscillator Grid (desktop: clean responsive 4 column grid) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 w-full">
+                  <div className="oscillator-grid grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2.5 w-full">
                     {renderOscControl('osc1', 'OSC 1')}
                     {renderOscControl('osc2', 'OSC 2')}
                     {renderOscControl('osc3', 'OSC 3')}
@@ -2268,18 +1935,18 @@ export const Synth: React.FC = () => {
               </div>
 
               {/* Lower Section: VCF Filter (Left) & Modulation Envelopes/LFO (Right) */}
-              <div className="flex flex-col lg:flex-row gap-2.5 w-full">
+              <div className="sound-design-grid flex flex-col lg:flex-row gap-2.5 w-full">
 
                 {/* Left Column: VCF Filter & Output Scope */}
-                <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+                <div className="filter-column flex-1 flex flex-col gap-2.5 min-w-0">
                   {/* Oscilloscope Screen */}
-                  <div className="oled-screen p-2 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
+                  <div className="output-scope oled-screen p-2 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
                     <div className="flex items-center justify-between px-1 mb-1">
-                      <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
+                      <span className="font-mono-lcd text-[8px] uppercase tracking-normal" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
                       <div className="flex gap-1">
-                        <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
-                        <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
-                        <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
+                        <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>OSC</button>
+                        <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'spectrum'     ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>FFT</button>
+                        <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[8px] font-mono px-1.5 py-0.5 rounded ${ visualizerMode === 'lissajous'    ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>VEC</button>
                       </div>
                     </div>
                     <div className="flex-1 w-full min-h-0">
@@ -2288,18 +1955,18 @@ export const Synth: React.FC = () => {
                         stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
                         enabled={true}
                         isPlaying={isAnyNoteActive} 
-                        color="#10b981" 
+                        color='var(--signal)'
                         mode={visualizerMode} 
                       />
                     </div>
                   </div>
 
                   {/* VCF Filter Module */}
-                  <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="w-full">
+                  <Panel title="02 / Filter" badgeColor="amber" className="w-full">
                     <div className="flex flex-col gap-2 w-full">
                       <div className="grid grid-cols-4 gap-1 w-full">
                         {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
-                          <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[28px] text-[8px] md:text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
+                          <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[28px] text-[8px] md:text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)] ' : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] active:bg-[var(--panel-bg-alt)]' }`}>{type.toUpperCase()}</button>
                         ))}
                       </div>
 
@@ -2356,9 +2023,9 @@ export const Synth: React.FC = () => {
                 </div>
 
                 {/* Right Column: Modulation Suite (LFO + ADSR Envelopes) */}
-                <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+                <div className="modulation-column flex-1 flex flex-col gap-1.5 min-w-0">
                   {/* LFO Modulation Panel */}
-                  <Panel title="LFO — MODULATION GENERATOR" badgeColor="emerald" className="w-full">
+                  <Panel title="03 / Modulation" badgeColor="emerald" className="w-full">
                     <div className="flex flex-col gap-2 w-full">
                       <div className="flex items-center gap-2">
                         <button
@@ -2369,7 +2036,7 @@ export const Synth: React.FC = () => {
                             e.dataTransfer.effectAllowed = 'copy';
                           }}
                           title="Drag LFO 1 onto Cutoff to route modulation"
-                          className="px-1.5 py-1 rounded-sm font-mono text-[8px] font-bold uppercase tracking-wider cursor-grab active:cursor-grabbing border border-[#00ff66]/40 bg-[#00ff66]/10 text-[#00ff66] hover:border-[#00ff66] shrink-0"
+                          className="px-1.5 py-1 rounded-sm font-mono text-[8px] font-bold uppercase tracking-normal cursor-grab active:cursor-grabbing border border-[var(--signal)] bg-[var(--signal-soft)] text-[var(--signal-ink)] hover:border-[var(--signal)] shrink-0"
                         >
                           LFO 1 ➔
                         </button>
@@ -2378,11 +2045,11 @@ export const Synth: React.FC = () => {
                             const isActive = params.lfo.waveform === w;
                             const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
                             return (
-                              <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[22px] min-w-[22px] ${ isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200' }`}><Icon className="w-3.5 h-3.5"/></button>
+                              <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[22px] min-w-[22px] ${ isActive ? 'bg-[var(--signal)] text-black ' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]' }`}><Icon className="w-3.5 h-3.5"/></button>
                             );
                           })}
                         </div>
-                        <div className="flex-1 h-8"><WaveformDisplay waveform={params.lfo.waveform} enabled={params.lfo.depth > 0} isPlaying={isAnyNoteActive && params.lfo.depth > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
+                        <div className="flex-1 h-8"><WaveformDisplay waveform={params.lfo.waveform} enabled={params.lfo.depth > 0} isPlaying={isAnyNoteActive && params.lfo.depth > 0} amplitudeScale={params.lfo.depth} color='var(--signal)' /></div>
                       </div>
 
                       <div className="flex items-center justify-around gap-2">
@@ -2434,7 +2101,7 @@ export const Synth: React.FC = () => {
 
                   {/* ADSR Envelope Editor Panel */}
                   <Panel 
-                    title={selectedEnvTab === 'amp' ? "AMP ENVELOPE (ADSR)" : "FILTER ENVELOPE (ADSR)"} 
+                    title="04 / Envelopes"
                     badgeColor={selectedEnvTab === 'amp' ? "cyan" : "amber"} 
                     className="w-full"
                   >
@@ -2446,8 +2113,8 @@ export const Synth: React.FC = () => {
                             onClick={() => setSelectedEnvTab('amp')}
                             className={`text-[8.5px] font-mono font-bold px-2.5 py-0.5 rounded-sm border transition-all ${
                               selectedEnvTab === 'amp'
-                                ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981] shadow-[0_0_6px_rgba(16,185,129,0.4)]'
-                                : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
+                                ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)] '
+                                : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)]'
                             }`}
                           >
                             AMP ENV
@@ -2457,15 +2124,15 @@ export const Synth: React.FC = () => {
                             onClick={() => setSelectedEnvTab('filter')}
                             className={`text-[8.5px] font-mono font-bold px-2.5 py-0.5 rounded-sm border transition-all ${
                               selectedEnvTab === 'filter'
-                                ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_6px_rgba(255,170,0,0.4)]'
-                                : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
+                                ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)] '
+                                : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)]'
                             }`}
                           >
                             FILTER ENV
                           </button>
                         </div>
                         {selectedEnvTab === 'filter' && (
-                          <span className="text-[8px] font-mono text-[#ffaa00]">
+                          <span className="text-[8px] font-mono text-[var(--signal-ink)]">
                             EG INT: {Math.round(params.filterEnvelope.amount)}
                           </span>
                         )}
@@ -2542,7 +2209,7 @@ export const Synth: React.FC = () => {
           {activeTab === 'vco' && (
           <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1">
-              <Panel title="VCO — OSCILLATORS & VOICE MODE" badgeColor="cyan" className="flex flex-col justify-between">
+              <Panel title="01 / Oscillators" badgeColor="cyan" className="flex flex-col justify-between">
                 <div className="flex flex-wrap items-center justify-between gap-2 w-full p-2 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                   <div className="flex flex-col items-center gap-0.5">
                     <span className="text-[7px] font-mono uppercase" style={{ color: 'var(--text-label)' }}>Voice Mode</span>
@@ -2634,8 +2301,8 @@ export const Synth: React.FC = () => {
                     <button key={osc} onClick={() => setSelectedMobileOsc(osc)}
                       className={`min-h-[38px] px-3 text-[9px] font-mono font-bold rounded-sm border flex-1 transition-all ${
                         selectedMobileOsc === osc
-                          ? 'bg-[#10b981] text-black border-[#10b981] shadow-[0_0_8px_#10b981]'
-                          : 'bg-[#121620] text-gray-400 border-[#222a3a] active:bg-[#1e2633]'
+                          ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                          : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] active:bg-[var(--panel-bg-alt)]'
                       }`}>
                       {osc.toUpperCase()}
                     </button>
@@ -2658,11 +2325,11 @@ export const Synth: React.FC = () => {
             <div className="flex flex-col gap-3.5 pt-1">
               <div className="oled-screen p-1.5 rounded-sm h-28 w-full flex flex-col justify-between shrink-0">
                 <div className="flex items-center justify-between px-1 mb-1">
-                  <span className="font-mono-lcd text-[8px] uppercase tracking-widest" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
+                  <span className="font-mono-lcd text-[8px] uppercase tracking-normal" style={{ color: 'var(--oled-text)' }}>MAIN AUDIO OUTPUT</span>
                   <div className="flex gap-1">
-                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[#10b981]' : 'text-gray-500' }`}>OSC</button>
-                    <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[#ffaa00]' : 'text-gray-500' }`}>FFT</button>
-                    <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'lissajous'    ? 'text-[#00ff66]' : 'text-gray-500' }`}>VEC</button>
+                    <button onClick={() => setVisualizerMode('oscilloscope')} className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'oscilloscope' ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>OSC</button>
+                    <button onClick={() => setVisualizerMode('spectrum')}     className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'spectrum'     ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>FFT</button>
+                    <button onClick={() => setVisualizerMode('lissajous')}    className={`text-[7px] font-mono px-1 rounded ${ visualizerMode === 'lissajous'    ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]' }`}>VEC</button>
                   </div>
                 </div>
                 <div className="flex-1 w-full">
@@ -2671,17 +2338,17 @@ export const Synth: React.FC = () => {
                     stereoAnalysers={audioEngine.current?.getStereoAnalysers() || null}
                     enabled={true}
                     isPlaying={isAnyNoteActive} 
-                    color="#10b981" 
+                    color='var(--signal)'
                     mode={visualizerMode} 
                   />
                 </div>
               </div>
               <div className="pt-1">
-                <Panel title="VCF — VOLTAGE CONTROLLED FILTER" badgeColor="amber" className="w-full flex flex-col justify-between">
+                <Panel title="02 / Filter" badgeColor="amber" className="w-full flex flex-col justify-between">
                   <div className="flex flex-col gap-2.5 w-full justify-between">
                     <div className="grid grid-cols-4 gap-1 w-full">
                       {(['lowpass', 'highpass', 'bandpass', 'notch'] as FilterType[]).map(type => (
-                        <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[36px] text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]' : 'bg-[#0a0d14] text-gray-500 border-[#1e2636] active:bg-[#141b28]' }`}>{type.toUpperCase()}</button>
+                        <button key={type} type="button" onClick={() => setFilterType(type)} className={`min-h-[36px] text-[9px] font-mono font-bold rounded-sm border transition-all ${ (params.filter.type || 'lowpass') === type ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)] ' : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] active:bg-[var(--panel-bg-alt)]' }`}>{type.toUpperCase()}</button>
                       ))}
                     </div>
 
@@ -2744,7 +2411,7 @@ export const Synth: React.FC = () => {
           {activeTab === 'env' && (
           <div className="mobile-section-panel mobile-section-active">
             <div className="flex flex-col gap-2 pt-1">
-              <Panel title="LFO — MODULATION" badgeColor="emerald" className="flex flex-col justify-between">
+              <Panel title="03 / Modulation" badgeColor="emerald" className="flex flex-col justify-between">
                 <div className="flex flex-col gap-2 w-full justify-between">
                   <div className="flex items-center gap-2">
                     <div className="flex flex-col gap-1 p-1 rounded-sm" style={{ background: 'var(--waveform-bg)', border: '1px solid var(--waveform-border)' }}>
@@ -2752,11 +2419,11 @@ export const Synth: React.FC = () => {
                         const isActive = params.lfo.waveform === w;
                         const Icon = { sine: SineIcon, triangle: TriangleIcon, sawtooth: SawtoothIcon, square: SquareIcon }[w];
                         return (
-                          <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[32px] min-w-[32px] ${ isActive ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]' : 'text-gray-500 hover:text-gray-200' }`}><Icon className="w-4 h-4"/></button>
+                          <button key={w} type="button" onClick={() => setLfoWaveform(w)} className={`p-1 rounded-sm transition-all flex items-center justify-center min-h-[32px] min-w-[32px] ${ isActive ? 'bg-[var(--signal)] text-black ' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]' }`}><Icon className="w-4 h-4"/></button>
                         );
                       })}
                     </div>
-                    <div className="flex-1 h-14"><WaveformDisplay waveform={params.lfo.waveform} enabled={params.lfo.depth > 0} isPlaying={isAnyNoteActive && params.lfo.depth > 0} amplitudeScale={params.lfo.depth} color="#00ff66" /></div>
+                    <div className="flex-1 h-14"><WaveformDisplay waveform={params.lfo.waveform} enabled={params.lfo.depth > 0} isPlaying={isAnyNoteActive && params.lfo.depth > 0} amplitudeScale={params.lfo.depth} color='var(--signal)' /></div>
                   </div>
                   <div className="flex items-center justify-around gap-2">
                     <Knob 
@@ -2791,12 +2458,12 @@ export const Synth: React.FC = () => {
                   <div className="flex items-center justify-between gap-1 p-1 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
                     <LEDButton label="BPM SYNC" active={params.lfo.sync} onClick={() => setParams(p => patchParams(p, { lfo: { sync: !p.lfo.sync } }))} color="emerald" size="sm" className="text-[8px] px-2 py-1" />
                     {params.lfo.sync && (
-                      <select value={params.lfo.division} onChange={(e) => setParams(p => patchParams(p, { lfo: { division: e.target.value } }))} className="bg-[#141a26] text-[#00ff66] font-mono text-[9px] px-2 py-1 rounded border border-[#202738]">
+                      <select value={params.lfo.division} onChange={(e) => setParams(p => patchParams(p, { lfo: { division: e.target.value } }))} className="bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] font-mono text-[9px] px-2 py-1 rounded border border-[var(--section-border)]">
                         {['1/16', '1/8', '1/4', '1/2', '1/1'].map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 bg-[#0a0d14] p-1 rounded-sm border border-[#1e2636]">
+                  <div className="flex items-center gap-1.5 bg-[var(--panel-bg-alt)] p-1 rounded-sm border border-[var(--section-border)]">
                     {(['pitch', 'filter', 'amp', 'pwm'] as LFOTarget[]).map(target => (
                       <LEDButton key={target} label={target.toUpperCase()} active={params.lfo.target === target} onClick={() => setParams(p => patchParams(p, { lfo: { target } }))} color="emerald" size="sm" className="flex-1 text-[8px] px-1 py-1" />
                     ))}
@@ -2807,7 +2474,7 @@ export const Synth: React.FC = () => {
               {/* Mobile Multi-Segment Graphical ADSR Visualizer */}
               <div className="pt-1">
                 <Panel 
-                  title={selectedEnvTab === 'amp' ? "AMP ENVELOPE (ADSR)" : "FILTER ENVELOPE (ADSR)"} 
+                  title="04 / Envelopes"
                   badgeColor={selectedEnvTab === 'amp' ? "cyan" : "amber"} 
                   className="flex flex-col justify-between"
                 >
@@ -2818,8 +2485,8 @@ export const Synth: React.FC = () => {
                         onClick={() => setSelectedEnvTab('amp')}
                         className={`text-[9px] font-mono font-bold px-3 py-1 rounded-sm border transition-all ${
                           selectedEnvTab === 'amp'
-                            ? 'bg-[#10b981]/20 text-[#10b981] border-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.4)]'
-                            : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
+                            ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)] '
+                            : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)]'
                         }`}
                       >
                         AMP ENV
@@ -2829,15 +2496,15 @@ export const Synth: React.FC = () => {
                         onClick={() => setSelectedEnvTab('filter')}
                         className={`text-[9px] font-mono font-bold px-3 py-1 rounded-sm border transition-all ${
                           selectedEnvTab === 'filter'
-                            ? 'bg-[#ffaa00]/20 text-[#ffaa00] border-[#ffaa00] shadow-[0_0_8px_rgba(255,170,0,0.4)]'
-                            : 'bg-[#0a0d14] text-gray-500 border-[#1e2636]'
+                            ? 'bg-[var(--signal-soft)] text-[var(--signal-ink)] border-[var(--signal)] '
+                            : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)]'
                         }`}
                       >
                         FILTER ENV
                       </button>
                     </div>
                     {selectedEnvTab === 'filter' && (
-                      <span className="text-[9px] font-mono text-[#ffaa00]">
+                      <span className="text-[9px] font-mono text-[var(--signal-ink)]">
                         EG INT: {Math.round(params.filterEnvelope.amount)}
                       </span>
                     )}
@@ -2931,11 +2598,11 @@ export const Synth: React.FC = () => {
           {activeTab === 'seq' && (
           <div className="mobile-section-panel mobile-section-active">
             <div className="pt-1 flex flex-col min-h-0 synth-panel rounded p-2">
-              <div className="w-full flex items-center justify-between px-2 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
-                <span className="font-mono text-[9px] font-bold tracking-[0.12em] uppercase" style={{ color: 'var(--text-primary)' }}>
+              <div className="w-full flex items-center justify-between px-2 py-1 mb-1.5 rounded-sm border  shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+                <span className="font-mono text-[9px] font-bold tracking-normal uppercase" style={{ color: 'var(--text-primary)' }}>
                   MELODIC MOTION SEQUENCER
                 </span>
-                <span className="text-[8px] font-mono text-[#00ff66]">16 STEPS</span>
+                <span className="text-[8px] font-mono text-[var(--signal-ink)]">16 STEPS</span>
               </div>
               <Suspense fallback={<WorkspaceLoadingFallback />}>
                 <MelodicSequencer
@@ -3031,7 +2698,7 @@ export const Synth: React.FC = () => {
 
       {/* Desktop Virtual Keyboard Dock (dockable / toggleable) */}
       {workspaceMode !== 'perform' && isKeybedVisible && (
-        <section className="shrink-0 hidden md:block">
+        <section className="keyboard-dock shrink-0 hidden md:block">
           <Keyboard 
             onNoteOn={handleNoteOn} 
             onNoteOff={handleNoteOff} 
@@ -3048,50 +2715,10 @@ export const Synth: React.FC = () => {
         </section>
       )}
 
-      {/* Global Device Chassis Bottom Bar: Author & Official Website */}
-      <footer 
-        className="shrink-0 w-full px-3 py-1 border-t flex items-center justify-between gap-3 text-[9px] md:text-[10px] font-mono select-none z-20 backdrop-blur-md"
-        style={{
-          background: 'var(--panel-bg)',
-          borderColor: 'var(--panel-border)',
-          color: 'var(--text-muted)'
-        }}
-      >
-        <div className="flex items-center gap-2.5 min-w-0">
-          <span className="flex items-center gap-1.5 font-bold tracking-widest text-white uppercase text-[8px] md:text-[9px]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse shadow-[0_0_6px_#10b981]" />
-            SUBTRACTIVE
-          </span>
-          <span className="text-gray-600 hidden sm:inline">•</span>
-          <span className="hidden sm:inline text-gray-400">ANALOG MODELLING SYNTHESIZER</span>
-          <span className="text-gray-600">•</span>
-          <span className="truncate">
-            CREATED BY{' '}
-            <a 
-              href="https://trustnodelogic.com/#person" 
-              target="_blank" 
-              rel="noopener noreferrer" 
-              className="font-bold text-white hover:text-[#10b981] transition-colors underline decoration-dotted underline-offset-2"
-              title="Justin Ray — Creative Technologist & DSP Engineer"
-            >
-              JUSTIN RAY
-            </a>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <a
-            href="https://trustnodelogic.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-white/10 hover:border-[#10b981]/50 bg-black/40 hover:bg-black/60 text-gray-300 hover:text-white transition-all group shadow-xs"
-            title="Visit Trust Node Logic — Official Website of Justin Ray"
-          >
-            <span className="text-[#10b981] group-hover:scale-110 transition-transform">🌐</span>
-            <span className="font-bold tracking-wider">trustnodelogic.com</span>
-            <span className="text-[8px] text-gray-500 group-hover:text-[#10b981] transition-colors">↗</span>
-          </a>
-        </div>
+      <footer className="instrument-footer">
+        <span>Designed by <a href="https://trustnodelogic.com/#person" target="_blank" rel="noopener noreferrer">Justin Ray</a></span>
+        <span className="audio-status"><i className="status-dot" /> Audio active</span>
+        <a href="https://trustnodelogic.com/" target="_blank" rel="noopener noreferrer">trustnodelogic.com ↗</a>
       </footer>
 
       {/* Studio Preset Browser Modal / Dock */}

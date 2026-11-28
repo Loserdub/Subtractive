@@ -96,12 +96,12 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
   return (
     <div className="synth-panel rounded p-2 md:p-2.5 flex flex-col items-center select-none w-full h-full relative">
       {/* Module Title Header Bar */}
-      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border  shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
         <div className="flex items-center gap-1.5 overflow-hidden">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#ff3344] shadow-[0_0_6px_#ff3344] shrink-0" />
-          <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>STUDIO MASTER FX RACK</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-[var(--signal)]  shrink-0" />
+          <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-normal uppercase truncate" style={{ color: 'var(--text-primary)' }}>STUDIO MASTER FX RACK</span>
         </div>
-        <span className="text-[7px] font-mono text-gray-500 hidden sm:inline uppercase tracking-widest">PRO ANALOG SIGNAL PATH</span>
+        <span className="text-[7px] font-mono text-[var(--text-secondary)] hidden sm:inline uppercase tracking-normal">PRO ANALOG SIGNAL PATH</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 w-full flex-1 min-h-0">
@@ -109,7 +109,7 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
         {/* 1. Drive / Tape Saturation Module */}
         <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
           <div className="flex items-center justify-between w-full pb-1 mb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
-            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate" style={{ color: 'var(--text-label)' }}>DRIVE / TAPE</span>
+            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-normal uppercase truncate" style={{ color: 'var(--text-label)' }}>DRIVE / TAPE</span>
             <LEDButton
               label={fx.drive.enabled ? "ON" : "OFF"}
               active={fx.drive.enabled}
@@ -120,7 +120,7 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
           </div>
 
           {/* Analog Transfer Curve Visualizer */}
-          <div className="w-full h-11 rounded bg-[#06080d] border border-[#1b2230] relative overflow-hidden flex items-center justify-center p-1 my-0.5">
+          <div className="w-full h-11 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] relative overflow-hidden flex items-center justify-center p-1 my-0.5">
             <svg className="w-full h-full" viewBox="0 0 100 40" preserveAspectRatio="none">
               <line x1="0" y1="20" x2="100" y2="20" stroke="#1c2536" strokeWidth="0.8" strokeDasharray="2,2" />
               <line x1="50" y1="0" x2="50" y2="40" stroke="#1c2536" strokeWidth="0.8" strokeDasharray="2,2" />
@@ -139,14 +139,14 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
                   <path
                     d={d}
                     fill="none"
-                    stroke={fx.drive.enabled ? (fx.drive.amount > 0.6 ? '#ff3344' : '#ffaa00') : '#475569'}
+                    stroke={fx.drive.enabled ? (fx.drive.amount > 0.6 ? 'var(--signal)' : 'var(--signal)') : '#475569'}
                     strokeWidth="1.8"
                     strokeLinecap="round"
                   />
                 );
               })()}
             </svg>
-            <span className="absolute bottom-0.5 right-1 text-[7px] font-mono text-gray-400">
+            <span className="absolute bottom-0.5 right-1 text-[7px] font-mono text-[var(--text-secondary)]">
               {fx.drive.enabled
                 ? fx.drive.amount > 0.75
                   ? 'ASYM CLIP'
@@ -175,10 +175,10 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
           </div>
 
           {/* Analog Tape Warmth / Saturation Level Meter */}
-          <div className="w-full mt-1 px-1 py-1 rounded bg-[#07090e] border border-[#1b2230] flex flex-col gap-0.5">
-            <div className="flex justify-between items-center text-[7px] font-mono text-gray-400 px-0.5">
+          <div className="w-full mt-1 px-1 py-1 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] flex flex-col gap-0.5">
+            <div className="flex justify-between items-center text-[7px] font-mono text-[var(--text-secondary)] px-0.5">
               <span>WARMTH</span>
-              <span className={driveEffective > 0.6 ? 'text-[#ff3344] font-bold' : 'text-gray-500'}>
+              <span className={driveEffective > 0.6 ? 'text-[var(--signal-ink)] font-bold' : 'text-[var(--text-secondary)]'}>
                 {driveEffective > 0 ? `+${(driveEffective * 12).toFixed(1)}dB` : '0dB'}
               </span>
             </div>
@@ -187,11 +187,11 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
                 const isLit = idx < driveMeterLevel;
                 const isHigh = idx >= 5;
                 const isMid = idx >= 3 && idx < 5;
-                let bg = 'bg-[#141b24]';
+                let bg = 'bg-[var(--panel-bg-alt)]';
                 if (isLit) {
-                  if (isHigh) bg = 'bg-[#ff3344] shadow-[0_0_4px_#ff3344]';
-                  else if (isMid) bg = 'bg-[#ffaa00] shadow-[0_0_4px_#ffaa00]';
-                  else bg = 'bg-[#10b981] shadow-[0_0_4px_#10b981]';
+                  if (isHigh) bg = 'bg-[var(--signal)] ';
+                  else if (isMid) bg = 'bg-[var(--signal)] ';
+                  else bg = 'bg-[var(--signal)] ';
                 }
                 return (
                   <div key={idx} className={`flex-1 h-full rounded-xs transition-all duration-75 ${bg}`} />
@@ -204,9 +204,9 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
         {/* 2. Roland Juno-60 BBD Analog Stereo Chorus Module */}
         <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
           <div className="flex items-center justify-between w-full pb-1 mb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
-            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate" style={{ color: 'var(--text-label)' }}>JUNO CHORUS</span>
+            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-normal uppercase truncate" style={{ color: 'var(--text-label)' }}>JUNO CHORUS</span>
             <div className={`w-2 h-2 rounded-full transition-all ${
-              chorus.enabled ? 'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00]' : 'bg-gray-700'
+              chorus.enabled ? 'bg-[var(--signal)] ' : 'bg-[var(--section-bg)]'
             }`} />
           </div>
 
@@ -222,18 +222,18 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
                   className={`py-1 px-0.5 text-[8px] font-mono font-bold rounded-xs border transition-all duration-100 flex flex-col items-center justify-center ${
                     isSelected
                       ? m === 'off'
-                        ? 'bg-[#1f293d] text-white border-gray-500 shadow-inner'
+                        ? 'bg-[var(--panel-bg-alt)] text-[var(--text-primary)] border-[var(--section-border)] '
                         : m === 'I'
-                        ? 'bg-[#f59e0b] text-black border-[#f59e0b] shadow-[0_0_8px_#f59e0b]'
+                        ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
                         : m === 'II'
-                        ? 'bg-[#f97316] text-black border-[#f97316] shadow-[0_0_8px_#f97316]'
-                        : 'bg-[#ef4444] text-white border-[#ef4444] shadow-[0_0_10px_#ef4444] animate-pulse'
-                      : 'bg-[#0a0d14] text-gray-500 border-[#1c2434] hover:text-gray-300'
+                        ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                        : 'bg-[var(--signal)] text-[var(--text-primary)] border-[var(--signal)]  animate-pulse'
+                      : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   <span>{m === 'off' ? 'OFF' : m}</span>
                   <div className={`w-1 h-1 rounded-full mt-0.5 ${
-                    isSelected ? (m === 'off' ? 'bg-gray-400' : 'bg-white shadow-[0_0_3px_white]') : 'bg-transparent'
+                    isSelected ? (m === 'off' ? 'bg-[var(--section-bg)]' : 'bg-white ') : 'bg-transparent'
                   }`} />
                 </button>
               );
@@ -289,7 +289,7 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
         {/* 3. Stereo Ping-Pong Delay Module */}
         <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
           <div className="flex items-center justify-between w-full pb-1 mb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
-            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate" style={{ color: 'var(--text-label)' }}>STEREO DELAY</span>
+            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-normal uppercase truncate" style={{ color: 'var(--text-label)' }}>STEREO DELAY</span>
             <LEDButton
               label={fx.delay.enabled ? "ON" : "OFF"}
               active={fx.delay.enabled}
@@ -356,8 +356,8 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
                     onClick={() => onChange({ ...fx, delay: { ...fx.delay, division: div } })}
                     className={`py-0.5 text-[7.5px] font-mono font-bold rounded-xs border transition-all ${
                       isSelected
-                        ? 'bg-[#00f0ff] text-black border-[#00f0ff] shadow-[0_0_6px_#00f0ff]'
-                        : 'bg-[#080d14] text-gray-400 border-[#1a2536] hover:text-white'
+                        ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                        : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {div}
@@ -366,7 +366,7 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
               })}
             </div>
           ) : (
-            <div className="w-full text-center py-0.5 text-[7px] font-mono text-gray-500 my-1">
+            <div className="w-full text-center py-0.5 text-[7px] font-mono text-[var(--text-secondary)] my-1">
               FREE RUNNING ({Math.round(fx.delay.time * 1000)}ms)
             </div>
           )}
@@ -394,7 +394,7 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
         {/* 4. Studio Reverb Module */}
         <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
           <div className="flex items-center justify-between w-full pb-1 mb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
-            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate" style={{ color: 'var(--text-label)' }}>PLATE REVERB</span>
+            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-normal uppercase truncate" style={{ color: 'var(--text-label)' }}>PLATE REVERB</span>
             <LEDButton
               label={fx.reverb.enabled ? "ON" : "OFF"}
               active={fx.reverb.enabled}
@@ -449,7 +449,7 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
             />
           </div>
 
-          <div className="w-full mt-1 px-1 py-0.5 rounded bg-[#07090e] border border-[#1b2230] text-[7.5px] font-mono text-center text-gray-400">
+          <div className="w-full mt-1 px-1 py-0.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[7.5px] font-mono text-center text-[var(--text-secondary)]">
             {fx.reverb.enabled ? `DECAY: ${fx.reverb.decay.toFixed(1)}s • DAMP: ${Math.round((fx.reverb.damping ?? 0.35) * 100)}%` : 'REVERB BYPASSED'}
           </div>
         </div>
@@ -457,7 +457,7 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
         {/* 5. VCA Master Bus Compressor Module */}
         <div className="flex flex-col items-center justify-between p-2 rounded-sm w-full min-w-0" style={{ border: '1px solid var(--osc-border)', background: 'var(--osc-bg)' }}>
           <div className="flex items-center justify-between w-full pb-1 mb-1" style={{ borderBottom: '1px solid var(--osc-border)' }}>
-            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-wider uppercase truncate" style={{ color: 'var(--text-label)' }}>VCA BUS COMP</span>
+            <span className="text-[9px] md:text-[10px] font-mono font-bold tracking-normal uppercase truncate" style={{ color: 'var(--text-label)' }}>VCA BUS COMP</span>
             <LEDButton
               label={comp.enabled ? "ON" : "OFF"}
               active={comp.enabled}
@@ -468,19 +468,19 @@ export const MasterFXPanel: React.FC<MasterFXPanelProps> = ({
           </div>
 
           {/* Gain Reduction Meter (SSL-Style) */}
-          <div className="w-full my-0.5 px-1 py-1 rounded bg-[#07090e] border border-[#1b2230] flex flex-col gap-0.5">
-            <div className="flex justify-between items-center text-[7px] font-mono text-gray-400 px-0.5">
+          <div className="w-full my-0.5 px-1 py-1 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] flex flex-col gap-0.5">
+            <div className="flex justify-between items-center text-[7px] font-mono text-[var(--text-secondary)] px-0.5">
               <span>GR (dB)</span>
-              <span className={comp.enabled ? 'text-[#ffaa00] font-bold' : 'text-gray-500'}>
+              <span className={comp.enabled ? 'text-[var(--signal-ink)] font-bold' : 'text-[var(--text-secondary)]'}>
                 {comp.enabled ? `${comp.ratio}:1` : 'OFF'}
               </span>
             </div>
             <div className="flex items-center gap-0.5 w-full h-1.5">
               {[0, 1, 2, 3, 4, 5, 6].map(idx => {
                 const isLit = comp.enabled && idx < Math.min(7, Math.round(Math.abs(comp.threshold) / 6));
-                let bg = 'bg-[#141b24]';
+                let bg = 'bg-[var(--panel-bg-alt)]';
                 if (isLit) {
-                  bg = idx >= 5 ? 'bg-[#ff3344] shadow-[0_0_4px_#ff3344]' : idx >= 3 ? 'bg-[#ffaa00] shadow-[0_0_4px_#ffaa00]' : 'bg-[#10b981] shadow-[0_0_4px_#10b981]';
+                  bg = idx >= 5 ? 'bg-[var(--signal)] ' : idx >= 3 ? 'bg-[var(--signal)] ' : 'bg-[var(--signal)] ';
                 }
                 return (
                   <div key={idx} className={`flex-1 h-full rounded-xs transition-all duration-75 ${bg}`} />

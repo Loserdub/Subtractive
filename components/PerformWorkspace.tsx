@@ -460,25 +460,25 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
         >
 
           {/* Title and Axis readout */}
-          <div className="flex items-center justify-between px-2 pb-1 border-b border-[#202c3e] shrink-0">
+          <div className="flex items-center justify-between px-2 pb-1 border-b border-[var(--section-border)] shrink-0">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-black tracking-widest text-[#10b981] uppercase">
+              <span className="text-[10px] font-mono font-black tracking-normal text-[var(--signal-ink)] uppercase">
                 XY VECTOR TOUCHPAD
               </span>
-              <span className="text-[8px] font-mono text-gray-400">
+              <span className="text-[8px] font-mono text-[var(--text-secondary)]">
                 X: Filter Cutoff • Y: Reverb & Delay Space
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1 bg-[#0a0f18] p-0.5 rounded border border-[#202c3e]">
+              <div className="flex items-center gap-1 bg-[var(--panel-bg-alt)] p-0.5 rounded border border-[var(--section-border)]">
                 <button
                   type="button"
                   onClick={() => setXyMode('latch')}
                   className={`px-2 py-0.5 text-[8px] font-mono font-bold rounded transition-all ${
                     xyMode === 'latch'
-                      ? 'bg-[#10b981] text-black shadow-[0_0_6px_#10b981]'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   LATCH
@@ -488,15 +488,15 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                   onClick={() => setXyMode('spring')}
                   className={`px-2 py-0.5 text-[8px] font-mono font-bold rounded transition-all ${
                     xyMode === 'spring'
-                      ? 'bg-[#00ff66] text-black shadow-[0_0_6px_#00ff66]'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   SPRING
                 </button>
               </div>
 
-              <span className="font-mono-lcd text-[9px] text-[#10b981]">
+              <span className="font-mono-lcd text-[9px] text-[var(--signal-ink)]">
                 X:{Math.round(xyPos.x * 100)}% Y:{Math.round(xyPos.y * 100)}%
               </span>
             </div>
@@ -510,22 +510,22 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
             onPointerUp={handlePadPointerUp}
             onPointerCancel={handlePadPointerUp}
             onLostPointerCapture={handlePadPointerUp}
-            className="flex-1 w-full min-h-[160px] my-1 rounded relative cursor-crosshair overflow-hidden touch-none select-none border border-[#1e283c]"
+            className="flex-1 w-full min-h-[160px] my-1 rounded relative cursor-crosshair overflow-hidden touch-none select-none border border-[var(--section-border)]"
             style={{
-              background: 'radial-gradient(ellipse at center, #0a1420 0%, #04070c 100%)',
+              background: 'var(--waveform-bg)',
             }}
           >
             {/* Grid Crosshairs */}
             <div className="absolute inset-0 pointer-events-none opacity-20"
               style={{
-                backgroundImage: 'linear-gradient(to right, #10b981 1px, transparent 1px), linear-gradient(to bottom, #10b981 1px, transparent 1px)',
+                backgroundImage: 'linear-gradient(to right, var(--section-border) 1px, transparent 1px), linear-gradient(to bottom, var(--section-border) 1px, transparent 1px)',
                 backgroundSize: '25% 25%',
               }}
             />
 
             {/* Center Axes */}
-            <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-[#10b981]/30 pointer-events-none" />
-            <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-[#10b981]/30 pointer-events-none" />
+            <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-[var(--signal-soft)] pointer-events-none" />
+            <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-[var(--signal-soft)] pointer-events-none" />
 
             {/* Glowing Crosshair Tracking Puck */}
             <div
@@ -536,30 +536,30 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 transform: isXyDragging ? 'scale(1.2)' : 'scale(1.0)',
               }}
             >
-              <div className="absolute inset-0 rounded-full bg-[#10b981]/20 animate-ping" />
-              <div className="w-5 h-5 rounded-full border-2 border-[#10b981] bg-[#10b981]/40 shadow-[0_0_12px_#10b981] flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_white]" />
+              <div className="absolute inset-0 rounded-full bg-[var(--signal-soft)] animate-ping" />
+              <div className="w-5 h-5 rounded-full border-2 border-[var(--signal)] bg-[var(--signal-soft)]  flex items-center justify-center">
+                <div className="w-1.5 h-1.5 rounded-full bg-white " />
               </div>
             </div>
 
             {/* Axis Labels */}
-            <span className="absolute bottom-1 left-2 text-[7px] font-mono text-gray-500 uppercase pointer-events-none">
+            <span className="absolute bottom-1 left-2 text-[7px] font-mono text-[var(--text-secondary)] uppercase pointer-events-none">
               ◀ DARK (20Hz)
             </span>
-            <span className="absolute bottom-1 right-2 text-[7px] font-mono text-gray-500 uppercase pointer-events-none">
+            <span className="absolute bottom-1 right-2 text-[7px] font-mono text-[var(--text-secondary)] uppercase pointer-events-none">
               BRIGHT (20kHz) ▶
             </span>
-            <span className="absolute top-1 left-2 text-[7px] font-mono text-gray-500 uppercase pointer-events-none">
+            <span className="absolute top-1 left-2 text-[7px] font-mono text-[var(--text-secondary)] uppercase pointer-events-none">
               ▲ LUSH SPACE (100%)
             </span>
-            <span className="absolute bottom-5 left-2 text-[7px] font-mono text-gray-500 uppercase pointer-events-none">
+            <span className="absolute bottom-5 left-2 text-[7px] font-mono text-[var(--text-secondary)] uppercase pointer-events-none">
               ▼ DRY (0%)
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-[8px] font-mono text-gray-400 px-1 pt-0.5">
+          <div className="flex items-center justify-between text-[8px] font-mono text-[var(--text-secondary)] px-1 pt-0.5">
             <span>Drag anywhere to sweep filters & space simultaneously</span>
-            <span className="text-[#00ff66]">{Number.isFinite(synthParams.filter.cutoff) ? Math.round(synthParams.filter.cutoff) : 20} Hz</span>
+            <span className="text-[var(--signal-ink)]">{Number.isFinite(synthParams.filter.cutoff) ? Math.round(synthParams.filter.cutoff) : 20} Hz</span>
           </div>
         </div>
 
@@ -568,17 +568,17 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
           className="synth-panel rounded p-2.5 flex flex-col justify-between flex-1 lg:flex-[6] min-h-[220px] relative"
         >
 
-          <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[#202c3e] shrink-0">
-            <span className="text-[10px] font-mono font-black tracking-widest text-[#ffaa00] uppercase">
+          <div className="w-full flex items-center justify-between px-2 pb-1 border-b border-[var(--section-border)] shrink-0">
+            <span className="text-[10px] font-mono font-black tracking-normal text-[var(--signal-ink)] uppercase">
               MASTER PERFORMANCE MACROS
             </span>
-            <span className="text-[8px] font-mono text-gray-400">
+            <span className="text-[8px] font-mono text-[var(--text-secondary)]">
               Multi-Destination Control Dials
             </span>
           </div>
 
           {/* 4 Large Tactile Macro Knobs */}
-          <div className="grid grid-cols-4 gap-2 my-2 py-2 px-1 rounded bg-[#0b1018] border border-[#1b2536]">
+          <div className="grid grid-cols-4 gap-2 my-2 py-2 px-1 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
             
             {/* Macro 1: Brightness */}
             <div className="flex flex-col items-center gap-1">
@@ -592,7 +592,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 unit="%"
                 color="cyan"
               />
-              <span className="text-[7px] font-mono text-gray-400 uppercase tracking-tighter">Cutoff+PWM</span>
+              <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase tracking-tighter">Cutoff+PWM</span>
             </div>
 
             {/* Macro 2: Color */}
@@ -607,7 +607,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 unit="%"
                 color="red"
               />
-              <span className="text-[7px] font-mono text-gray-400 uppercase tracking-tighter">Res+Drive</span>
+              <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase tracking-tighter">Res+Drive</span>
             </div>
 
             {/* Macro 3: Space */}
@@ -622,7 +622,7 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 unit="%"
                 color="emerald"
               />
-              <span className="text-[7px] font-mono text-gray-400 uppercase tracking-tighter">Rev+Delay</span>
+              <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase tracking-tighter">Rev+Delay</span>
             </div>
 
             {/* Macro 4: Punch */}
@@ -637,14 +637,14 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 unit="%"
                 color="amber"
               />
-              <span className="text-[7px] font-mono text-gray-400 uppercase tracking-tighter">Sub+Attack</span>
+              <span className="text-[7px] font-mono text-[var(--text-secondary)] uppercase tracking-tighter">Sub+Attack</span>
             </div>
 
           </div>
 
           {/* Momentary Live FX Action Triggers */}
-          <div className="flex flex-col gap-1 shrink-0 pt-1 border-t border-[#202c3e]">
-            <span className="text-[7px] font-mono uppercase tracking-widest text-gray-400">
+          <div className="flex flex-col gap-1 shrink-0 pt-1 border-t border-[var(--section-border)]">
+            <span className="text-[7px] font-mono uppercase tracking-normal text-[var(--text-secondary)]">
               MOMENTARY LIVE FX TRIGGERS (HOLD TO ENGAGE)
             </span>
             <div className="grid grid-cols-2 gap-2">
@@ -654,10 +654,10 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 onPointerUp={handleDubFreezeUp}
                 onPointerLeave={handleDubFreezeUp}
                 onPointerCancel={handleDubFreezeUp}
-                className={`py-2 px-2 rounded font-mono text-[9px] font-bold tracking-wider border uppercase transition-all select-none ${
+                className={`py-2 px-2 rounded font-mono text-[9px] font-bold tracking-normal border uppercase transition-all select-none ${
                   isDubActive
-                    ? 'bg-[#00ff66] text-black border-[#00ff66] shadow-[0_0_12px_#00ff66] scale-[0.98]'
-                    : 'bg-[#121926] text-[#00ff66] border-[#00ff66]/40 hover:border-[#00ff66]'
+                    ? 'bg-[var(--signal)] text-black border-[var(--signal)]  scale-[0.98]'
+                    : 'bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] border-[var(--signal)] hover:border-[var(--signal)]'
                 }`}
               >
                 Dub echo freeze
@@ -669,10 +669,10 @@ export const PerformWorkspace: React.FC<PerformWorkspaceProps> = React.memo(({
                 onPointerUp={handleFilterDropUp}
                 onPointerLeave={handleFilterDropUp}
                 onPointerCancel={handleFilterDropUp}
-                className={`py-2 px-2 rounded font-mono text-[9px] font-bold tracking-wider border uppercase transition-all select-none ${
+                className={`py-2 px-2 rounded font-mono text-[9px] font-bold tracking-normal border uppercase transition-all select-none ${
                   isFilterDropActive
-                    ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_12px_#ff3344] scale-[0.98]'
-                    : 'bg-[#121926] text-[#ff3344] border-[#ff3344]/40 hover:border-[#ff3344]'
+                    ? 'bg-[var(--signal)] text-[var(--text-primary)] border-[var(--signal)]  scale-[0.98]'
+                    : 'bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] border-[var(--signal)] hover:border-[var(--signal)]'
                 }`}
               >
                 Sub bass drop

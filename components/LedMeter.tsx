@@ -17,13 +17,13 @@ interface SegmentDef {
 }
 
 const SEGMENTS: SegmentDef[] = [
-  { threshold: 0.92, color: 'red',     litClass: 'bg-[#ff2244] shadow-[0_0_6px_#ff2244]', dimClass: 'bg-[#2a040a]' },
-  { threshold: 0.75, color: 'amber',   litClass: 'bg-[#ffaa00] shadow-[0_0_5px_#ffaa00]', dimClass: 'bg-[#291b00]' },
-  { threshold: 0.58, color: 'amber',   litClass: 'bg-[#ffaa00] shadow-[0_0_5px_#ffaa00]', dimClass: 'bg-[#291b00]' },
-  { threshold: 0.42, color: 'emerald', litClass: 'bg-[#10b981] shadow-[0_0_4px_#10b981]', dimClass: 'bg-[#031d14]' },
-  { threshold: 0.26, color: 'emerald', litClass: 'bg-[#10b981] shadow-[0_0_4px_#10b981]', dimClass: 'bg-[#031d14]' },
-  { threshold: 0.14, color: 'emerald', litClass: 'bg-[#10b981] shadow-[0_0_4px_#10b981]', dimClass: 'bg-[#031d14]' },
-  { threshold: 0.04, color: 'emerald', litClass: 'bg-[#10b981] shadow-[0_0_4px_#10b981]', dimClass: 'bg-[#031d14]' },
+  { threshold: 0.92, color: 'red',     litClass: 'bg-[var(--signal)] ', dimClass: 'bg-[var(--panel-bg-alt)]' },
+  { threshold: 0.75, color: 'amber',   litClass: 'bg-[var(--signal)] ', dimClass: 'bg-[var(--panel-bg-alt)]' },
+  { threshold: 0.58, color: 'amber',   litClass: 'bg-[var(--signal)] ', dimClass: 'bg-[var(--panel-bg-alt)]' },
+  { threshold: 0.42, color: 'emerald', litClass: 'bg-[var(--signal)] ', dimClass: 'bg-[var(--panel-bg-alt)]' },
+  { threshold: 0.26, color: 'emerald', litClass: 'bg-[var(--signal)] ', dimClass: 'bg-[var(--panel-bg-alt)]' },
+  { threshold: 0.14, color: 'emerald', litClass: 'bg-[var(--signal)] ', dimClass: 'bg-[var(--panel-bg-alt)]' },
+  { threshold: 0.04, color: 'emerald', litClass: 'bg-[var(--signal)] ', dimClass: 'bg-[var(--panel-bg-alt)]' },
 ];
 
 export const LedMeter: React.FC<LedMeterProps> = React.memo(({
@@ -93,9 +93,9 @@ export const LedMeter: React.FC<LedMeterProps> = React.memo(({
         const def = SEGMENTS[i];
 
         if (isLit || isPeak) {
-          seg.className = `w-full flex-1 rounded-2xs border border-white/20 transition-colors duration-75 ${def.litClass}`;
+          seg.className = `w-full flex-1 rounded-2xs border border-[var(--section-border)] transition-colors duration-75 ${def.litClass}`;
         } else {
-          seg.className = `w-full flex-1 rounded-2xs border border-white/5 transition-colors duration-75 ${def.dimClass}`;
+          seg.className = `w-full flex-1 rounded-2xs border border-[var(--section-border)] transition-colors duration-75 ${def.dimClass}`;
         }
       }
 
@@ -116,7 +116,7 @@ export const LedMeter: React.FC<LedMeterProps> = React.memo(({
       ref={containerRef}
       className={`flex ${
         orientation === 'vertical' ? 'flex-col' : 'flex-row'
-      } gap-0.5 p-0.5 rounded-xs bg-[#05080e] border border-[#1b2537] shadow-inner shrink-0 select-none ${className}`}
+      } gap-0.5 p-0.5 rounded-xs bg-[var(--panel-bg-alt)] border border-[var(--section-border)]  shrink-0 select-none ${className}`}
       style={{
         width: orientation === 'vertical' ? `${width}px` : 'auto',
         height: orientation === 'vertical' ? `${height}px` : `${width}px`,
@@ -126,7 +126,7 @@ export const LedMeter: React.FC<LedMeterProps> = React.memo(({
       {SEGMENTS.map((def, idx) => (
         <div
           key={idx}
-          className={`w-full flex-1 rounded-2xs border border-white/5 ${def.dimClass}`}
+          className={`w-full flex-1 rounded-2xs border border-[var(--section-border)] ${def.dimClass}`}
         />
       ))}
     </div>

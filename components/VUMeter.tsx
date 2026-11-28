@@ -7,32 +7,6 @@ interface VUMeterProps {
 
 const TOTAL_SEGMENTS = 10;
 
-const ACTIVE_CLASSES = [
-  'bg-[#00ff66] shadow-[0_0_6px_#00ff66] border-black/40', // 0
-  'bg-[#00ff66] shadow-[0_0_6px_#00ff66] border-black/40', // 1
-  'bg-[#00ff66] shadow-[0_0_6px_#00ff66] border-black/40', // 2
-  'bg-[#00ff66] shadow-[0_0_6px_#00ff66] border-black/40', // 3
-  'bg-[#00ff66] shadow-[0_0_6px_#00ff66] border-black/40', // 4
-  'bg-[#00ff66] shadow-[0_0_6px_#00ff66] border-black/40', // 5
-  'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00] border-black/40', // 6
-  'bg-[#ffaa00] shadow-[0_0_6px_#ffaa00] border-black/40', // 7
-  'bg-[#ff3344] shadow-[0_0_6px_#ff3344] border-black/40', // 8
-  'bg-[#ff3344] shadow-[0_0_6px_#ff3344] border-black/40', // 9
-];
-
-const INACTIVE_CLASSES = [
-  'bg-[#003311] border-black/40', // 0
-  'bg-[#003311] border-black/40', // 1
-  'bg-[#003311] border-black/40', // 2
-  'bg-[#003311] border-black/40', // 3
-  'bg-[#003311] border-black/40', // 4
-  'bg-[#003311] border-black/40', // 5
-  'bg-[#442200] border-black/40', // 6
-  'bg-[#442200] border-black/40', // 7
-  'bg-[#440011] border-black/40', // 8
-  'bg-[#440011] border-black/40', // 9
-];
-
 export const VUMeter: React.FC<VUMeterProps> = React.memo(({ getPeakLevels, className = "" }) => {
   const leftSegmentsRef = useRef<(HTMLDivElement | null)[]>([]);
   const rightSegmentsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -93,20 +67,14 @@ export const VUMeter: React.FC<VUMeterProps> = React.memo(({ getPeakLevels, clas
         if (leftEl) {
           const isLeftActive = i < activeLeftCount;
           const isLeftPeak = i === peakLeftIndex && curLeftPeak > 0.05;
-          const cls = `w-2.5 h-3 rounded-[1px] border transition-all duration-75 ${
-            isLeftActive || isLeftPeak ? ACTIVE_CLASSES[i] : INACTIVE_CLASSES[i]
-          }`;
-          if (leftEl.className !== cls) leftEl.className = cls;
+          leftEl.dataset.active = String(isLeftActive || isLeftPeak);
         }
 
         const rightEl = rightSegmentsRef.current[i];
         if (rightEl) {
           const isRightActive = i < activeRightCount;
           const isRightPeak = i === peakRightIndex && curRightPeak > 0.05;
-          const cls = `w-2.5 h-3 rounded-[1px] border transition-all duration-75 ${
-            isRightActive || isRightPeak ? ACTIVE_CLASSES[i] : INACTIVE_CLASSES[i]
-          }`;
-          if (rightEl.className !== cls) rightEl.className = cls;
+          rightEl.dataset.active = String(isRightActive || isRightPeak);
         }
       }
 
@@ -128,16 +96,16 @@ export const VUMeter: React.FC<VUMeterProps> = React.memo(({ getPeakLevels, clas
   }, [getPeakLevels]);
 
   return (
-    <div className={`flex flex-col gap-1 select-none bg-[#0e121a] p-1.5 rounded-sm border border-[#202738] ${className}`}>
+    <div className={`level-meter ${className}`} aria-label="Stereo output level">
       {/* Left Channel */}
       <div className="flex items-center gap-1.5">
-        <span className="text-[7px] font-mono font-bold text-gray-400 w-2.5 text-right">L</span>
-        <div className="flex items-center gap-[2px] bg-[#07090e] p-1 rounded-sm border border-[#1a2332] shadow-inner">
+        <span className="text-[7px] font-mono font-bold text-[var(--text-secondary)] w-2.5 text-right">L</span>
+        <div className="flex items-center gap-[2px]">
           {Array.from({ length: TOTAL_SEGMENTS }).map((_, i) => (
             <div
               key={i}
               ref={el => { leftSegmentsRef.current[i] = el; }}
-              className={`w-2.5 h-3 rounded-[1px] border transition-all duration-75 ${INACTIVE_CLASSES[i]}`}
+              className="meter-segment" data-clip={i >= 8}
             />
           ))}
         </div>
@@ -145,13 +113,13 @@ export const VUMeter: React.FC<VUMeterProps> = React.memo(({ getPeakLevels, clas
 
       {/* Right Channel */}
       <div className="flex items-center gap-1.5">
-        <span className="text-[7px] font-mono font-bold text-gray-400 w-2.5 text-right">R</span>
-        <div className="flex items-center gap-[2px] bg-[#07090e] p-1 rounded-sm border border-[#1a2332] shadow-inner">
+        <span className="text-[7px] font-mono font-bold text-[var(--text-secondary)] w-2.5 text-right">R</span>
+        <div className="flex items-center gap-[2px]">
           {Array.from({ length: TOTAL_SEGMENTS }).map((_, i) => (
             <div
               key={i}
               ref={el => { rightSegmentsRef.current[i] = el; }}
-              className={`w-2.5 h-3 rounded-[1px] border transition-all duration-75 ${INACTIVE_CLASSES[i]}`}
+              className="meter-segment" data-clip={i >= 8}
             />
           ))}
         </div>

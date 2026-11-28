@@ -35,18 +35,18 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="w-full p-4 rounded-sm bg-[#12080a] border border-[#ff3344]/40 flex flex-col items-center justify-center text-center gap-2 m-auto max-w-md my-4">
-          <div className="w-3 h-3 rounded-full bg-[#ff3344] shadow-[0_0_8px_#ff3344]" />
-          <h3 className="font-mono text-xs font-bold text-[#ff3344] uppercase tracking-wider">
+        <div className="w-full p-4 rounded-sm bg-[var(--panel-bg-alt)] border border-[var(--signal)] flex flex-col items-center justify-center text-center gap-2 m-auto max-w-md my-4">
+          <div className="w-3 h-3 rounded-full bg-[var(--signal)] " />
+          <h3 className="font-mono text-xs font-bold text-[var(--signal-ink)] uppercase tracking-normal">
             {this.props.fallbackTitle || 'Workspace Recovery'}
           </h3>
-          <p className="font-mono text-[9px] text-gray-400 max-w-xs">
+          <p className="font-mono text-[9px] text-[var(--text-secondary)] max-w-xs">
             A parameter parsing error occurred. Click below to recover and re-initialize module state.
           </p>
           <button
             type="button"
             onClick={this.handleReset}
-            className="px-3 py-1 rounded font-mono text-[9px] font-bold bg-[#ff3344] text-white hover:brightness-110 active:scale-95 transition-all shadow-[0_0_8px_rgba(255,51,68,0.4)]"
+            className="px-3 py-1 rounded font-mono text-[9px] font-bold bg-[var(--signal)] text-[var(--text-primary)] hover:brightness-110 active:scale-95 transition-all "
           >
             RECOVER WORKSPACE
           </button>

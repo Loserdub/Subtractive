@@ -137,28 +137,28 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
     <div className="synth-panel rounded p-2.5 md:p-3 flex flex-col select-none w-full h-full gap-2.5 relative">
       {/* ── Top Header Status Bar ── */}
       <div 
-        className="w-full flex items-center justify-between px-3 py-1.5 rounded-sm border shadow-inner shrink-0" 
+        className="w-full flex items-center justify-between px-3 py-1.5 rounded-sm border  shrink-0"
         style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}
       >
         <div className="flex items-center gap-2 overflow-hidden">
-          <div className={`w-2 h-2 rounded-full ${safeArp.enabled ? 'bg-[#00e5ff] shadow-[0_0_8px_#00e5ff]' : 'bg-gray-600'} shrink-0`} />
-          <span className="font-mono text-[10px] md:text-[11px] font-bold tracking-[0.16em] uppercase" style={{ color: 'var(--text-primary)' }}>
+          <div className={`w-2 h-2 rounded-full ${safeArp.enabled ? 'bg-[var(--signal)] ' : 'bg-[var(--section-bg)]'} shrink-0`} />
+          <span className="font-mono text-[10px] md:text-[11px] font-bold tracking-normal uppercase" style={{ color: 'var(--text-primary)' }}>
             POLY ARPEGGIATOR CONSOLE
           </span>
-          <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[#09101a] border border-[#1e2a3c] text-gray-300">
+          <span className="text-[8px] font-mono px-1.5 py-0.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[var(--text-primary)]">
             {modeData.find(m => m.id === safeArp.mode)?.label} • {safeArp.division}{safeArp.timingType === 'triplet' ? 'T' : safeArp.timingType === 'dotted' ? 'D' : ''} • {safeArp.octaves} OCT
           </span>
         </div>
 
         <div className="flex items-center gap-3">
           {safeArp.enabled && activeStep !== null && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[#0c1824] border border-[#00e5ff]/30 text-[#00e5ff] font-mono text-[9px]">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff] animate-pulse" />
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-[var(--panel-bg-alt)] border border-[var(--signal)] text-[var(--signal-ink)] font-mono text-[9px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--signal)] animate-pulse" />
               <span>STEP {activeStep + 1}</span>
-              {activeNote !== null && <span className="font-bold text-white">[{midiToNoteName(activeNote)}]</span>}
+              {activeNote !== null && <span className="font-bold text-[var(--text-primary)]">[{midiToNoteName(activeNote)}]</span>}
             </div>
           )}
-          <span className={`text-[8px] font-mono font-bold tracking-wider ${safeArp.enabled ? 'text-[#00e5ff]' : 'text-gray-500'}`}>
+          <span className={`text-[8px] font-mono font-bold tracking-normal ${safeArp.enabled ? 'text-[var(--signal-ink)]' : 'text-[var(--text-secondary)]'}`}>
             {safeArp.enabled ? (safeArp.latch ? '● RUNNING (LATCHED)' : '● ARMED (PRESS KEYS)') : '○ BYPASSED'}
           </span>
         </div>
@@ -170,14 +170,14 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
         {/* ════ ZONE A: CORE CONTROLS & PLAYBACK MODES (Left) ════ */}
         <div className="xl:w-3/12 flex flex-col gap-2 p-2.5 rounded-sm border shrink-0 justify-between" style={{ background: 'var(--section-bg)', borderColor: 'var(--section-border)' }}>
           <div className="flex flex-col gap-2">
-            <span className="text-[8px] font-mono uppercase tracking-widest text-gray-400 font-bold border-b border-[#1c2638] pb-1">
+            <span className="text-[8px] font-mono uppercase tracking-normal text-[var(--text-secondary)] font-bold border-b border-[var(--section-border)] pb-1">
               ENGINE & PLAYBACK MODES
             </span>
 
             {/* Primary Toggle Switches: Power, Latch (Hold), Retrig */}
             <div className="grid grid-cols-3 gap-1.5 pt-0.5">
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[7px] font-mono uppercase text-gray-400">Power</span>
+                <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)]">Power</span>
                 <LEDButton
                   label={safeArp.enabled ? 'ON' : 'OFF'}
                   active={safeArp.enabled}
@@ -189,15 +189,15 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
               </div>
 
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[7px] font-mono uppercase text-gray-400">Latch</span>
+                <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)]">Latch</span>
                 <button
                   type="button"
                   onClick={toggleLatch}
                   title="Latch / Hold chord notes hands-free"
-                  className={`w-full py-1 rounded-xs font-mono text-[8px] font-bold tracking-wider uppercase transition-all border ${
+                  className={`w-full py-1 rounded-xs font-mono text-[8px] font-bold tracking-normal uppercase transition-all border ${
                     safeArp.latch
-                      ? 'bg-[#ffaa00] text-black border-[#ffaa00] shadow-[0_0_8px_#ffaa00]'
-                      : 'bg-[#121824] text-gray-400 border-[#222f44] hover:text-white'
+                      ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                      : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {safeArp.latch ? 'HOLD ON' : 'HOLD'}
@@ -205,15 +205,15 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
               </div>
 
               <div className="flex flex-col items-center gap-1">
-                <span className="text-[7px] font-mono uppercase text-gray-400">Key Sync</span>
+                <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)]">Key Sync</span>
                 <button
                   type="button"
                   onClick={toggleRetrig}
                   title="Retrigger step 1 on new key press"
-                  className={`w-full py-1 rounded-xs font-mono text-[8px] font-bold tracking-wider uppercase transition-all border ${
+                  className={`w-full py-1 rounded-xs font-mono text-[8px] font-bold tracking-normal uppercase transition-all border ${
                     safeArp.retrig
-                      ? 'bg-[#00ff66] text-black border-[#00ff66] shadow-[0_0_8px_#00ff66]'
-                      : 'bg-[#121824] text-gray-400 border-[#222f44] hover:text-white'
+                      ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                      : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {safeArp.retrig ? 'RETRIG' : 'FREE'}
@@ -224,10 +224,10 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
             {/* Mode Matrix Grid (8 modes: Up, Down, Up/Down, As Played, Chord, Converge, Diverge, Random) */}
             <div className="flex flex-col gap-1 pt-1">
               <div className="flex items-center justify-between">
-                <span className="text-[7px] font-mono uppercase text-gray-400 font-bold">Arp Pattern Mode</span>
-                <span className="text-[7px] font-mono text-[#00e5ff]">{modeData.find(m => m.id === safeArp.mode)?.desc}</span>
+                <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)] font-bold">Arp Pattern Mode</span>
+                <span className="text-[7px] font-mono text-[var(--signal-ink)]">{modeData.find(m => m.id === safeArp.mode)?.desc}</span>
               </div>
-              <div className="grid grid-cols-2 gap-1 p-1 rounded-sm bg-[#080d16] border border-[#1b2536]">
+              <div className="grid grid-cols-2 gap-1 p-1 rounded-sm bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
                 {modeData.map((m) => {
                   const isSelected = safeArp.mode === m.id;
                   return (
@@ -237,12 +237,12 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                       onClick={() => setMode(m.id)}
                       className={`flex items-center justify-between px-2 py-1.5 rounded-xs font-mono text-[8px] transition-all border ${
                         isSelected
-                          ? 'bg-[#00e5ff] text-black font-black border-[#00e5ff] shadow-[0_0_8px_rgba(0,229,255,0.4)]'
-                          : 'bg-[#111722] text-gray-300 border-[#1e293b] hover:text-white hover:border-[#334155]'
+                          ? 'bg-[var(--signal)] text-black font-black border-[var(--signal)] '
+                          : 'bg-[var(--panel-bg-alt)] text-[var(--text-primary)] border-[var(--section-border)] hover:text-[var(--text-primary)] hover:border-[var(--section-border)]'
                       }`}
                     >
                       <span className="font-bold">{m.label}</span>
-                      <span className={`text-[10px] ${isSelected ? 'text-black' : 'text-[#00e5ff]'}`}>{m.icon}</span>
+                      <span className={`text-[10px] ${isSelected ? 'text-black' : 'text-[var(--signal-ink)]'}`}>{m.icon}</span>
                     </button>
                   );
                 })}
@@ -251,8 +251,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
 
             {/* Octave Range Selector */}
             <div className="flex flex-col gap-1 pt-0.5">
-              <span className="text-[7px] font-mono uppercase text-gray-400 font-bold">Octave Span</span>
-              <div className="grid grid-cols-4 gap-1 p-0.5 rounded-sm bg-[#080d16] border border-[#1b2536]">
+              <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)] font-bold">Octave Span</span>
+              <div className="grid grid-cols-4 gap-1 p-0.5 rounded-sm bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
                 {[1, 2, 3, 4].map((oct) => (
                   <button
                     key={oct}
@@ -260,8 +260,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                     onClick={() => setOctaves(oct)}
                     className={`py-1 rounded-xs font-mono font-bold text-[8px] transition-all border ${
                       safeArp.octaves === oct
-                        ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_6px_#00e5ff]'
-                        : 'bg-[#111722] text-gray-400 border-[#1e293b] hover:text-white'
+                        ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                        : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {oct} OCT
@@ -271,45 +271,45 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
             </div>
           </div>
 
-          <div className="p-2 rounded bg-[#090e18] border border-[#1a2334] text-[7px] font-mono text-gray-400 leading-tight">
-            <span className="text-[#00e5ff] font-bold block mb-0.5">TIP: STRAIGHT ARPEGGIOS</span>
-            Select <strong className="text-white">UP</strong> or <strong className="text-white">ORDER</strong> with <strong className="text-white">1/16 STRAIGHT</strong> for instant classic Jupiter/Juno rolls.
+          <div className="p-2 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[7px] font-mono text-[var(--text-secondary)] leading-tight">
+            <span className="text-[var(--signal-ink)] font-bold block mb-0.5">TIP: STRAIGHT ARPEGGIOS</span>
+            Select <strong className="text-[var(--text-primary)]">UP</strong> or <strong className="text-[var(--text-primary)]">ORDER</strong> with <strong className="text-[var(--text-primary)]">1/16 STRAIGHT</strong> for instant classic Jupiter/Juno rolls.
           </div>
         </div>
 
         {/* ════ ZONE B: 16-STEP PITCH RIBBON & MINI PIANO-ROLL RADAR (Center) ════ */}
         <div className="xl:w-6/12 flex-1 flex flex-col p-2.5 rounded-sm border shrink-0 justify-between" style={{ background: 'var(--section-bg)', borderColor: 'var(--section-border)' }}>
-          <div className="flex items-center justify-between pb-1 border-b border-[#1c2638]">
+          <div className="flex items-center justify-between pb-1 border-b border-[var(--section-border)]">
             <div className="flex items-center gap-1.5">
-              <span className="text-[8px] font-mono uppercase tracking-widest text-[#00e5ff] font-bold">
+              <span className="text-[8px] font-mono uppercase tracking-normal text-[var(--signal-ink)] font-bold">
                 16-STEP PITCH TRAJECTORY & RHYTHM MASK
               </span>
-              <span className="text-[7px] font-mono text-gray-400">
+              <span className="text-[7px] font-mono text-[var(--text-secondary)]">
                 (Click step pins to toggle active / rest)
               </span>
             </div>
             
             {/* Quick Pattern Presets */}
             <div className="flex items-center gap-1">
-              <span className="text-[6px] font-mono uppercase text-gray-500 mr-0.5">MASK:</span>
+              <span className="text-[6px] font-mono uppercase text-[var(--text-secondary)] mr-0.5">MASK:</span>
               <button
                 type="button"
                 onClick={() => setPatternPreset('all')}
-                className="px-1.5 py-0.5 text-[7px] font-mono bg-[#111722] hover:bg-[#1a2436] text-gray-300 rounded border border-[#202b3e]"
+                className="px-1.5 py-0.5 text-[7px] font-mono bg-[var(--panel-bg-alt)] hover:bg-[var(--panel-bg-alt)] text-[var(--text-primary)] rounded border border-[var(--section-border)]"
               >
                 ALL
               </button>
               <button
                 type="button"
                 onClick={() => setPatternPreset('evens')}
-                className="px-1.5 py-0.5 text-[7px] font-mono bg-[#111722] hover:bg-[#1a2436] text-gray-300 rounded border border-[#202b3e]"
+                className="px-1.5 py-0.5 text-[7px] font-mono bg-[var(--panel-bg-alt)] hover:bg-[var(--panel-bg-alt)] text-[var(--text-primary)] rounded border border-[var(--section-border)]"
               >
                 1/8s
               </button>
               <button
                 type="button"
                 onClick={() => setPatternPreset('four')}
-                className="px-1.5 py-0.5 text-[7px] font-mono bg-[#111722] hover:bg-[#1a2436] text-gray-300 rounded border border-[#202b3e]"
+                className="px-1.5 py-0.5 text-[7px] font-mono bg-[var(--panel-bg-alt)] hover:bg-[var(--panel-bg-alt)] text-[var(--text-primary)] rounded border border-[var(--section-border)]"
               >
                 1/4s
               </button>
@@ -317,27 +317,27 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
           </div>
 
           {/* 16-Step Pitch Matrix Grid */}
-          <div className="flex-1 min-h-[160px] my-1 rounded-sm border p-2 flex flex-col justify-between shadow-inner relative overflow-hidden" style={{ background: '#050810', borderColor: '#162030' }}>
+          <div className="flex-1 min-h-[160px] my-1 rounded-sm border p-2 flex flex-col justify-between relative overflow-hidden" style={{ background: 'var(--waveform-bg)', borderColor: 'var(--waveform-border)' }}>
             
             {/* Beat Dividers Header (4 Beats) */}
-            <div className="grid grid-cols-4 gap-1 pb-1 mb-1 border-b border-[#131b2a] text-[7px] font-mono text-gray-500">
-              <span className="text-[#00e5ff]/70 font-bold pl-1">BEAT 1</span>
-              <span className="text-[#00e5ff]/70 font-bold pl-1">BEAT 2</span>
-              <span className="text-[#00e5ff]/70 font-bold pl-1">BEAT 3</span>
-              <span className="text-[#00e5ff]/70 font-bold pl-1">BEAT 4</span>
+            <div className="grid grid-cols-4 gap-1 pb-1 mb-1 border-b border-[var(--section-border)] text-[7px] font-mono text-[var(--text-secondary)]">
+              <span className="text-[var(--signal-ink)] font-bold pl-1">BEAT 1</span>
+              <span className="text-[var(--signal-ink)] font-bold pl-1">BEAT 2</span>
+              <span className="text-[var(--signal-ink)] font-bold pl-1">BEAT 3</span>
+              <span className="text-[var(--signal-ink)] font-bold pl-1">BEAT 4</span>
             </div>
 
             {/* Continuous SVG Trajectory Waveform Vector */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-40" viewBox="0 0 100 100" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="arpWaveGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00e5ff" stopOpacity="0.4" />
-                  <stop offset="100%" stopColor="#00e5ff" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor='var(--signal)' stopOpacity="0.4" />
+                  <stop offset="100%" stopColor='var(--signal)' stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               <polyline
                 fill="none"
-                stroke="#00e5ff"
+                stroke='var(--signal)'
                 strokeWidth="1.5"
                 strokeDasharray="3 3"
                 points={trajectoryHeights.map((h, i) => `${((i + 0.5) * (100 / 16)).toFixed(2)},${(100 - (h * 70 + 15)).toFixed(2)}`).join(' ')}
@@ -356,17 +356,17 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                   <div 
                     key={idx}
                     className={`flex flex-col items-center justify-end h-full relative transition-all ${
-                      isBeatStart ? 'border-l border-[#1a2638] pl-0.5' : ''
+                      isBeatStart ? 'border-l border-[var(--section-border)] pl-0.5' : ''
                     }`}
                   >
                     {/* Active Playhead High-Luminance Indicator */}
                     {isActivePlayhead && (
-                      <div className="absolute inset-x-0 inset-y-0 bg-white/10 border-x border-[#00e5ff] pointer-events-none animate-pulse rounded-xs shadow-[0_0_12px_rgba(0,229,255,0.4)]" />
+                      <div className="absolute inset-x-0 inset-y-0 bg-[var(--section-bg)] border-x border-[var(--signal)] pointer-events-none animate-pulse rounded-xs " />
                     )}
 
                     {/* Active Note Tag (Floating above note bar) */}
                     {isActivePlayhead && activeNote !== null && isStepMasked && (
-                      <div className="absolute top-0 px-1 py-0.5 rounded bg-[#00e5ff] text-black font-mono font-black text-[6px] shadow-[0_0_6px_#00e5ff] z-20 animate-bounce">
+                      <div className="absolute top-0 px-1 py-0.5 rounded bg-[var(--signal)] text-black font-mono font-black text-[6px]  z-20 animate-bounce">
                         {midiToNoteName(activeNote)}
                       </div>
                     )}
@@ -375,7 +375,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                     {safeArp.ratchet && safeArp.ratchet > 1 && isStepMasked && (
                       <div className="flex items-center gap-0.5 mb-1">
                         {Array.from({ length: safeArp.ratchet }).map((_, rIdx) => (
-                          <div key={rIdx} className="w-1 h-1 rounded-full bg-[#ffaa00]" />
+                          <div key={rIdx} className="w-1 h-1 rounded-full bg-[var(--signal)]" />
                         ))}
                       </div>
                     )}
@@ -387,13 +387,12 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                         height: isStepMasked ? `${heightPercent}%` : '8%',
                         background: isStepMasked
                           ? isActivePlayhead 
-                            ? 'linear-gradient(to top, rgba(0,229,255,0.4), #ffffff)' 
-                            : 'linear-gradient(to top, rgba(0,229,255,0.12), #00e5ff)'
-                          : 'rgba(255,255,255,0.03)',
+                            ? 'var(--signal)'
+                            : 'var(--signal-soft)'
+                          : 'var(--panel-bg)',
                         borderTop: isStepMasked 
-                          ? isActivePlayhead ? '2px solid #ffffff' : '2px solid #00e5ff' 
-                          : '1px dashed rgba(255,255,255,0.15)',
-                        boxShadow: isStepMasked && isActivePlayhead ? '0 0 10px #00e5ff' : 'none'
+                          ? isActivePlayhead ? '2px solid var(--ink)' : '2px solid var(--signal)'
+                          : '1px dashed var(--section-border)',
                       }}
                       onClick={() => toggleStep(idx)}
                       title={`Step ${idx + 1}: ${isStepMasked ? 'Active' : 'Rest (Muted)'} (Click to toggle)`}
@@ -407,8 +406,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                         isStepMasked
                           ? isActivePlayhead
                             ? 'bg-white text-black font-black'
-                            : 'bg-[#0a121c] text-[#00e5ff] hover:bg-[#00e5ff] hover:text-black'
-                          : 'bg-[#0d1016] text-gray-600 hover:text-gray-400'
+                            : 'bg-[var(--panel-bg-alt)] text-[var(--signal-ink)] hover:bg-[var(--signal)] hover:text-black'
+                          : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] hover:text-[var(--text-secondary)]'
                       }`}
                     >
                       {idx + 1}
@@ -420,22 +419,22 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
           </div>
 
           {/* Bottom Visualizer Legend */}
-          <div className="flex items-center justify-between text-[7px] font-mono text-gray-400 px-1 pt-1">
+          <div className="flex items-center justify-between text-[7px] font-mono text-[var(--text-secondary)] px-1 pt-1">
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#00e5ff]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--signal)]" />
                 <span>ACTIVE NOTE</span>
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--section-bg)]" />
                 <span>REST (MUTED)</span>
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ffaa00]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--signal)]" />
                 <span>RATCHET BURST</span>
               </span>
             </div>
-            <span className="text-[#00e5ff] font-bold">
+            <span className="text-[var(--signal-ink)] font-bold">
               16-STEP CLOCK SYNC
             </span>
           </div>
@@ -444,14 +443,14 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
         {/* ════ ZONE C: TIME, GROOVE & REAL-TIME SHAPING (Right) ════ */}
         <div className="xl:w-3/12 flex flex-col gap-2 p-2.5 rounded-sm border shrink-0 justify-between" style={{ background: 'var(--section-bg)', borderColor: 'var(--section-border)' }}>
           <div className="flex flex-col gap-2">
-            <span className="text-[8px] font-mono uppercase tracking-widest text-gray-400 font-bold border-b border-[#1c2638] pb-1">
+            <span className="text-[8px] font-mono uppercase tracking-normal text-[var(--text-secondary)] font-bold border-b border-[var(--section-border)] pb-1">
               RHYTHM & EXPRESSION
             </span>
 
             {/* Clock Division Selector */}
             <div className="flex flex-col gap-1">
-              <span className="text-[7px] font-mono uppercase text-gray-400 font-bold">Rate Division</span>
-              <div className="grid grid-cols-4 gap-1 p-0.5 rounded-sm bg-[#080d16] border border-[#1b2536]">
+              <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)] font-bold">Rate Division</span>
+              <div className="grid grid-cols-4 gap-1 p-0.5 rounded-sm bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
                 {['1/32', '1/16', '1/8', '1/4'].map((div) => (
                   <button
                     key={div}
@@ -459,8 +458,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                     onClick={() => setDivision(div)}
                     className={`py-1 rounded-xs font-mono font-bold text-[8px] transition-all border ${
                       safeArp.division === div
-                        ? 'bg-[#00ff66] text-black border-[#00ff66] shadow-[0_0_6px_#00ff66]'
-                        : 'bg-[#111722] text-gray-400 border-[#1e293b] hover:text-white'
+                        ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                        : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {div}
@@ -471,8 +470,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
 
             {/* Timing Type Modifiers (Straight / Triplet / Dotted) */}
             <div className="flex flex-col gap-1">
-              <span className="text-[7px] font-mono uppercase text-gray-400 font-bold">Timing Feel</span>
-              <div className="grid grid-cols-3 gap-1 p-0.5 rounded-sm bg-[#080d16] border border-[#1b2536]">
+              <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)] font-bold">Timing Feel</span>
+              <div className="grid grid-cols-3 gap-1 p-0.5 rounded-sm bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
                 {[
                   { id: 'straight', label: 'STRAIGHT' },
                   { id: 'triplet',  label: 'TRIPLET (T)' },
@@ -484,8 +483,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                     onClick={() => setTimingType(t.id as 'straight' | 'triplet' | 'dotted')}
                     className={`py-1 rounded-xs font-mono font-bold text-[7px] transition-all border ${
                       safeArp.timingType === t.id
-                        ? 'bg-[#00e5ff] text-black border-[#00e5ff] shadow-[0_0_6px_#00e5ff]'
-                        : 'bg-[#111722] text-gray-400 border-[#1e293b] hover:text-white'
+                        ? 'bg-[var(--signal)] text-black border-[var(--signal)] '
+                        : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {t.label}
@@ -496,8 +495,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
 
             {/* Ratchet Flam Multiplier */}
             <div className="flex flex-col gap-1">
-              <span className="text-[7px] font-mono uppercase text-gray-400 font-bold">Ratchet Roll Burst</span>
-              <div className="grid grid-cols-4 gap-1 p-0.5 rounded-sm bg-[#080d16] border border-[#1b2536]">
+              <span className="text-[7px] font-mono uppercase text-[var(--text-secondary)] font-bold">Ratchet Roll Burst</span>
+              <div className="grid grid-cols-4 gap-1 p-0.5 rounded-sm bg-[var(--panel-bg-alt)] border border-[var(--section-border)]">
                 {[1, 2, 3, 4].map((r) => (
                   <button
                     key={r}
@@ -505,8 +504,8 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
                     onClick={() => setRatchet(r)}
                     className={`py-1 rounded-xs font-mono font-bold text-[8px] transition-all border ${
                       (safeArp.ratchet ?? 1) === r
-                        ? 'bg-[#ff3344] text-white border-[#ff3344] shadow-[0_0_6px_#ff3344]'
-                        : 'bg-[#111722] text-gray-400 border-[#1e293b] hover:text-white'
+                        ? 'bg-[var(--signal)] text-[var(--text-primary)] border-[var(--signal)] '
+                        : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] border-[var(--section-border)] hover:text-[var(--text-primary)]'
                     }`}
                   >
                     {r}x
@@ -516,7 +515,7 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
             </div>
 
             {/* Expression Knobs: Gate Length & Groove Swing */}
-            <div className="grid grid-cols-2 gap-2 p-2 rounded bg-[#080d16] border border-[#1b2536] items-center justify-around">
+            <div className="grid grid-cols-2 gap-2 p-2 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] items-center justify-around">
               <div className="flex flex-col items-center">
                 <Knob
                   label="Gate"
@@ -553,9 +552,9 @@ export const ArpeggiatorPanel: React.FC<ArpeggiatorPanelProps> = ({
             </div>
           </div>
 
-          <div className="p-2 rounded bg-[#090e18] border border-[#1a2334] text-[7px] font-mono text-gray-400 leading-tight">
-            <span className="text-[#00ff66] font-bold block mb-0.5">LATCH & TWEAK</span>
-            Turn on <strong className="text-white">LATCH</strong>, play any chord, then switch to <strong className="text-white">FX</strong> or use the knobs on the right to shape tone live.
+          <div className="p-2 rounded bg-[var(--panel-bg-alt)] border border-[var(--section-border)] text-[7px] font-mono text-[var(--text-secondary)] leading-tight">
+            <span className="text-[var(--signal-ink)] font-bold block mb-0.5">LATCH & TWEAK</span>
+            Turn on <strong className="text-[var(--text-primary)]">LATCH</strong>, play any chord, then switch to <strong className="text-[var(--text-primary)]">FX</strong> or use the knobs on the right to shape tone live.
           </div>
         </div>
 

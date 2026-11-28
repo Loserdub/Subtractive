@@ -1,6 +1,5 @@
 import React, { useRef, useEffect } from 'react';
 import { Waveform } from '../types';
-import { useTheme } from '../contexts/ThemeContext';
 
 interface WaveformDisplayProps {
   waveform?: Waveform;
@@ -19,7 +18,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   waveform = 'sawtooth',
   enabled = true,
   isPlaying = true,
-  color = '#10b981',
+  color = 'var(--signal)',
   amplitudeScale = 1,
   analyser = null,
   stereoAnalysers = null,
@@ -33,12 +32,11 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
   const phaseRef = useRef<number>(0);
   const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const { theme } = useTheme();
-  const isLightTheme = theme === 'studio-paper' || theme === 'vintage-japanese';
+  const isLightTheme = true;
   const paletteRef = useRef({
     bg: '#05080e',
     grid: 'rgba(16, 185, 129, 0.08)',
-    stroke: color || '#10b981',
+    stroke: color || 'var(--signal)',
     core: '#ffffff',
     wash: 'rgba(4, 18, 12, 0.22)',
     isLight: false,
@@ -50,17 +48,17 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = React.memo(({
     const cs = getComputedStyle(el);
     const bg = cs.getPropertyValue('--waveform-bg').trim() || '#05080e';
     const ink = cs.getPropertyValue('--text-primary').trim() || '#171815';
-    const accentAmber = cs.getPropertyValue('--accent-amber').trim() || '#ff6636';
+    const accentAmber = cs.getPropertyValue('--accent-amber').trim() || 'var(--signal)';
     paletteRef.current = {
       bg,
       grid: isLightTheme ? 'rgba(23, 24, 21, 0.12)' : 'rgba(16, 185, 129, 0.08)',
-      stroke: isLightTheme ? ink : (colorRef.current || '#10b981'),
+      stroke: isLightTheme ? ink : (colorRef.current || 'var(--signal)'),
       core: isLightTheme ? accentAmber : '#ffffff',
       wash: isLightTheme ? bg : (colorRef.current?.startsWith('#ff') ? 'rgba(18, 12, 4, 0.24)' : 'rgba(4, 18, 12, 0.22)'),
       isLight: isLightTheme,
     };
     gridCanvasRef.current = null;
-  }, [theme, color, isLightTheme]);
+  }, [color, isLightTheme]);
 
   // Peak hold array for 64-band logarithmic spectrum
   const peakHoldRef = useRef<Float32Array>(new Float32Array(64));

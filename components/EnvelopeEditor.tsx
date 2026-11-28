@@ -63,31 +63,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
     return () => observer.disconnect();
   }, [height]);
 
-  // High-def studio phosphor color profiles
-  const colorMap = {
-    cyan: {
-      stroke: '#00f0ff',
-      halo: 'rgba(0, 240, 255, 0.25)',
-      fillTop: 'rgba(0, 240, 255, 0.16)',
-      fillBottom: 'rgba(0, 240, 255, 0.00)',
-      beam: '#7df9ff',
-    },
-    amber: {
-      stroke: '#ffaa00',
-      halo: 'rgba(255, 170, 0, 0.25)',
-      fillTop: 'rgba(255, 170, 0, 0.16)',
-      fillBottom: 'rgba(255, 170, 0, 0.00)',
-      beam: '#ffd580',
-    },
-    emerald: {
-      stroke: '#00ff66',
-      halo: 'rgba(0, 255, 102, 0.25)',
-      fillTop: 'rgba(0, 255, 102, 0.16)',
-      fillBottom: 'rgba(0, 255, 102, 0.00)',
-      beam: '#99ffbb',
-    },
-  };
-  const theme = colorMap[color] || colorMap.cyan;
+  const theme = { stroke: 'var(--signal)', beam: 'var(--signal-ink)', halo: 'transparent' };
 
   // ViewBox layout metrics in true pixel coordinates
   const PADDING_LEFT = 24;
@@ -354,7 +330,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full rounded-sm overflow-hidden select-none oled-screen ${className}`}
+      className={`relative w-full rounded-sm overflow-hidden select-none oled-screen envelope-display ${className}`}
       style={{ height }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => { setIsHovered(false); setHoveredHandle(null); setHoverX(null); }}
@@ -371,8 +347,8 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
         <defs>
           {/* High-def linear gradient: subtle 16% opacity fading cleanly to pure black without haze */}
           <linearGradient id={`env-grad-${color}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor={theme.stroke} stopOpacity="0.16" />
-            <stop offset="60%" stopColor={theme.stroke} stopOpacity="0.04" />
+            <stop offset="0%" stopColor={theme.stroke} stopOpacity="0.035" />
+            <stop offset="60%" stopColor={theme.stroke} stopOpacity="0.01" />
             <stop offset="100%" stopColor={theme.stroke} stopOpacity="0.00" />
           </linearGradient>
 
@@ -405,7 +381,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
             y1={Y_TOP}
             x2={x}
             y2={Y_BOTTOM}
-            stroke="rgba(255, 255, 255, 0.08)"
+            stroke="var(--section-border)"
             strokeDasharray="2 3"
             strokeWidth="1"
           />
@@ -414,7 +390,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
         {/* Horizontal Precision Gridlines (0%, 50%, 100% Level) */}
         <line x1={PADDING_LEFT} y1={Y_BOTTOM} x2={dimensions.width - PADDING_RIGHT} y2={Y_BOTTOM} stroke="rgba(255, 255, 255, 0.16)" strokeWidth="1" />
         <line x1={PADDING_LEFT} y1={Y_TOP + contentHeight * 0.5} x2={dimensions.width - PADDING_RIGHT} y2={Y_TOP + contentHeight * 0.5} stroke="rgba(255, 255, 255, 0.04)" strokeDasharray="1 4" strokeWidth="1" />
-        <line x1={PADDING_LEFT} y1={Y_TOP} x2={dimensions.width - PADDING_RIGHT} y2={Y_TOP} stroke="rgba(255, 255, 255, 0.08)" strokeDasharray="2 4" strokeWidth="1" />
+        <line x1={PADDING_LEFT} y1={Y_TOP} x2={dimensions.width - PADDING_RIGHT} y2={Y_TOP} stroke="var(--section-border)" strokeDasharray="2 4" strokeWidth="1" />
 
         {/* Dynamic Hover Hairline Cursor */}
         {isHovered && hoverX !== null && hoverX >= PADDING_LEFT && hoverX <= dimensions.width - PADDING_RIGHT && (
@@ -441,7 +417,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
             key={item.key}
             x={item.x}
             y={dimensions.height - 6}
-            fill={activeHoverPhase === item.key || activeHandle === item.key ? theme.stroke : 'rgba(255, 255, 255, 0.28)'}
+            fill={activeHoverPhase === item.key || activeHandle === item.key ? theme.stroke : 'var(--text-secondary)'}
             fontSize={contentWidth < 200 ? '7' : '8'}
             fontFamily="'Space Mono', monospace"
             letterSpacing="0.08em"
@@ -463,7 +439,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
           strokeWidth="1.5"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ filter: `drop-shadow(0 0 2px ${theme.stroke}aa)` }}
+
         />
 
         {/* Sustain Horizontal Draggable Reticle Bar */}
@@ -564,18 +540,18 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
       {/* Header Overlay: Title & Value Readout Chips */}
       <div className="absolute top-1.5 left-2 pointer-events-none flex items-center gap-2">
         <span 
-          className="text-[8px] font-mono font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-xs"
-          style={{ background: 'rgba(0,0,0,0.8)', color: theme.stroke, border: `1px solid ${theme.stroke}44` }}
+          className="text-[8px] font-mono font-bold tracking-normal uppercase px-1.5 py-0.5 rounded-xs"
+          style={{ background: 'var(--waveform-bg)', color: 'var(--text-primary)' }}
         >
           {title}
         </span>
-        <div className="flex items-center gap-2 text-[8px] font-mono text-gray-400">
-          <span>A: <strong className={activeHoverPhase === 'attack' || activeHandle === 'attack' ? 'text-white underline' : 'text-gray-200'}>{formatTime(envelope.attack)}</strong></span>
-          <span>D: <strong className={activeHoverPhase === 'decay' || activeHandle === 'decay' ? 'text-white underline' : 'text-gray-200'}>{formatTime(envelope.decay)}</strong></span>
-          <span>S: <strong className={activeHoverPhase === 'sustain' || activeHandle === 'sustain' ? 'text-white underline' : 'text-gray-200'}>{Math.round(envelope.sustain * 100)}%</strong></span>
-          <span>R: <strong className={activeHoverPhase === 'release' || activeHandle === 'release' ? 'text-white underline' : 'text-gray-200'}>{formatTime(envelope.release)}</strong></span>
+        <div className="flex items-center gap-2 text-[8px] font-mono text-[var(--text-secondary)]">
+          <span>A: <strong className={activeHoverPhase === 'attack' || activeHandle === 'attack' ? 'text-[var(--text-primary)] underline' : 'text-[var(--text-primary)]'}>{formatTime(envelope.attack)}</strong></span>
+          <span>D: <strong className={activeHoverPhase === 'decay' || activeHandle === 'decay' ? 'text-[var(--text-primary)] underline' : 'text-[var(--text-primary)]'}>{formatTime(envelope.decay)}</strong></span>
+          <span>S: <strong className={activeHoverPhase === 'sustain' || activeHandle === 'sustain' ? 'text-[var(--text-primary)] underline' : 'text-[var(--text-primary)]'}>{Math.round(envelope.sustain * 100)}%</strong></span>
+          <span>R: <strong className={activeHoverPhase === 'release' || activeHandle === 'release' ? 'text-[var(--text-primary)] underline' : 'text-[var(--text-primary)]'}>{formatTime(envelope.release)}</strong></span>
           {amount !== undefined && (
-            <span>INT: <strong className="text-gray-200">{Math.round(amount)}</strong></span>
+            <span>INT: <strong className="text-[var(--text-primary)]">{Math.round(amount)}</strong></span>
           )}
         </div>
       </div>
@@ -583,7 +559,7 @@ export const EnvelopeEditor: React.FC<EnvelopeEditorProps> = ({
       {/* Floating HUD Tooltip when Dragging or Hovering */}
       {activeHandle && (
         <div
-          className="absolute pointer-events-none z-30 px-2 py-0.5 rounded-xs text-[8px] font-mono-lcd shadow-lg uppercase backdrop-blur-sm"
+          className="absolute pointer-events-none z-30 px-2 py-0.5 rounded-xs text-[8px] font-mono-lcd  uppercase backdrop-blur-sm"
           style={{
             left: activeHandle === 'attack' ? `${Math.max(45, Math.min(dimensions.width - 45, points.xA))}px` :
                   activeHandle === 'decay' || activeHandle === 'sustain' ? `${Math.max(55, Math.min(dimensions.width - 55, points.xD))}px` :

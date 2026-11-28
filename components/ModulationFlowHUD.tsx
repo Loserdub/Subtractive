@@ -9,19 +9,19 @@ interface ModulationFlowHUDProps {
 }
 
 const MOD_SOURCES: { id: ModSource; label: string; color: string }[] = [
-  { id: 'lfo1', label: 'LFO 1', color: '#10b981' },
-  { id: 'lfo2', label: 'LFO 2', color: '#06b6d4' },
-  { id: 'filterEnv', label: 'FLT EG', color: '#f59e0b' },
-  { id: 'velocity', label: 'VELOCITY', color: '#a855f7' },
-  { id: 'modWheel', label: 'MOD WHEEL', color: '#38bdf8' },
+  { id: 'lfo1', label: 'LFO 1', color: 'var(--signal)' },
+  { id: 'lfo2', label: 'LFO 2', color: 'var(--signal)' },
+  { id: 'filterEnv', label: 'FLT EG', color: 'var(--signal)' },
+  { id: 'velocity', label: 'VELOCITY', color: 'var(--signal)' },
+  { id: 'modWheel', label: 'MOD WHEEL', color: 'var(--signal)' },
 ];
 
 const MOD_DESTINATIONS: { id: ModDestination; label: string; color: string }[] = [
-  { id: 'cutoff', label: 'CUTOFF', color: '#f59e0b' },
-  { id: 'filterFM', label: 'FILTER FM', color: '#ef4444' },
-  { id: 'allPitch', label: 'PITCH', color: '#38bdf8' },
-  { id: 'resonance', label: 'RES', color: '#10b981' },
-  { id: 'pan', label: 'STEREO PAN', color: '#06b6d4' },
+  { id: 'cutoff', label: 'CUTOFF', color: 'var(--signal)' },
+  { id: 'filterFM', label: 'FILTER FM', color: 'var(--signal)' },
+  { id: 'allPitch', label: 'PITCH', color: 'var(--signal)' },
+  { id: 'resonance', label: 'RES', color: 'var(--signal)' },
+  { id: 'pan', label: 'STEREO PAN', color: 'var(--signal)' },
 ];
 
 export const ModulationFlowHUD: React.FC<ModulationFlowHUDProps> = ({
@@ -52,7 +52,7 @@ export const ModulationFlowHUD: React.FC<ModulationFlowHUDProps> = ({
       <div className="flex items-center justify-between pb-1 mb-1.5" style={{ borderBottom: '1px solid var(--section-border)' }}>
         <div className="flex items-center gap-1.5">
           <div className="w-1.5 h-1.5 rounded-full" style={{ background: isNoteActive ? 'var(--accent-emerald)' : 'var(--text-muted)' }} />
-          <span className="text-[9px] font-mono font-bold tracking-wider uppercase" style={{ color: 'var(--text-primary)' }}>
+          <span className="text-[9px] font-mono font-bold tracking-normal uppercase" style={{ color: 'var(--text-primary)' }}>
             SIGNAL-FLOW MODULATION MATRIX
           </span>
         </div>
@@ -71,8 +71,8 @@ export const ModulationFlowHUD: React.FC<ModulationFlowHUDProps> = ({
       {/* Signal Flow Trace Matrix Rows */}
       <div className="flex flex-col gap-1 w-full">
         {slots.map((route, slotIdx) => {
-          const srcColor = MOD_SOURCES.find(s => s.id === route.source)?.color || '#10b981';
-          const destColor = MOD_DESTINATIONS.find(d => d.id === route.destination)?.color || '#f59e0b';
+          const srcColor = MOD_SOURCES.find(s => s.id === route.source)?.color || 'var(--signal)';
+          const destColor = MOD_DESTINATIONS.find(d => d.id === route.destination)?.color || 'var(--signal)';
           const isFlowing = route.enabled && isNoteActive && Math.abs(route.amount) > 0.01;
 
           return (

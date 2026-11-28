@@ -25,10 +25,10 @@ interface DrumMachineProps {
 }
 
 const TRACK_THEMES: Record<DrumTrackName, { color: 'cyan' | 'amber' | 'emerald' | 'red'; activeBg: string; accentBg: string }> = {
-  kick: { color: 'cyan', activeBg: 'bg-[#04261a] border-[#10b981] text-[#10b981]', accentBg: 'bg-[#10b981] text-black shadow-[0_0_12px_#10b981]' },
-  snare: { color: 'red', activeBg: 'bg-[#3d000a] border-[#ff3344] text-[#ff3344]', accentBg: 'bg-[#ff3344] text-white shadow-[0_0_12px_#ff3344]' },
-  hihat: { color: 'emerald', activeBg: 'bg-[#003d19] border-[#00ff66] text-[#00ff66]', accentBg: 'bg-[#00ff66] text-black shadow-[0_0_12px_#00ff66]' },
-  crash: { color: 'amber', activeBg: 'bg-[#3d2900] border-[#ffaa00] text-[#ffaa00]', accentBg: 'bg-[#ffaa00] text-black shadow-[0_0_12px_#ffaa00]' },
+  kick: { color: 'cyan', activeBg: 'bg-[var(--signal-soft)] border-[var(--signal)] text-[var(--signal-ink)]', accentBg: 'bg-[var(--signal)] text-black ' },
+  snare: { color: 'red', activeBg: 'bg-[var(--signal-soft)] border-[var(--signal)] text-[var(--signal-ink)]', accentBg: 'bg-[var(--signal)] text-[var(--text-primary)] ' },
+  hihat: { color: 'emerald', activeBg: 'bg-[var(--signal-soft)] border-[var(--signal)] text-[var(--signal-ink)]', accentBg: 'bg-[var(--signal)] text-black ' },
+  crash: { color: 'amber', activeBg: 'bg-[var(--signal-soft)] border-[var(--signal)] text-[var(--signal-ink)]', accentBg: 'bg-[var(--signal)] text-black ' },
 };
 
 export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
@@ -69,10 +69,10 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
   return (
     <div className="synth-panel rounded p-2 md:p-2.5 flex flex-col items-center w-full select-none h-full relative">
       {/* Module Title Header Bar */}
-      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border shadow-inner shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
+      <div className="w-full flex items-center justify-between px-2.5 py-1 mb-1.5 rounded-sm border  shrink-0" style={{ background: 'var(--badge-bg)', borderColor: 'var(--badge-border)' }}>
         <div className="flex items-center gap-1.5 overflow-hidden">
-          <div className="w-1.5 h-1.5 rounded-full bg-[#ffaa00] shadow-[0_0_6px_#ffaa00] shrink-0" />
-          <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-[0.14em] uppercase truncate" style={{ color: 'var(--text-primary)' }}>RHYTHM SEQUENCER</span>
+          <div className="w-1.5 h-1.5 rounded-full bg-[var(--signal)]  shrink-0" />
+          <span className="font-mono text-[9px] md:text-[10px] font-bold tracking-normal uppercase truncate" style={{ color: 'var(--text-primary)' }}>RHYTHM SEQUENCER</span>
         </div>
       </div>
 
@@ -94,7 +94,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
 
           {/* Pattern Bank Selectors */}
           <div className="flex flex-col items-center gap-0.5 shrink-0">
-            <span className="text-[7px] uppercase font-mono tracking-wider" style={{ color: 'var(--text-label)' }}>Bank</span>
+            <span className="text-[7px] uppercase font-mono tracking-normal" style={{ color: 'var(--text-label)' }}>Bank</span>
             <div className="flex gap-0.5 p-0.5 rounded-sm" style={{ background: 'var(--section-bg)', border: '1px solid var(--section-border)' }}>
               {[0, 1, 2, 3].map((bankIndex) => (
                 <button
@@ -102,8 +102,8 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
                   onClick={() => onBankSelect(bankIndex)}
                   className={`w-5 h-5 rounded-sm font-mono font-bold text-[9px] transition-all ${
                     currentBank === bankIndex
-                      ? 'bg-[#ffaa00] text-black shadow-[0_0_6px_#ffaa00]'
-                      : 'bg-[#181e2b] text-gray-400 hover:text-white border border-[#2b3548]'
+                      ? 'bg-[var(--signal)] text-black '
+                      : 'bg-[var(--panel-bg-alt)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--section-border)]'
                   }`}
                 >
                   {bankIndex + 1}
@@ -178,7 +178,7 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
       </div>
 
       {/* 16-Step Sequencer 3-State LED Grid */}
-      <div className="w-full rounded-sm py-2.5 mt-2 relative shadow-inner" style={{ background: 'var(--oled-bg)', border: '1px solid var(--osc-border)', overflowX: 'auto', touchAction: 'pan-x' }}>
+      <div className="w-full rounded-sm py-2.5 mt-2 relative " style={{ background: 'var(--oled-bg)', border: '1px solid var(--osc-border)', overflowX: 'auto', touchAction: 'pan-x' }}>
         <div className="flex flex-row gap-1 sm:gap-1.5 md:gap-2 justify-center min-w-max px-2">
           {pattern[selectedTrack].map((stepVal, index) => {
             const isNormal = stepVal === 1;
@@ -187,15 +187,15 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
             const stepGroup = Math.floor(index / 4);
             const isDownbeat = index % 4 === 0;
 
-            let stepBg = 'bg-[#141a26] border-[#253044]';
+            let stepBg = 'bg-[var(--panel-bg-alt)] border-[var(--section-border)]';
             if (isAccent) {
-              stepBg = isPlayingStep ? 'bg-white text-black border-white shadow-[0_0_12px_white]' : currentTheme.accentBg;
+              stepBg = isPlayingStep ? 'bg-[var(--signal-ink)] text-[var(--panel-bg)] border-[var(--signal-ink)]' : currentTheme.accentBg;
             } else if (isNormal) {
-              stepBg = isPlayingStep ? 'bg-[#10b981] border-white shadow-[0_0_10px_#10b981]' : currentTheme.activeBg;
+              stepBg = isPlayingStep ? 'bg-[var(--signal)] border-white ' : currentTheme.activeBg;
             } else if (isPlayingStep) {
-              stepBg = 'bg-[#3b475e] border-white';
+              stepBg = 'bg-[var(--panel-bg-alt)] border-white';
             } else if (stepGroup % 2 === 0) {
-              stepBg = 'bg-[#101520] border-[#1d2638] hover:bg-[#182030]';
+              stepBg = 'bg-[var(--panel-bg-alt)] border-[var(--section-border)] hover:bg-[var(--panel-bg-alt)]';
             }
 
             return (
@@ -208,17 +208,17 @@ export const DrumMachine: React.FC<DrumMachineProps> = React.memo(({
                 <div 
                   className={`w-2 h-1 rounded-full transition-all ${
                     isAccent
-                      ? 'bg-white shadow-[0_0_8px_white]'
+                      ? 'bg-white '
                       : isNormal 
-                        ? 'bg-white/80 shadow-[0_0_5px_white]' 
-                        : 'bg-black/40'
+                        ? 'bg-[var(--section-bg)] '
+                        : 'bg-[var(--section-bg)]'
                   }`} 
                 />
 
                 {isAccent ? (
                   <span className="text-[7px] md:text-[9px] font-mono font-black tracking-tighter uppercase">ACC</span>
                 ) : isDownbeat ? (
-                  <span className="text-[7px] md:text-[8px] text-gray-400 font-mono font-bold">
+                  <span className="text-[7px] md:text-[8px] text-[var(--text-secondary)] font-mono font-bold">
                     {index + 1}
                   </span>
                 ) : null}

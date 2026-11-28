@@ -1,1462 +1,241 @@
-/* ══════════════════════════════════════════════════════════════════════
-   DEFAULT / MONO-DARK THEME TOKENS (also :root fallbacks)
-   ══════════════════════════════════════════════════════════════════════ */
-:root,
-[data-theme="mono-dark"] {
-  /* Chassis & Structure */
-  --chassis-bg:       #07090e;
-  --chassis-gradient: linear-gradient(180deg, #0b0e15 0%, #06080c 100%);
-  --panel-bg:         #0f131c;
-  --panel-bg-alt:     #0a0d14;
-  --panel-gradient:   linear-gradient(180deg, #131722 0%, #0d1017 100%);
-  --panel-border:     rgba(16, 185, 129, 0.28);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(255, 255, 255, 0.08);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.65);
-  --panel-shadow:     0 3px 12px -2px rgba(0, 0, 0, 0.65);
-
-  /* OLED / LCD Screen */
-  --oled-bg:          #020604;
-  --oled-bg-grad:     linear-gradient(180deg, #030805 0%, #010403 100%);
-  --oled-border:      rgba(16, 185, 129, 0.45);
-  --oled-glow:        rgba(16, 185, 129, 0.18);
-  --oled-text:        #10b981;
-  --oled-scanline:    rgba(0, 0, 0, 0.12);
-
-  /* Knob Material — flat cell-shade */
-  --knob-track:       #12221b;
-  --knob-ribbed:      #101d17;
-  --knob-face-grad:   #182e23;
-  --knob-face-border: #10b981;
-  --knob-hi:          rgba(16, 185, 129, 0.12);
-  --knob-lo:          rgba(0, 0, 0, 1);
-
-  /* Screw — hexagonal bolt look */
-  --screw-grad:       #1b3327;
-  --screw-border:     #10b981;
-  --screw-line:       #10b981;
-
-  /* Accent Colors — signal and UI */
-  --accent-cyan:      #10b981;
-  --accent-amber:     #ffaa00;
-  --accent-emerald:   #00ff66;
-  --accent-red:       #ff3344;
-
-  /* Text hierarchy */
-  --text-primary:     #e2e8f0;
-  --text-secondary:   #6b7280;
-  --text-muted:       #374151;
-  --text-label:       #9ca3af;
-
-  /* Interactive Elements */
-  --btn-inactive-bg:      #0d1018;
-  --btn-inactive-border:  #2a3142;
-  --btn-inactive-text:    #4b5568;
-  --btn-hover-bg:         #161c28;
-  --section-bg:           #090c12;
-  --section-border:       #1e2636;
-  --osc-bg:               #0c0f18;
-  --osc-border:           #1e2636;
-  --waveform-bg:          #060810;
-  --waveform-border:      #1a2230;
-
-  /* Piano Keys */
-  --key-white-grad:   #f0f4f8;
-  --key-white-active: #b0bfcc;
-  --key-black-grad:   #111520;
-  --key-black-active: #080a10;
-
-  /* Wheel Slider */
-  --wheel-bg:         #06140e;
-  --wheel-border:     #10b981;
-  --wheel-thumb:      linear-gradient(to right, #064e3b 0%, #10b981 50%, #064e3b 100%);
-
-  /* Mobile Tab Bar */
-  --tab-bar-bg:       #06140e;
-  --tab-bar-border:   #10b981;
-  --tab-active-bg:    rgba(16, 185, 129, 0.15);
-  --tab-active-border:#10b981;
-  --tab-active-text:  #10b981;
-  --tab-active-glow:  rgba(16, 185, 129, 0.5);
-  --tab-inactive-text:#4b5568;
-
-  /* Body */
-  --body-bg:          #080a0e;
-  --body-text:        #e2e8f0;
-
-  /* Scrollbar */
-  --scrollbar-track:  #0a0c12;
-  --scrollbar-thumb:  #1e2636;
-  --scrollbar-hover:  #2a3548;
-
-  /* Badge (panel title) */
-  --badge-bg:         #06140e;
-  --badge-border:     #10b981;
-
-  /* Theme crossfade */
-  --theme-transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.2s ease;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   VINTAGE JAPANESE — Roland / Korg (Orange × Blue × Brushed Aluminum)
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="vintage-japanese"] {
-  --chassis-bg:       #b0b4bc;
-  --chassis-gradient: linear-gradient(180deg, #b8bcc4 0%, #a8acb4 100%);
-  --panel-bg:         #c8ccd4;
-  --panel-bg-alt:     #bcc0c8;
-  --panel-gradient:   linear-gradient(180deg, #d2d6de 0%, #c4c8d0 100%);
-  --panel-border:     rgba(26, 95, 232, 0.35);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(255, 255, 255, 0.65);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.15);
-  --panel-shadow:     0 3px 10px -2px rgba(0, 0, 80, 0.2);
-
-  --oled-bg:          #100800;
-  --oled-bg-grad:     linear-gradient(180deg, #160b00 0%, #0c0600 100%);
-  --oled-border:      rgba(232, 84, 26, 0.5);
-  --oled-glow:        rgba(232, 84, 26, 0.2);
-  --oled-text:        #ffa500;
-  --oled-scanline:    rgba(0, 0, 0, 0.1);
-
-  --knob-track:       #8890a0;
-  --knob-ribbed:      #a0a8b4;
-  --knob-face-grad:   #b8bcc8;
-  --knob-face-border: #e8541a;
-  --knob-hi:          rgba(255, 255, 255, 0.6);
-  --knob-lo:          rgba(0, 0, 0, 0.25);
-
-  --screw-grad:       #c8ccd8;
-  --screw-border:     #1a5fe8;
-  --screw-line:       #1a5fe8;
-
-  --accent-cyan:      #1a5fe8;
-  --accent-amber:     #e8541a;
-  --accent-emerald:   #2a9e44;
-  --accent-red:       #cc1122;
-
-  --text-primary:     #10141c;
-  --text-secondary:   #404448;
-  --text-muted:       #707480;
-  --text-label:       #404858;
-
-  --btn-inactive-bg:     #b4b8c4;
-  --btn-inactive-border: #7880a0;
-  --btn-inactive-text:   #505870;
-  --btn-hover-bg:        #ccd0dc;
-  --section-bg:          #b0b4bc;
-  --section-border:      #8890a0;
-  --osc-bg:              #bcc0c8;
-  --osc-border:          #8890a0;
-  --waveform-bg:         #a8acb8;
-  --waveform-border:     #8890a0;
-
-  --key-white-grad:   #f4f8fc;
-  --key-white-active: #c0c8d8;
-  --key-black-grad:   #141824;
-  --key-black-active: #080c14;
-
-  --wheel-bg:         #a0a4b0;
-  --wheel-border:     #e8541a;
-  --wheel-thumb:      linear-gradient(to right, #9040a0 0%, #e8541a 50%, #9040a0 100%);
-
-  --tab-bar-bg:       #b0b4bc;
-  --tab-bar-border:   #e8541a;
-  --tab-active-bg:    rgba(232, 84, 26, 0.18);
-  --tab-active-border:#e8541a;
-  --tab-active-text:  #e8541a;
-  --tab-active-glow:  rgba(232, 84, 26, 0.5);
-  --tab-inactive-text:#606878;
-
-  --body-bg:          #a4a8b0;
-  --body-text:        #10141c;
-  --scrollbar-track:  #a8acb8;
-  --scrollbar-thumb:  #7880a0;
-  --scrollbar-hover:  #606878;
-  --badge-bg:         #ccd0dc;
-  --badge-border:     #1a5fe8;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   GERMAN INDUSTRIAL — Moog Black & Machined Aluminum / Gold
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="german-industrial"] {
-  --chassis-bg:       #030303;
-  --chassis-gradient: linear-gradient(180deg, #080808 0%, #020202 100%);
-  --panel-bg:         #0c0c0c;
-  --panel-bg-alt:     #060606;
-  --panel-gradient:   linear-gradient(180deg, #121212 0%, #090909 100%);
-  --panel-border:     rgba(201, 168, 76, 0.32);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(201, 168, 76, 0.14);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.8);
-  --panel-shadow:     0 3px 12px -2px rgba(0, 0, 0, 0.8);
-
-  --oled-bg:          #010601;
-  --oled-bg-grad:     linear-gradient(180deg, #020a02 0%, #000400 100%);
-  --oled-border:      rgba(170, 200, 64, 0.45);
-  --oled-glow:        rgba(170, 200, 64, 0.18);
-  --oled-text:        #00ff44;
-  --oled-scanline:    rgba(0, 0, 0, 0.12);
-
-  --knob-track:       #1a1a1a;
-  --knob-ribbed:      #181818;
-  --knob-face-grad:   #202020;
-  --knob-face-border: #c9a84c;
-  --knob-hi:          rgba(201, 168, 76, 0.1);
-  --knob-lo:          rgba(0, 0, 0, 1);
-
-  --screw-grad:       #242424;
-  --screw-border:     #c9a84c;
-  --screw-line:       #c9a84c;
-
-  --accent-cyan:      #c9a84c;
-  --accent-amber:     #e8b84c;
-  --accent-emerald:   #aac840;
-  --accent-red:       #cc3322;
-
-  --text-primary:     #f0ece0;
-  --text-secondary:   #807860;
-  --text-muted:       #404030;
-  --text-label:       #a09070;
-
-  --btn-inactive-bg:     #0c0c0c;
-  --btn-inactive-border: #252520;
-  --btn-inactive-text:   #606050;
-  --btn-hover-bg:        #161610;
-  --section-bg:          #060606;
-  --section-border:      #1c1c18;
-  --osc-bg:              #080808;
-  --osc-border:          #1c1c18;
-  --waveform-bg:         #030303;
-  --waveform-border:     #161610;
-
-  --key-white-grad:   #eceae0;
-  --key-white-active: #a09888;
-  --key-black-grad:   #0a0a0a;
-  --key-black-active: #020202;
-
-  --wheel-bg:         #040404;
-  --wheel-border:     #c9a84c;
-  --wheel-thumb:      linear-gradient(to right, #604820 0%, #c9a84c 50%, #604820 100%);
-
-  --tab-bar-bg:       #060606;
-  --tab-bar-border:   #c9a84c;
-  --tab-active-bg:    rgba(201, 168, 76, 0.12);
-  --tab-active-border:#c9a84c;
-  --tab-active-text:  #c9a84c;
-  --tab-active-glow:  rgba(201, 168, 76, 0.5);
-  --tab-inactive-text:#505040;
-
-  --body-bg:          #020202;
-  --body-text:        #f0ece0;
-  --scrollbar-track:  #060606;
-  --scrollbar-thumb:  #1e1e14;
-  --scrollbar-hover:  #2e2e20;
-  --badge-bg:         #0a0a0a;
-  --badge-border:     #c9a84c;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   CYBERPUNK CRT — Neon Magenta + Cyan on void black, scanlines
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="cyberpunk-crt"] {
-  --chassis-bg:       #030409;
-  --chassis-gradient: linear-gradient(180deg, #070914 0%, #020308 100%);
-  --panel-bg:         #080b16;
-  --panel-bg-alt:     #04060c;
-  --panel-gradient:   linear-gradient(180deg, #0d1222 0%, #060912 100%);
-  --panel-border:     rgba(255, 0, 204, 0.35);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(255, 0, 204, 0.18);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.75);
-  --panel-shadow:     0 3px 14px -2px rgba(255, 0, 204, 0.18);
-
-  --oled-bg:          #020008;
-  --oled-bg-grad:     linear-gradient(180deg, #040110 0%, #020006 100%);
-  --oled-border:      rgba(255, 0, 204, 0.45);
-  --oled-glow:        rgba(255, 0, 204, 0.22);
-  --oled-text:        #ff00cc;
-  --oled-scanline:    rgba(0, 0, 0, 0.12);
-
-  --knob-track:       #1a0028;
-  --knob-ribbed:      #140020;
-  --knob-face-grad:   #1c0030;
-  --knob-face-border: #ff00cc;
-  --knob-hi:          rgba(255, 0, 204, 0.18);
-  --knob-lo:          rgba(0, 0, 0, 1);
-
-  --screw-grad:       #240038;
-  --screw-border:     #ff00cc;
-  --screw-line:       #ff00cc;
-
-  --accent-cyan:      #00ffee;
-  --accent-amber:     #ff00cc;
-  --accent-emerald:   #00ff88;
-  --accent-red:       #ff2244;
-
-  --text-primary:     #e0d0f0;
-  --text-secondary:   #805888;
-  --text-muted:       #3a1850;
-  --text-label:       #b080c0;
-
-  --btn-inactive-bg:     #06000e;
-  --btn-inactive-border: #280038;
-  --btn-inactive-text:   #5030a0;
-  --btn-hover-bg:        #0e0018;
-  --section-bg:          #040008;
-  --section-border:      #1e0030;
-  --osc-bg:              #05000e;
-  --osc-border:          #180028;
-  --waveform-bg:         #020008;
-  --waveform-border:     #12001e;
-
-  --key-white-grad:   #e0d0f8;
-  --key-white-active: #9070d0;
-  --key-black-grad:   #0c0018;
-  --key-black-active: #040010;
-
-  --wheel-bg:         #03000a;
-  --wheel-border:     #ff00cc;
-  --wheel-thumb:      linear-gradient(to right, #6000a0 0%, #ff00cc 50%, #6000a0 100%);
-
-  --tab-bar-bg:       #03000a;
-  --tab-bar-border:   #ff00cc;
-  --tab-active-bg:    rgba(255, 0, 204, 0.14);
-  --tab-active-border:#ff00cc;
-  --tab-active-text:  #ff00cc;
-  --tab-active-glow:  rgba(255, 0, 204, 0.6);
-  --tab-inactive-text:#4d2880;
-
-  --body-bg:          #020308;
-  --body-text:        #e0d0f0;
-  --scrollbar-track:  #040008;
-  --scrollbar-thumb:  #180026;
-  --scrollbar-hover:  #280040;
-  --badge-bg:         #04000e;
-  --badge-border:     #ff00cc;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   SOLAR AURORA — Dynamic Quantum Mesh & Northern Lights
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="solar-aurora"] {
-  --chassis-bg:       #060814;
-  --chassis-gradient: radial-gradient(circle at 50% 0%, #0d122b 0%, #060814 100%);
-  --panel-bg:         #0c1022;
-  --panel-bg-alt:     #080b18;
-  --panel-gradient:   linear-gradient(180deg, #10162e 0%, #090d1c 100%);
-  --panel-border:     rgba(0, 240, 255, 0.35);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(0, 240, 255, 0.15);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.7);
-  --panel-shadow:     0 4px 18px -2px rgba(0, 240, 255, 0.16);
-
-  --oled-bg:          #030510;
-  --oled-bg-grad:     linear-gradient(180deg, #050818 0%, #02030a 100%);
-  --oled-border:      rgba(0, 240, 255, 0.5);
-  --oled-glow:        rgba(0, 240, 255, 0.25);
-  --oled-text:        #00f0ff;
-  --oled-scanline:    rgba(0, 0, 0, 0.15);
-
-  --knob-track:       #0e172a;
-  --knob-ribbed:      #0b1220;
-  --knob-face-grad:   #121d36;
-  --knob-face-border: #00f0ff;
-  --knob-hi:          rgba(0, 240, 255, 0.2);
-  --knob-lo:          #000000;
-
-  --screw-grad:       #182442;
-  --screw-border:     #00f0ff;
-  --screw-line:       #00f0ff;
-
-  --accent-cyan:      #00f0ff;
-  --accent-amber:     #ffaa00;
-  --accent-emerald:   #00ff9d;
-  --accent-red:       #ff007f;
-
-  --text-primary:     #f0f6fc;
-  --text-secondary:   #818cf8;
-  --text-muted:       #383f60;
-  --text-label:       #93c5fd;
-
-  --btn-inactive-bg:     #090d1c;
-  --btn-inactive-border: #1e294b;
-  --btn-inactive-text:   #5b6998;
-  --btn-hover-bg:        #141b38;
-  --section-bg:          #070a16;
-  --section-border:      #16203c;
-  --osc-bg:              #0a0e20;
-  --osc-border:          #1b2648;
-  --waveform-bg:         #040612;
-  --waveform-border:     #131c38;
-
-  --key-white-grad:   #e8effc;
-  --key-white-active: #a5bfe8;
-  --key-black-grad:   #090d1c;
-  --key-black-active: #04060e;
-
-  --wheel-bg:         #050814;
-  --wheel-border:     #00f0ff;
-  --wheel-thumb:      linear-gradient(to right, #005577 0%, #00f0ff 50%, #005577 100%);
-
-  --tab-bar-bg:       #060816;
-  --tab-bar-border:   #00f0ff;
-  --tab-active-bg:    rgba(0, 240, 255, 0.16);
-  --tab-active-border:#00f0ff;
-  --tab-active-text:  #00f0ff;
-  --tab-active-glow:  rgba(0, 240, 255, 0.55);
-  --tab-inactive-text:#4c5b88;
-
-  --body-bg:          #060814;
-  --body-text:        #f0f6fc;
-  --scrollbar-track:  #070a16;
-  --scrollbar-thumb:  #192444;
-  --scrollbar-hover:  #293b6e;
-  --badge-bg:         #070b1a;
-  --badge-border:     #00f0ff;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   CYBER MATRIX — Phosphor Vector Grid & Scanning Lasers
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="cyber-matrix"] {
-  --chassis-bg:       #020804;
-  --chassis-gradient: linear-gradient(180deg, #040e06 0%, #010402 100%);
-  --panel-bg:         #061409;
-  --panel-bg-alt:     #030b05;
-  --panel-gradient:   linear-gradient(180deg, #091d0e 0%, #041007 100%);
-  --panel-border:     rgba(0, 255, 102, 0.4);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(0, 255, 102, 0.15);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.8);
-  --panel-shadow:     0 4px 18px -2px rgba(0, 255, 102, 0.15);
-
-  --oled-bg:          #010502;
-  --oled-bg-grad:     linear-gradient(180deg, #020904 0%, #010402 100%);
-  --oled-border:      rgba(0, 255, 102, 0.55);
-  --oled-glow:        rgba(0, 255, 102, 0.3);
-  --oled-text:        #00ff66;
-  --oled-scanline:    rgba(0, 0, 0, 0.2);
-
-  --knob-track:       #051c0c;
-  --knob-ribbed:      #031408;
-  --knob-face-grad:   #092612;
-  --knob-face-border: #00ff66;
-  --knob-hi:          rgba(0, 255, 102, 0.2);
-  --knob-lo:          #000000;
-
-  --screw-grad:       #0b3017;
-  --screw-border:     #00ff66;
-  --screw-line:       #00ff66;
-
-  --accent-cyan:      #00e5ff;
-  --accent-amber:     #ffbb00;
-  --accent-emerald:   #00ff66;
-  --accent-red:       #ff2255;
-
-  --text-primary:     #e0ffe8;
-  --text-secondary:   #4ade80;
-  --text-muted:       #194d28;
-  --text-label:       #86efac;
-
-  --btn-inactive-bg:     #030d06;
-  --btn-inactive-border: #0c2b14;
-  --btn-inactive-text:   #255e34;
-  --btn-hover-bg:        #081e0e;
-  --section-bg:          #020a04;
-  --section-border:      #08200d;
-  --osc-bg:              #041007;
-  --osc-border:          #0d2e16;
-  --waveform-bg:         #010603;
-  --waveform-border:     #082410;
-
-  --key-white-grad:   #e4faec;
-  --key-white-active: #8ee2ac;
-  --key-black-grad:   #030d06;
-  --key-black-active: #010402;
-
-  --wheel-bg:         #020804;
-  --wheel-border:     #00ff66;
-  --wheel-thumb:      linear-gradient(to right, #005522 0%, #00ff66 50%, #005522 100%);
-
-  --tab-bar-bg:       #020804;
-  --tab-bar-border:   #00ff66;
-  --tab-active-bg:    rgba(0, 255, 102, 0.18);
-  --tab-active-border:#00ff66;
-  --tab-active-text:  #00ff66;
-  --tab-active-glow:  rgba(0, 255, 102, 0.6);
-  --tab-inactive-text:#256135;
-
-  --body-bg:          #020804;
-  --body-text:        #e0ffe8;
-  --scrollbar-track:  #020804;
-  --scrollbar-thumb:  #0d2e16;
-  --scrollbar-hover:  #174d25;
-  --badge-bg:         #030e06;
-  --badge-border:     #00ff66;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   OBSIDIAN MINIMAL — Dieter Rams Swiss Engineering & Safety Orange
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="obsidian-minimal"] {
-  --chassis-bg:       #090a0f;
-  --chassis-gradient: linear-gradient(180deg, #10121a 0%, #07080c 100%);
-  --panel-bg:         #11131c;
-  --panel-bg-alt:     #0c0d14;
-  --panel-gradient:   linear-gradient(180deg, #141724 0%, #0e1018 100%);
-  --panel-border:     rgba(255, 255, 255, 0.16);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(255, 255, 255, 0.1);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.85);
-  --panel-shadow:     0 4px 14px -2px rgba(0, 0, 0, 0.8);
-
-  --oled-bg:          #06070a;
-  --oled-bg-grad:     linear-gradient(180deg, #090b10 0%, #040508 100%);
-  --oled-border:      rgba(255, 107, 0, 0.45);
-  --oled-glow:        rgba(255, 107, 0, 0.15);
-  --oled-text:        #f3f4f6;
-  --oled-scanline:    rgba(0, 0, 0, 0.08);
-
-  --knob-track:       #161922;
-  --knob-ribbed:      #11141c;
-  --knob-face-grad:   #1b1f2b;
-  --knob-face-border: #ff6b00;
-  --knob-hi:          rgba(255, 255, 255, 0.12);
-  --knob-lo:          #000000;
-
-  --screw-grad:       #202432;
-  --screw-border:     #4b5563;
-  --screw-line:       #6b7280;
-
-  --accent-cyan:      #38bdf8;
-  --accent-amber:     #ff6b00;
-  --accent-emerald:   #10b981;
-  --accent-red:       #ef4444;
-
-  --text-primary:     #f9fafb;
-  --text-secondary:   #9ca3af;
-  --text-muted:       #4b5563;
-  --text-label:       #d1d5db;
-
-  --btn-inactive-bg:     #0d0e15;
-  --btn-inactive-border: #212534;
-  --btn-inactive-text:   #6b7280;
-  --btn-hover-bg:        #181b27;
-  --section-bg:          #090a0f;
-  --section-border:      #1a1d29;
-  --osc-bg:              #0d0e16;
-  --osc-border:          #1e2230;
-  --waveform-bg:         #06070a;
-  --waveform-border:     #171924;
-
-  --key-white-grad:   #f3f4f6;
-  --key-white-active: #cbd5e1;
-  --key-black-grad:   #0f1118;
-  --key-black-active: #06070a;
-
-  --wheel-bg:         #07080c;
-  --wheel-border:     #ff6b00;
-  --wheel-thumb:      linear-gradient(to right, #993d00 0%, #ff6b00 50%, #993d00 100%);
-
-  --tab-bar-bg:       #07080c;
-  --tab-bar-border:   #ff6b00;
-  --tab-active-bg:    rgba(255, 107, 0, 0.14);
-  --tab-active-border:#ff6b00;
-  --tab-active-text:  #ff6b00;
-  --tab-active-glow:  rgba(255, 107, 0, 0.4);
-  --tab-inactive-text:#6b7280;
-
-  --body-bg:          #090a0f;
-  --body-text:        #f9fafb;
-  --scrollbar-track:  #08090d;
-  --scrollbar-thumb:  #1e2230;
-  --scrollbar-hover:  #2f354a;
-  --badge-bg:         #0b0d13;
-  --badge-border:     #ff6b00;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   TOKYO NEON — Midnight Akihabara Magenta & Hyper-Cyan
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="tokyo-neon"] {
-  --chassis-bg:       #060410;
-  --chassis-gradient: linear-gradient(180deg, #0e0922 0%, #04020a 100%);
-  --panel-bg:         #0f0924;
-  --panel-bg-alt:     #090516;
-  --panel-gradient:   linear-gradient(180deg, #160d34 0%, #0c071d 100%);
-  --panel-border:     rgba(255, 0, 119, 0.45);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(0, 245, 255, 0.2);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.85);
-  --panel-shadow:     0 4px 20px -2px rgba(255, 0, 119, 0.25);
-
-  --oled-bg:          #04010a;
-  --oled-bg-grad:     linear-gradient(180deg, #080314 0%, #020006 100%);
-  --oled-border:      rgba(255, 0, 119, 0.6);
-  --oled-glow:        rgba(255, 0, 119, 0.3);
-  --oled-text:        #ff0077;
-  --oled-scanline:    rgba(0, 0, 0, 0.18);
-
-  --knob-track:       #180528;
-  --knob-ribbed:      #120320;
-  --knob-face-grad:   #220638;
-  --knob-face-border: #ff0077;
-  --knob-hi:          rgba(0, 245, 255, 0.25);
-  --knob-lo:          #000000;
-
-  --screw-grad:       #2a0846;
-  --screw-border:     #00f5ff;
-  --screw-line:       #ff0077;
-
-  --accent-cyan:      #00f5ff;
-  --accent-amber:     #ffe600;
-  --accent-emerald:   #00ffaa;
-  --accent-red:       #ff0077;
-
-  --text-primary:     #f8e8ff;
-  --text-secondary:   #b882e8;
-  --text-muted:       #4c2472;
-  --text-label:       #dfb6ff;
-
-  --btn-inactive-bg:     #090416;
-  --btn-inactive-border: #260f42;
-  --btn-inactive-text:   #6d38a0;
-  --btn-hover-bg:        #15092e;
-  --section-bg:          #060210;
-  --section-border:      #1e0a36;
-  --osc-bg:              #0a0518;
-  --osc-border:          #240e40;
-  --waveform-bg:         #04010a;
-  --waveform-border:     #1b0832;
-
-  --key-white-grad:   #f2e4fc;
-  --key-white-active: #b58ee2;
-  --key-black-grad:   #0b0416;
-  --key-black-active: #04010a;
-
-  --wheel-bg:         #05020c;
-  --wheel-border:     #00f5ff;
-  --wheel-thumb:      linear-gradient(to right, #800050 0%, #ff0077 50%, #00f5ff 100%);
-
-  --tab-bar-bg:       #05020c;
-  --tab-bar-border:   #ff0077;
-  --tab-active-bg:    rgba(255, 0, 119, 0.18);
-  --tab-active-border:#ff0077;
-  --tab-active-text:  #ff0077;
-  --tab-active-glow:  rgba(255, 0, 119, 0.6);
-  --tab-inactive-text:#633394;
-
-  --body-bg:          #060410;
-  --body-text:        #f8e8ff;
-  --scrollbar-track:  #05020c;
-  --scrollbar-thumb:  #240e40;
-  --scrollbar-hover:  #3b1768;
-  --badge-bg:         #080316;
-  --badge-border:     #ff0077;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   SYNTHWAVE SUNSET — 80s Miami Sunset Gradient & Twilight Outrun
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="synthwave-sunset"] {
-  --chassis-bg:       #0b0616;
-  --chassis-gradient: linear-gradient(180deg, #170a2a 0%, #090412 100%);
-  --panel-bg:         #130a26;
-  --panel-bg-alt:     #0c061a;
-  --panel-gradient:   linear-gradient(180deg, #1c0e38 0%, #100820 100%);
-  --panel-border:     rgba(255, 122, 0, 0.4);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(255, 19, 129, 0.2);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.85);
-  --panel-shadow:     0 4px 18px -2px rgba(255, 122, 0, 0.2);
-
-  --oled-bg:          #06020e;
-  --oled-bg-grad:     linear-gradient(180deg, #0b041a 0%, #040108 100%);
-  --oled-border:      rgba(255, 122, 0, 0.55);
-  --oled-glow:        rgba(255, 122, 0, 0.25);
-  --oled-text:        #ff7a00;
-  --oled-scanline:    rgba(0, 0, 0, 0.15);
-
-  --knob-track:       #1e0a24;
-  --knob-ribbed:      #15061a;
-  --knob-face-grad:   #280e32;
-  --knob-face-border: #ff7a00;
-  --knob-hi:          rgba(255, 19, 129, 0.25);
-  --knob-lo:          #000000;
-
-  --screw-grad:       #32103e;
-  --screw-border:     #ff1381;
-  --screw-line:       #ff7a00;
-
-  --accent-cyan:      #00c8ff;
-  --accent-amber:     #ff7a00;
-  --accent-emerald:   #00ffcc;
-  --accent-red:       #ff1381;
-
-  --text-primary:     #fff1e8;
-  --text-secondary:   #f08ac6;
-  --text-muted:       #562354;
-  --text-label:       #ffbde0;
-
-  --btn-inactive-bg:     #0c051a;
-  --btn-inactive-border: #29103c;
-  --btn-inactive-text:   #783474;
-  --btn-hover-bg:        #180b32;
-  --section-bg:          #080312;
-  --section-border:      #200a30;
-  --osc-bg:              #0d061c;
-  --osc-border:          #270f38;
-  --waveform-bg:         #05020c;
-  --waveform-border:     #1d082c;
-
-  --key-white-grad:   #fcecf4;
-  --key-white-active: #d69dbf;
-  --key-black-grad:   #0e051a;
-  --key-black-active: #05020c;
-
-  --wheel-bg:         #070210;
-  --wheel-border:     #ff7a00;
-  --wheel-thumb:      linear-gradient(to right, #aa1060 0%, #ff7a00 50%, #aa1060 100%);
-
-  --tab-bar-bg:       #070210;
-  --tab-bar-border:   #ff7a00;
-  --tab-active-bg:    rgba(255, 122, 0, 0.16);
-  --tab-active-border:#ff7a00;
-  --tab-active-text:  #ff7a00;
-  --tab-active-glow:  rgba(255, 122, 0, 0.55);
-  --tab-inactive-text:#682a64;
-
-  --body-bg:          #0b0616;
-  --body-text:        #fff1e8;
-  --scrollbar-track:  #070210;
-  --scrollbar-thumb:  #270f38;
-  --scrollbar-hover:  #421a60;
-  --badge-bg:         #0a0416;
-  --badge-border:     #ff7a00;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   GHOST FROST — Icy Arctic Glass & Translucent Crystalline Glow
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="ghost-frost"] {
-  --chassis-bg:       #060a12;
-  --chassis-gradient: linear-gradient(180deg, #0b1424 0%, #05080f 100%);
-  --panel-bg:         #0c1422;
-  --panel-bg-alt:     #080e18;
-  --panel-gradient:   linear-gradient(180deg, #101c30 0%, #09121e 100%);
-  --panel-border:     rgba(56, 189, 248, 0.35);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(167, 139, 250, 0.2);
-  --panel-inset-lo:   rgba(0, 0, 0, 0.8);
-  --panel-shadow:     0 4px 16px -2px rgba(56, 189, 248, 0.18);
-
-  --oled-bg:          #03060c;
-  --oled-bg-grad:     linear-gradient(180deg, #050b16 0%, #020408 100%);
-  --oled-border:      rgba(56, 189, 248, 0.5);
-  --oled-glow:        rgba(56, 189, 248, 0.22);
-  --oled-text:        #38bdf8;
-  --oled-scanline:    rgba(0, 0, 0, 0.1);
-
-  --knob-track:       #0d1a2c;
-  --knob-ribbed:      #091320;
-  --knob-face-grad:   #13243e;
-  --knob-face-border: #38bdf8;
-  --knob-hi:          rgba(167, 139, 250, 0.2);
-  --knob-lo:          #000000;
-
-  --screw-grad:       #182e4e;
-  --screw-border:     #38bdf8;
-  --screw-line:       #a78bfa;
-
-  --accent-cyan:      #38bdf8;
-  --accent-amber:     #fbbf24;
-  --accent-emerald:   #34d399;
-  --accent-red:       #f43f5e;
-
-  --text-primary:     #f0f9ff;
-  --text-secondary:   #93c5fd;
-  --text-muted:       #334e68;
-  --text-label:       #bae6fd;
-
-  --btn-inactive-bg:     #08101a;
-  --btn-inactive-border: #15273c;
-  --btn-inactive-text:   #486581;
-  --btn-hover-bg:        #102034;
-  --section-bg:          #050a12;
-  --section-border:      #112134;
-  --osc-bg:              #09121e;
-  --osc-border:          #162a42;
-  --waveform-bg:         #03060c;
-  --waveform-border:     #102032;
-
-  --key-white-grad:   #eaf4fc;
-  --key-white-active: #9ec5e8;
-  --key-black-grad:   #08101c;
-  --key-black-active: #03060c;
-
-  --wheel-bg:         #040810;
-  --wheel-border:     #38bdf8;
-  --wheel-thumb:      linear-gradient(to right, #0369a1 0%, #38bdf8 50%, #0369a1 100%);
-
-  --tab-bar-bg:       #040810;
-  --tab-bar-border:   #38bdf8;
-  --tab-active-bg:    rgba(56, 189, 248, 0.16);
-  --tab-active-border:#38bdf8;
-  --tab-active-text:  #38bdf8;
-  --tab-active-glow:  rgba(56, 189, 248, 0.5);
-  --tab-inactive-text:#415f7e;
-
-  --body-bg:          #060a12;
-  --body-text:        #f0f9ff;
-  --scrollbar-track:  #050a12;
-  --scrollbar-thumb:  #162a42;
-  --scrollbar-hover:  #244268;
-  --badge-bg:         #070d18;
-  --badge-border:     #38bdf8;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   STUDIO PAPER — Archival Drafting Stock & Safety-Orange Signal
-   ══════════════════════════════════════════════════════════════════════ */
-[data-theme="studio-paper"] {
-  --chassis-bg:       #eeeae0;
-  --chassis-gradient: #eeeae0;
-  --panel-bg:         #e7e2d6;
-  --panel-bg-alt:     #dfd9cc;
-  --panel-gradient:   #e7e2d6;
-  --panel-border:     rgba(23, 24, 21, 0.24);
-  --panel-border-width: 1px;
-  --panel-inset-hi:   rgba(255, 255, 255, 0.45);
-  --panel-inset-lo:   rgba(23, 24, 21, 0.05);
-  --panel-shadow:     0 1px 0 rgba(23, 24, 21, 0.08);
-
-  --oled-bg:          #171815;
-  --oled-bg-grad:     #171815;
-  --oled-border:      #171815;
-  --oled-glow:        transparent;
-  --oled-text:        #eeeae0;
-  --oled-scanline:    rgba(255, 255, 255, 0.03);
-
-  --knob-track:       #cbc5b7;
-  --knob-ribbed:      #d8d2c4;
-  --knob-face-grad:   #eeeae0;
-  --knob-face-border: #171815;
-  --knob-hi:          rgba(255, 255, 255, 0.5);
-  --knob-lo:          rgba(23, 24, 21, 0.14);
-
-  --screw-grad:       #d6d0c2;
-  --screw-border:     rgba(23, 24, 21, 0.35);
-  --screw-line:       #171815;
-
-  --accent-cyan:      #0f6d55;
-  --accent-amber:     #ff6636;
-  --accent-emerald:   #1a7f4c;
-  --accent-red:       #c93828;
-
-  --text-primary:     #171815;
-  --text-secondary:   #5b5c55;
-  --text-muted:       #888980;
-  --text-label:       #3d3e38;
-
-  --btn-inactive-bg:      #e2ddd0;
-  --btn-inactive-border:  rgba(23, 24, 21, 0.28);
-  --btn-inactive-text:    #3d3e38;
-  --btn-hover-bg:         #d8d2c3;
-  --section-bg:           #e2ddd0;
-  --section-border:       rgba(23, 24, 21, 0.2);
-  --osc-bg:               #ebe6db;
-  --osc-border:           rgba(23, 24, 21, 0.22);
-  --waveform-bg:          #e9e4d9;
-  --waveform-border:      rgba(23, 24, 21, 0.24);
-
-  --key-white-grad:   #f8f6f0;
-  --key-white-active: #dcd6c7;
-  --key-black-grad:   #171815;
-  --key-black-active: #343630;
-
-  --wheel-bg:         #dcd6c7;
-  --wheel-border:     #171815;
-  --wheel-thumb:      #ff6636;
-
-  --tab-bar-bg:       #e2ddd0;
-  --tab-bar-border:   rgba(23, 24, 21, 0.25);
-  --tab-active-bg:    #ff6636;
-  --tab-active-border:#171815;
-  --tab-active-text:  #171815;
-  --tab-active-glow:  transparent;
-  --tab-inactive-text:#4d4e47;
-
-  --body-bg:          #eeeae0;
-  --body-text:        #171815;
-  --scrollbar-track:  #e2ddd0;
-  --scrollbar-thumb:  #b8b2a3;
-  --scrollbar-hover:  #8d8779;
-  --badge-bg:         #e2ddd0;
-  --badge-border:     rgba(23, 24, 21, 0.25);
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   FILE FOLDER SECTION TABS ("Layers of a Real File")
-   ══════════════════════════════════════════════════════════════════════ */
-.file-tabs-rack {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  gap: 4px;
-  background: var(--section-bg);
-  padding: 4px 6px 0 6px;
-  border-bottom: 2px solid var(--panel-border);
-  box-shadow: inset 0 -3px 8px rgba(0, 0, 0, 0.5);
-  border-radius: 6px 6px 0 0;
-}
-
-.file-folder-tab {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 7px 12px;
-  font-family: var(--font-mono, monospace);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-  border: 1px solid var(--btn-inactive-border);
-  border-bottom: none;
-  background: var(--btn-inactive-bg);
-  color: var(--text-secondary);
-  cursor: pointer;
-  user-select: none;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  white-space: nowrap;
-}
-
-.file-folder-tab.inactive {
-  transform: translateY(2px);
-  opacity: 0.78;
-  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.04), 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.file-folder-tab.inactive:hover {
-  transform: translateY(0px);
-  opacity: 1;
-  color: var(--text-primary);
-  background: var(--btn-hover-bg);
-  border-color: var(--panel-border);
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.4);
-}
-
-.file-folder-tab.active {
-  transform: translateY(-2px);
-  background: var(--panel-bg);
-  border-color: var(--tab-accent, var(--panel-border));
-  border-top-width: 2px;
-  color: var(--text-primary);
-  box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.6), 0 0 16px var(--tab-glow, rgba(16, 185, 129, 0.35));
-  z-index: 20;
-}
-
-.file-folder-tab.active::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--panel-bg);
-  z-index: 30;
-}
-
-.file-folder-accent-bar {
-  position: absolute;
-  top: 0;
-  left: 6px;
-  right: 6px;
-  height: 2px;
-  border-radius: 9999px;
-  transition: all 0.2s ease;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   ANIMATED SVG MOVING SKIN KEYFRAMES
-   ══════════════════════════════════════════════════════════════════════ */
-@keyframes aurora-wave-1-anim {
-  0%, 100% { transform: translateY(0) scaleY(1); opacity: 0.7; }
-  50% { transform: translateY(-35px) scaleY(1.15) skewX(2deg); opacity: 0.95; }
-}
-.aurora-wave-1 {
-  animation: aurora-wave-1-anim 16s ease-in-out infinite alternate;
-  transform-origin: center;
-}
-
-@keyframes aurora-wave-2-anim {
-  0%, 100% { transform: translateY(0) scaleX(1); opacity: 0.55; }
-  50% { transform: translateY(30px) scaleX(1.08) skewX(-2.5deg); opacity: 0.85; }
-}
-.aurora-wave-2 {
-  animation: aurora-wave-2-anim 20s ease-in-out infinite alternate;
-  transform-origin: center;
-}
-
-@keyframes matrix-scroll {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(40px); }
-}
-.matrix-grid-scroll {
-  animation: matrix-scroll 2.5s linear infinite;
-}
-
-@keyframes matrix-laser {
-  0% { top: -5%; opacity: 0; }
-  15% { opacity: 0.7; }
-  85% { opacity: 0.7; }
-  100% { top: 105%; opacity: 0; }
-}
-.matrix-scanline {
-  animation: matrix-laser 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   BASE LAYER
-   ══════════════════════════════════════════════════════════════════════ */
-@layer base {
-  html, body {
-    height: 100%;
-    height: 100dvh;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    touch-action: manipulation;
-    -webkit-touch-callout: none;
-    -webkit-user-select: none;
-    user-select: none;
-    background-color: var(--body-bg);
-    color: var(--body-text);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    transition: var(--theme-transition);
-  }
-
-  /* On mobile the main tab panel container scrolls vertically */
-  .mobile-tab-panel {
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-  }
-
-  /*
-   * Mobile section panels — each tab gets an absolutely-positioned full-height
-   * container that scrolls independently. Only the active one is shown.
-   */
-  .mobile-section-panel {
-    position: absolute;
-    inset: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior-y: contain;
-    touch-action: pan-y;
-    padding: 0.375rem 0.375rem 2.5rem 0.375rem;
-    transition: opacity 0.12s ease;
-  }
-  .mobile-section-active {
-    opacity: 1;
-    pointer-events: auto;
-    visibility: visible;
-    z-index: 1;
-  }
-  .mobile-section-hidden {
-    opacity: 0;
-    pointer-events: none;
-    visibility: hidden;
-    z-index: 0;
-  }
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   SCROLLBARS
-   ══════════════════════════════════════════════════════════════════════ */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track  { background: var(--scrollbar-track); }
-::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
-
-/* ══════════════════════════════════════════════════════════════════════
-   TYPOGRAPHY — Space Mono Precision Telemetry & Audio Instrument Fonts
-   ══════════════════════════════════════════════════════════════════════ */
-.font-mono,
-.font-mono-lcd {
-  font-family: 'Space Mono', monospace;
-  font-variant-numeric: tabular-nums;
-  -moz-font-feature-settings: "tnum" 1;
-  -webkit-font-feature-settings: "tnum" 1;
-  font-feature-settings: "tnum" 1;
-}
-
-.font-mono-lcd {
-  letter-spacing: 0.08em;
-}
-
-.font-brand {
-  font-family: 'Orbitron', sans-serif;
-}
-
-/* Ensure all mono telemetry / parameter values have tabular numbers & optimal tracking */
-[class*="font-mono"] {
-  font-variant-numeric: tabular-nums;
-  -moz-font-feature-settings: "tnum" 1;
-  -webkit-font-feature-settings: "tnum" 1;
-  font-feature-settings: "tnum" 1;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   CHASSIS & PANELS — Machined Console Architecture (Recessed CNC Bays)
-   ══════════════════════════════════════════════════════════════════════ */
-.synth-chassis {
-  background: var(--chassis-gradient, var(--chassis-bg));
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
-    0 8px 32px rgba(0, 0, 0, 0.9);
-  transition: var(--theme-transition);
-}
-
-.synth-panel {
-  background: var(--panel-gradient, var(--panel-bg));
-  border: 1px solid var(--panel-border);
-  border-radius: 4px;
-  box-shadow:
-    inset 0 1px 0 var(--panel-inset-hi),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-    inset 0 2px 5px var(--panel-inset-lo),
-    var(--panel-shadow);
-  position: relative;
-  transition: var(--theme-transition);
-}
-
-.panel-bevel {
-  box-shadow: 
-    inset 0 1px 0 var(--panel-inset-hi),
-    inset 0 2px 4px var(--panel-inset-lo),
-    0 2px 6px rgba(0, 0, 0, 0.4);
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   OLED SCREEN — Precision Dark Glass with Vector Glow
-   ══════════════════════════════════════════════════════════════════════ */
-.oled-screen {
-  background: var(--oled-bg-grad, var(--oled-bg));
-  border: 1px solid var(--oled-border);
-  border-radius: 3px;
-  box-shadow:
-    inset 0 2px 8px rgba(0, 0, 0, 0.95),
-    inset 0 0 0 1px rgba(0, 0, 0, 0.8),
-    0 0 12px -2px var(--oled-glow);
-  position: relative;
-  overflow: hidden;
-  transition: var(--theme-transition);
-}
-
-/* Soft Studio Reflection Highlight Overlay */
-.oled-screen::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.05) 0%,
-    rgba(255, 255, 255, 0.01) 20%,
-    transparent 35%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 12;
-}
-
-/* Ultra-Fine Micro Scanline Grid (Crisp Retina Feel) */
-.oled-screen::after {
-  content: " ";
-  display: block;
-  position: absolute;
-  top: 0; left: 0; bottom: 0; right: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent 0px,
-    transparent 2px,
-    rgba(0, 0, 0, 0.12) 2px,
-    rgba(0, 0, 0, 0.12) 3px
-  );
-  pointer-events: none;
-  z-index: 11;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   CHASSIS MACHINE BOLTS — Countersunk Torx/Hex at Outer Perimeter
-   ══════════════════════════════════════════════════════════════════════ */
-.synth-screw-chassis {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.22) 0%, var(--screw-grad) 45%, #0a0d14 100%);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 1px 1.5px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.5);
-  position: relative;
-  transition: var(--theme-transition);
-  flex-shrink: 0;
-}
-.synth-screw-chassis::after {
-  content: "";
-  position: absolute;
-  inset: 22%;
-  background: var(--screw-line);
-  clip-path: polygon(
-    40% 0%, 60% 0%, 60% 40%, 100% 40%, 100% 60%, 60% 60%, 60% 100%, 40% 100%, 40% 60%, 0% 60%, 0% 40%, 40% 40%
-  );
-  opacity: 0.6;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   LED GLOW EFFECTS — refined precision audio indicators
-   ══════════════════════════════════════════════════════════════════════ */
-.led-glow-cyan    { box-shadow: 0 0 0 1px rgba(16,185,129,0.5), 0 0 10px rgba(16,185,129,0.8), 0 0 20px rgba(16,185,129,0.25); }
-.led-glow-amber   { box-shadow: 0 0 0 1px rgba(255,170,0,0.5), 0 0 10px rgba(255,170,0,0.8), 0 0 20px rgba(255,170,0,0.25); }
-.led-glow-emerald { box-shadow: 0 0 0 1px rgba(0,255,102,0.5), 0 0 10px rgba(0,255,102,0.8), 0 0 20px rgba(0,255,102,0.25); }
-.led-glow-red     { box-shadow: 0 0 0 1px rgba(255,51,68,0.5),  0 0 10px rgba(255,51,68,0.8),  0 0 20px rgba(255,51,68,0.25); }
-
-/* ══════════════════════════════════════════════════════════════════════
-   CYBERPUNK CRT — smooth ambient pulse
-   ══════════════════════════════════════════════════════════════════════ */
-@keyframes crt-border-flash {
-  0%, 92%, 100% { border-color: rgba(255, 0, 204, 0.4); box-shadow: inset 0 1px 0 rgba(255, 0, 204, 0.2), inset 0 2px 6px rgba(0,0,0,0.8), 0 0 10px rgba(255, 0, 204, 0.2); }
-  94%           { border-color: rgba(0, 255, 238, 0.8); box-shadow: inset 0 1px 0 rgba(0, 255, 238, 0.4), inset 0 2px 6px rgba(0,0,0,0.8), 0 0 16px rgba(0, 255, 238, 0.4); }
-  96%           { border-color: rgba(255, 0, 204, 0.4); box-shadow: inset 0 1px 0 rgba(255, 0, 204, 0.2), inset 0 2px 6px rgba(0,0,0,0.8), 0 0 10px rgba(255, 0, 204, 0.2); }
-}
-[data-theme="cyberpunk-crt"] .synth-panel {
-  animation: crt-border-flash 5s ease-in-out infinite;
-}
-
-@keyframes crt-flicker {
-  0%   { opacity: 1; }
-  47%  { opacity: 1; }
-  48%  { opacity: 0.92; }
-  49%  { opacity: 1; }
-  100% { opacity: 1; }
-}
-[data-theme="cyberpunk-crt"] .synth-chassis {
-  animation: crt-flicker 12s linear infinite;
-}
-
-[data-theme="studio-paper"] .synth-chassis {
-  box-shadow: none;
-}
-
-[data-theme="studio-paper"] .synth-panel {
-  box-shadow: 0 1px 0 rgba(23, 24, 21, 0.08);
-}
-
-[data-theme="studio-paper"] .oled-screen {
-  box-shadow: none;
-}
-
-[data-theme="studio-paper"] .oled-screen::before,
-[data-theme="studio-paper"] .oled-screen::after {
-  display: none;
-}
-
-[data-theme="studio-paper"] .synth-screw-chassis {
-  background: var(--screw-grad);
-  border-color: var(--screw-border);
-  box-shadow: none;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   TOUCH UTILITIES
-   ══════════════════════════════════════════════════════════════════════ */
-.touch-lock {
-  user-select: none !important;
-  -webkit-user-select: none !important;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   PIANO KEYBED — flat cell-shade keys, hard borders, bold press depth
-   ══════════════════════════════════════════════════════════════════════ */
-.key-white {
-  background: var(--key-white-grad);
-  border-right: 1px solid #1a2030;
-  border-bottom: 4px solid #1a2030;
-  box-shadow: none;
-}
-.key-white.active {
-  background: var(--key-white-active);
-  transform: translateY(4px);
-  border-bottom-width: 0px;
-  box-shadow: none;
-}
-
-.key-black {
-  background: var(--key-black-grad);
-  border: 1px solid rgba(16,185,129,0.2);
-  border-bottom: 4px solid rgba(0,0,0,0.9);
-  box-shadow: 2px 0 0 rgba(0,0,0,0.9);
-}
-.key-black.active {
-  background: var(--key-black-active);
-  transform: translateY(3px);
-  border-bottom-width: 1px;
-  box-shadow: none;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   WHEEL SLIDERS (mobile pitch / mod)
-   ══════════════════════════════════════════════════════════════════════ */
-.wheel-slider-h {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 28px;
-  background: var(--wheel-bg);
-  border: 1px solid var(--wheel-border);
-  border-radius: 4px;
-  outline: none;
-  cursor: pointer;
-  touch-action: none;
-  transition: var(--theme-transition);
-}
-.wheel-slider-h::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 28px;
-  height: 24px;
-  border-radius: 3px;
-  background: var(--wheel-thumb);
-  border: 1px solid rgba(0,0,0,0.7);
-  box-shadow: 0 0 4px rgba(255,255,255,0.5);
-  cursor: ns-resize;
-}
-.wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #047857 0%, #10b981 50%, #047857 100%);
-  box-shadow: 0 0 6px #10b981;
-}
-[data-theme="vintage-japanese"] .wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #1040a0 0%, #1a5fe8 50%, #1040a0 100%);
-  box-shadow: 0 0 6px #1a5fe8;
-}
-[data-theme="german-industrial"] .wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #907030 0%, #c9a84c 50%, #907030 100%);
-  box-shadow: 0 0 6px #c9a84c;
-}
-[data-theme="cyberpunk-crt"] .wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #8000aa 0%, #ff00cc 50%, #8000aa 100%);
-  box-shadow: 0 0 8px #ff00cc;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   TOUCH TARGETS
-   ══════════════════════════════════════════════════════════════════════ */
-.touch-target { min-height: 44px; min-width: 44px; }
-
-/* ══════════════════════════════════════════════════════════════════════
-   MOBILE TAB BAR — cell-shade: solid bg, hard borders, bold active
-   ══════════════════════════════════════════════════════════════════════ */
-.mobile-tab-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  flex: 1;
-  font-family: 'Space Mono', monospace;
-  font-variant-numeric: tabular-nums;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  border-radius: 2px;
-  border: 1px solid transparent;
-  transition: all 0.1s ease;
-  user-select: none;
-  -webkit-user-select: none;
-}
-.mobile-tab-btn.active {
-  background: var(--tab-active-bg);
-  border-color: var(--tab-active-border);
-  border-bottom: 3px solid var(--tab-active-border);
-  color: var(--tab-active-text);
-  box-shadow: 0 0 12px var(--tab-active-glow), 2px 2px 0 rgba(0,0,0,0.8);
-}
-.mobile-tab-btn:not(.active) {
-  color: var(--tab-inactive-text);
-  background: transparent;
-}
-.mobile-tab-btn:not(.active):active {
-  background: rgba(255,255,255,0.04);
-  color: var(--text-label);
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   THEME SWITCHER CHIP BUTTON — square, flat, cell-shade
-   ══════════════════════════════════════════════════════════════════════ */
-.theme-chip {
-  width: 20px;
-  height: 20px;
-  border-radius: 2px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: all 0.12s ease;
-  position: relative;
-  flex-shrink: 0;
-}
-.theme-chip.active {
-  transform: scale(1.25);
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.4), 2px 2px 0 rgba(0,0,0,0.9);
-}
-.theme-chip:hover:not(.active) {
-  transform: scale(1.15);
-  box-shadow: 1px 1px 0 rgba(0,0,0,0.8);
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   WHEEL SLIDER — thick accent border
-   ══════════════════════════════════════════════════════════════════════ */
-.wheel-slider-h {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 28px;
-  background: var(--wheel-bg);
-  border: 2px solid var(--wheel-border);
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-  touch-action: none;
-  transition: var(--theme-transition);
-}
-.wheel-slider-h::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 28px;
-  height: 24px;
-  border-radius: 2px;
-  background: var(--wheel-thumb);
-  border: 2px solid rgba(0,0,0,0.9);
-  box-shadow: 2px 0 0 rgba(0,0,0,0.7), -2px 0 0 rgba(0,0,0,0.7);
-  cursor: ns-resize;
-}
-.wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #065f46 0%, #10b981 50%, #065f46 100%);
-  box-shadow: 0 0 8px #10b981, 2px 0 0 rgba(0,0,0,0.7);
-}
-[data-theme="vintage-japanese"] .wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #0e3880 0%, #1a5fe8 50%, #0e3880 100%);
-  box-shadow: 0 0 8px #1a5fe8;
-}
-[data-theme="german-industrial"] .wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #806020 0%, #c9a84c 50%, #806020 100%);
-  box-shadow: 0 0 8px #c9a84c;
-}
-[data-theme="cyberpunk-crt"] .wheel-slider-h.mod::-webkit-slider-thumb {
-  background: linear-gradient(to right, #700090 0%, #ff00cc 50%, #700090 100%);
-  box-shadow: 0 0 12px #ff00cc;
+/* Subtractive — paper, ink, signal. Shared by every workspace. */
+:root {
+  color-scheme: light;
+  --paper: #eeeae0;
+  --ink: #171815;
+  --signal: #ff6636;
+  --signal-soft: #fbe0cf;
+  --signal-ink: #a83b19;
+  --chassis-bg: var(--paper);
+  --panel-bg: #f2efe7;
+  --panel-bg-alt: #e8e9e2;
+  --panel-border: #a5a49a;
+  --section-bg: #e3e0d7;
+  --section-border: #c4c2b8;
+  --osc-bg: var(--panel-bg);
+  --osc-border: var(--section-border);
+  --waveform-bg: #e8e9e2;
+  --waveform-border: #b7b9ae;
+  --oled-bg: var(--waveform-bg);
+  --oled-border: var(--waveform-border);
+  --oled-text: var(--ink);
+  --knob-track: #b8b9af;
+  --knob-face-grad: linear-gradient(145deg, #f7f5ee, #e5e4db);
+  --knob-hi: #ffffffa6;
+  --knob-lo: #1718151a;
+  --accent-cyan: var(--signal);
+  --accent-amber: var(--signal);
+  --accent-emerald: var(--signal);
+  --accent-red: var(--signal);
+  --text-primary: var(--ink);
+  --text-secondary: #62635b;
+  --text-muted: #75766d;
+  --text-label: #363831;
+  --btn-inactive-bg: #eeede5;
+  --btn-inactive-border: #aaa99e;
+  --btn-inactive-text: var(--text-label);
+  --btn-hover-bg: #e2e1d7;
+  --badge-bg: var(--section-bg);
+  --badge-border: var(--section-border);
+  --tab-bar-bg: var(--paper);
+  --tab-bar-border: var(--section-border);
+}
+html, body, #root { height:100%; height:100dvh; margin:0; overflow:hidden; }
+body { background:var(--paper); color:var(--ink); font-family:Inter,"Helvetica Neue",Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+* { box-sizing:border-box; }
+button, input, select { font:inherit; accent-color:var(--signal); }
+button { cursor:pointer; }
+button:disabled { cursor:default; opacity:.35; }
+button, select, input { -webkit-tap-highlight-color:transparent; }
+button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible, a:focus-visible {
+  outline:2px solid var(--signal-ink); outline-offset:3px;
+}
+button:not(:disabled):hover { filter:brightness(.975); }
+::selection { background:var(--signal-soft); }
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:#b2b1a5; border-radius:3px; }
+.font-mono, .font-mono-lcd { font-family:"IBM Plex Mono",Consolas,monospace; font-variant-numeric:tabular-nums; letter-spacing:0; }
+.font-brand { font-family:Inter,"Helvetica Neue",Arial,sans-serif; letter-spacing:-.055em; }
+.instrument-shell .font-mono { font-family:Inter,"Helvetica Neue",Arial,sans-serif; font-weight:500; }
+.instrument-shell .font-black { font-weight:600; }
+.synth-chassis { background:var(--paper); color:var(--ink); }
+.synth-panel, .panel-bevel { background:var(--panel-bg); border:1px solid var(--panel-border); border-radius:4px; box-shadow:inset 0 1px #ffffff70; }
+.oled-screen { position:relative; background:var(--waveform-bg); color:var(--ink); border:1px solid var(--waveform-border); border-radius:3px; box-shadow:inset 0 1px 2px #17181509; }
+.synth-screw-chassis { display:none; }
+.touch-lock { touch-action:none; user-select:none; }
+.touch-target { min-width:44px; min-height:44px; }
+.instrument-shell { padding:12px 18px 8px; gap:8px; }
+.instrument-header { flex:none; }
+.instrument-imprint { display:flex; justify-content:space-between; padding:0 2px 7px; border-bottom:1px solid var(--ink); font:500 10px/1.2 "IBM Plex Mono",monospace; text-transform:uppercase; letter-spacing:.08em; }
+.instrument-toolbar { display:flex; align-items:center; gap:22px; padding:14px 8px 13px; }
+.instrument-brand { flex:none; }
+.instrument-brand h1 { font-size:clamp(27px,2.8vw,44px); font-weight:800; line-height:1; letter-spacing:-.065em; margin:0 0 5px; }
+.instrument-brand p { font-size:11px; line-height:1.3; margin:0; letter-spacing:-.015em; }
+.preset-station { flex:1; min-width:130px; max-width:330px; border-left:1px solid var(--section-border); padding-left:22px; }
+.control-caption { display:block; margin-bottom:5px; font-size:10px; font-weight:500; }
+.preset-readout { display:flex; height:36px; background:var(--panel-bg); border:1px solid #77786e; border-radius:3px; box-shadow:inset 0 1px 2px #1718150a; }
+.preset-readout button { border:0; background:transparent; padding:0 10px; min-width:30px; }
+.preset-readout button:nth-child(2) { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; }
+.preset-readout button:first-child,.preset-readout button:last-child { font-size:22px; }
+.header-actions { display:flex; align-items:center; gap:5px; }
+.header-actions button, .dock-toggle { min-height:28px; padding:5px 8px; border:1px solid var(--section-border); border-radius:3px; background:var(--btn-inactive-bg); font-size:11px; white-space:nowrap; }
+.compare-slot b { background:var(--signal-soft); padding:2px 5px; margin-left:3px; font-weight:500; }
+.header-status { font-size:10px; color:var(--text-secondary); max-width:130px; line-height:1.4; }
+.status-dot { display:inline-block; width:5px; height:5px; margin-right:5px; border-radius:50%; background:var(--signal); }
+.master-station { display:flex; align-items:center; gap:12px; padding-left:18px; border-left:1px solid var(--section-border); margin-left:auto; }
+.workspace-switch { display:flex; border:0; border-block:1px solid var(--panel-border); border-radius:0; background:transparent; gap:0; padding:0; }
+.workspace-switch button { flex:1; position:relative; padding:12px 10px 11px; border:0; background:transparent; color:var(--text-primary); font:500 12px/1.2 Inter,sans-serif; text-align:left; white-space:nowrap; }
+.workspace-switch button span { color:var(--text-secondary); font:11px "IBM Plex Mono",monospace; margin-right:6px; }
+.workspace-switch button[aria-pressed=true] { background:transparent; color:var(--ink); font-weight:650; }
+.workspace-switch button[aria-pressed=true]::after { content:""; position:absolute; height:2px; bottom:-1px; left:0; right:16px; background:var(--signal); }
+.workspace-switch button:hover:not([aria-pressed=true]) { background:#17181504; }
+.instrument-workspace { order:2; }
+.transport-bar { order:3; background:var(--section-bg)!important; border:1px solid var(--panel-border); border-radius:4px; gap:8px; padding:7px 10px; }
+.transport-bar button { min-height:26px; font-size:10px; }
+.transport-bar .dock-toggle[aria-pressed=true] { background:var(--signal-soft); border-color:var(--signal); }
+.keyboard-dock { order:4; }
+.instrument-footer { order:5; display:flex; align-items:center; justify-content:space-between; flex:none; gap:12px; padding:7px 3px 0; border-top:1px solid var(--panel-border); font-size:10px; color:var(--text-secondary); }
+.instrument-footer a { color:inherit; text-decoration:none; }
+.instrument-footer a:hover { text-decoration:underline; text-underline-offset:3px; }
+.audio-status { display:flex; align-items:center; font:10px "IBM Plex Mono",monospace; }
+.synth-workspace { padding:0!important; gap:8px!important; }
+.sound-module { padding:10px 12px!important; }
+.sound-module-title { align-self:stretch; background:var(--section-bg); margin:-10px -12px 10px; padding:9px 12px; border-bottom:1px solid var(--section-border); border-radius:3px 3px 0 0; font:600 14px/1.2 Inter,sans-serif; letter-spacing:-.02em; color:var(--ink); }
+.sound-module-title::before { display:none; }
+.oscillator-strip { border:0!important; border-radius:0; background:transparent!important; padding:3px 12px 0!important; }
+.oscillator-strip + .oscillator-strip { border-left:1px solid var(--section-border)!important; }
+.oscillator-strip > div:first-child { border:0; padding-bottom:6px; margin-bottom:5px; }
+.oscillator-strip > div:first-child > div:first-child > div { display:none; }
+.oscillator-strip > div:nth-child(2) { min-height:65px; }
+.oscillator-strip > div:nth-child(2) > div:first-child { display:flex; flex-direction:column; }
+.oscillator-strip > div:nth-child(2) button { min-width:28px; min-height:22px; }
+.oscillator-strip > div:nth-child(3) { background:transparent!important; border:0; margin:4px 0; }
+.oscillator-strip > div:last-child { border:0; padding-top:3px; }
+.output-scope { height:92px!important; }
+.modulation-column { min-width:0; }
+.synth-workspace > div { flex-shrink:0; }
+.instrument-shell [class*="text-[7"], .instrument-shell [class*="text-[8"], .instrument-shell [class*="text-[9"] { font-size:11px; line-height:1.3; }
+.transport-bar .knob-control { flex-direction:row; min-width:0!important; max-width:none!important; gap:6px; }
+.transport-bar .knob-dial { width:28px!important; height:28px!important; }
+.transport-bar .knob-label, .transport-bar .knob-value { font-size:10px; }
+.knob-control { display:flex; flex-direction:column; align-items:center; gap:2px; min-width:54px; position:relative; user-select:none; }
+.knob-label { order:-1; font:500 11px/1.25 Inter,sans-serif; color:var(--text-label); text-align:center; white-space:nowrap; }
+.knob-value { font:11px/1.25 "IBM Plex Mono",Consolas,monospace; color:var(--ink); white-space:nowrap; }
+.knob-dial { position:relative; flex:none; cursor:ns-resize; touch-action:none; border-radius:50%; outline-offset:2px; }
+.knob-dial::after { content:""; position:absolute; inset:-3px; border-radius:50%; }
+.knob-cap { display:none; }
+.toggle-switch { display:flex; align-items:center; gap:5px; }
+.toggle-switch > div { gap:0; }
+.toggle-switch > div > div:first-child { display:none; }
+.toggle-switch button { width:30px; height:18px; box-shadow:none; border:1px solid var(--btn-inactive-border); border-radius:3px; }
+.toggle-switch button[aria-checked=true] { background:var(--signal-soft)!important; border-color:var(--signal); }
+.toggle-switch button > div { top:2px; width:12px; height:12px; border:1px solid #8f9085; background:var(--panel-bg); box-shadow:0 1px 1px #17181515; border-radius:2px; }
+.toggle-switch button[aria-checked=true] > div { transform:translateX(14px); }
+.toggle-switch button[aria-checked=false] > div { transform:translateX(2px); }
+.toggle-switch button > div > div { display:none; }
+.toggle-switch > span { font:10px Inter,sans-serif; text-transform:none; }
+.oscillator-strip .toggle-switch > span { display:none; }
+.led-button { min-height:26px; border-radius:3px; font:500 10px/1.2 Inter,sans-serif; letter-spacing:0; }
+.led-button[aria-pressed=true] { background:var(--signal-soft)!important; border-color:var(--signal)!important; color:var(--ink)!important; }
+.level-meter { display:flex; flex-direction:column; gap:4px; background:transparent; padding:0; border:0; }
+.level-meter > div > div { background:transparent; padding:0; border:0; }
+.meter-segment { width:5px; height:7px; border:0; border-radius:0; background:#cfcec3; }
+.meter-segment[data-active=true] { background:var(--signal); }
+.meter-segment[data-clip=true][data-active=true] { background:var(--signal-ink); }
+.envelope-display svg path { filter:none!important; }
+.envelope-display svg circle[fill="#04070c"] { fill:var(--waveform-bg); }
+.envelope-display svg circle[fill="#ffffff"] { fill:var(--signal); }
+.envelope-display svg line { stroke:var(--section-border); }
+.envelope-display svg text { fill:var(--text-secondary); }
+.envelope-display > div:first-of-type { background:var(--waveform-bg); }
+.keybed-surface { height:110px!important; min-height:90px!important; padding:0!important; background:var(--ink)!important; border:1px solid #6d6f64!important; border-radius:3px; }
+.key-white { background:linear-gradient(#f7f5ee,#f0ede4); color:var(--ink); border:0; box-shadow:inset 0 -2px #d4d2c7; }
+.key-white.active { background:var(--signal-soft); box-shadow:inset 0 -2px var(--signal); }
+.key-black { background:linear-gradient(90deg,#252722,#30322b 65%,#20221e); color:var(--paper); border:1px solid #171815; box-shadow:0 2px 1px #17181540; filter:none!important; }
+.key-black.active { background:#9f4f30; }
+.key-white > div:first-child, .key-black > div:first-child, .key-black > div:last-child { display:none; }
+.key-white span { background:transparent!important; border:0!important; font-weight:400; }
+.key-black span { color:var(--paper)!important; background:transparent!important; border:0!important; font-weight:400; }
+.key-white > div:last-child { background:transparent; }
+.wheel-slider-h { appearance:none; width:100%; height:20px; border:1px solid var(--panel-border); border-radius:2px; background:var(--waveform-bg); cursor:ns-resize; touch-action:none; }
+.wheel-slider-h::-webkit-slider-thumb { appearance:none; width:18px; height:16px; border:1px solid var(--ink); border-radius:1px; background:var(--signal); }
+.mobile-tab-btn { flex:1 0 52px; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:44px; border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent; color:var(--text-secondary); font:500 10px Inter,sans-serif; }
+.mobile-tab-btn.active { color:var(--ink); border-bottom-color:var(--signal); background:var(--signal-soft); }
+.mobile-navigation { order:1; border:0!important; border-bottom:1px solid var(--section-border)!important; }
+.mobile-section-panel { position:absolute; inset:0; overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; touch-action:pan-y; padding:5px 1px 24px; }
+.mobile-section-hidden { visibility:hidden; pointer-events:none; }
+.mobile-section-active { visibility:visible; }
+@media(min-width:1100px) {
+  .voice-controls { gap:10px!important; padding:6px 8px!important; }
+  .voice-controls .knob-control { flex-direction:row; gap:5px; min-width:0!important; max-width:none!important; }
+  .voice-controls .knob-dial { width:30px!important; height:30px!important; }
+  .oscillator-strip > div:nth-child(2) > div:first-child { display:grid; grid-template-columns:repeat(2,1fr); }
+  .oscillator-strip > div:nth-child(2) button { min-height:26px; min-width:26px; }
+  .instrument-toolbar { padding-block:9px; }
+  .master-station .knob-label { display:none; }
+  .oscillator-grid { grid-template-columns:repeat(4,minmax(0,1fr))!important; gap:0!important; }
+  .sound-design-grid { display:grid!important; grid-template-columns:1.1fr 1.6fr; align-items:start; gap:8px!important; }
+  .filter-column { display:contents!important; }
+  .filter-column .sound-module { grid-column:1; grid-row:1 / 3; }
+  .filter-column .output-scope { grid-column:2; grid-row:2; }
+  .modulation-column { display:grid!important; grid-template-columns:.85fr 1.15fr; grid-column:2; grid-row:1; gap:8px!important; }
+  .modulation-column > :last-child { grid-column:1 / -1; }
+}
+@media(min-width:768px) and (max-width:1199px) {
+  .instrument-toolbar { gap:12px; padding-inline:0; flex-wrap:wrap; }
+  .instrument-brand h1 { font-size:30px; }
+  .preset-station { padding-left:12px; }
+  .header-status { display:none; }
+  .master-station { padding-left:10px; }
+  .header-actions { margin-left:auto; }
+  .master-meter { display:none; }
+  .oscillator-grid { grid-template-columns:repeat(4,minmax(0,1fr))!important; gap:0!important; }
+  .oscillator-strip { padding-inline:8px!important; }
+}
+@media(max-width:767px) {
+  .instrument-shell { padding:8px 10px max(8px,env(safe-area-inset-bottom)); gap:6px; }
+  .instrument-imprint { font-size:9px; padding-bottom:6px; }
+  .instrument-toolbar { display:grid; grid-template-columns:1fr auto; gap:10px; padding:12px 0 8px; }
+  .instrument-brand h1 { font-size:30px; }
+  .instrument-brand p { font-size:10px; }
+  .preset-station { grid-column:1; grid-row:2; border:0; padding:0; max-width:none; }
+  .control-caption { display:none; }
+  .preset-readout { height:40px; }
+  .preset-readout button { min-width:38px; }
+  .header-actions { grid-column:1 / -1; grid-row:3; gap:5px; }
+  .header-actions button { min-height:36px; flex:1; padding-inline:6px; font-size:11px; }
+  .header-status { display:none; }
+  .master-station { grid-column:2; grid-row:1 / 3; border:0; padding-left:8px; }
+  .master-meter { display:none; }
+  .workspace-switch { display:none; }
+  .mobile-navigation { padding:0!important; margin:0 -2px; gap:0!important; }
+  .transport-bar { order:1; display:grid; grid-template-columns:minmax(0,1fr); padding:6px; gap:6px; }
+  .transport-bar > div { width:100%; min-width:0; flex-wrap:nowrap; justify-content:space-between; gap:5px; }
+  .transport-bar > div:first-child { width:100%; justify-content:space-between; }
+  .transport-bar button { min-height:34px; padding-inline:7px; font-size:10px; }
+  .transport-bar .dock-toggle { display:none; }
+  .transport-bar .knob-control { min-width:42px; }
+  .transport-bar > div:nth-child(2) { flex:none; min-width:0; }
+  .transport-bar > div:nth-child(2) > div { padding-inline:3px; }
+  .transport-bar > div:last-child { gap:5px; }
+  .transport-bar > div:last-child > div:last-child { padding-left:4px; }
+  .sound-module { padding:12px!important; }
+  .sound-module-title { margin:-12px -12px 12px; font-size:14px; padding:11px 12px; }
+  .instrument-workspace button:not(.knob-dial) { min-height:36px; }
+  .instrument-workspace button { font-size:11px; }
+  .instrument-workspace .oscillator-strip { padding:10px!important; border:1px solid var(--section-border)!important; }
+  .oscillator-strip > div:nth-child(2) > div:first-child { display:grid; grid-template-columns:repeat(2,1fr); }
+  .oscillator-strip > div:nth-child(2) button { min-width:38px; min-height:36px; }
+  .oscillator-strip .toggle-switch button { min-height:24px!important; width:38px; }
+  .instrument-workspace [class*="text-[7"], .instrument-workspace [class*="text-[8"], .instrument-workspace [class*="text-[9"] { font-size:12px; line-height:1.35; }
+  .knob-label, .knob-value { font-size:12px; }
+  .instrument-footer { font-size:9px; padding-top:6px; gap:8px; }
+  .audio-status { display:none; }
+  .keybed-surface { height:190px!important; }
+  .keyboard-panel > div:first-child > div { max-width:100%; flex-wrap:wrap; }
+  .keyboard-panel button { min-width:28px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *, *::before, *::after { scroll-behavior:auto!important; transition:none!important; animation:none!important; }
 }

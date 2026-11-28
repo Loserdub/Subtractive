@@ -1,9 +1,9 @@
-const CACHE_NAME = 'subtractive-synth-v1';
+const CACHE_NAME = 'subtractive-synth-paper-v2';
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
-  './vite.svg'
+  './icon.svg'
 ];
 
 self.addEventListener('install', (event) => {

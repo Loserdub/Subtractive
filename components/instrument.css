@@ -18,29 +18,15 @@
 [data-theme="studio-paper"] .motion-lane {
   --signal-ink: color-mix(in srgb, var(--signal) 65%, var(--ink));
 }
-.workspace-switch { display:flex; gap:2px; padding:3px; border:1px solid var(--section-border); border-radius:5px; background:var(--section-bg); }
-.workspace-switch button { border:0; border-radius:2px; padding:9px clamp(5px,.65vw,12px); background:transparent; color:var(--text-label); font:700 11px/1.1 Consolas,monospace; letter-spacing:.045em; cursor:pointer; }
-.workspace-switch button:hover:not([aria-pressed=true]) { color:var(--text-primary); background:var(--btn-hover-bg); }
-.workspace-switch button[aria-pressed=true] { color:var(--oled-bg); background:var(--accent-amber); }
-.sound-module-title { align-self:stretch; margin:0 0 8px; padding:3px 0 7px; border-bottom:1px solid var(--section-border);
-  color:var(--text-primary); font:650 12px/1.25 Inter,"Segoe UI",sans-serif; letter-spacing:.04em; }
-.sound-module-title::before { content:""; display:inline-block; width:10px; height:3px; margin-right:8px; vertical-align:middle; background:var(--accent-cyan); }
-.sound-module-title[data-accent=amber]::before { background:var(--accent-amber); }
-.sound-module-title[data-accent=emerald]::before { background:var(--accent-emerald); }
-.sound-module-title[data-accent=red]::before { background:var(--accent-red); }
-main:has(.filter-routing:focus-within) .sound-module:not(:has(.filter-routing)) .sound-module-title::before { opacity:.25; }
-@media(min-width:768px) and (max-height:850px) {
-  .synth-chassis .keybed-surface { height:clamp(78px,12vh,108px); min-height:78px; }
-}
 .instrument-module,.filter-routing,.motion-lane { border:1px solid var(--edge); border-radius:5px; background:var(--surface); min-width:0; }
 .instrument-module { flex:none; padding:12px; }
 .instrument-heading,.mod-readout { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
 .instrument-heading h2,.instrument-heading h3 { margin:0 auto 0 0; color:var(--ink); font:650 15px/1.2 Inter,"Segoe UI",sans-serif; letter-spacing:-.025em; }
-.instrument-key,.motion-lane select { font:600 12px/1.2 Consolas,monospace; color:var(--ink); border:1px solid var(--btn-inactive-border); border-radius:3px; padding:5px 10px; background:var(--btn-inactive-bg); cursor:pointer; }
-.instrument-key[aria-pressed=true] { color:var(--oled-bg); background:var(--signal); border-color:var(--signal); }
+.instrument-key,.motion-lane select { font:500 11px/1.2 Inter,sans-serif; color:var(--ink); border:1px solid var(--btn-inactive-border); border-radius:3px; padding:5px 10px; background:var(--btn-inactive-bg); cursor:pointer; }
+.instrument-key[aria-pressed=true] { color:var(--ink); background:var(--signal-soft); border-color:var(--signal); }
 .instrument-key[aria-pressed=true]:hover { filter:brightness(1.08); }
 .instrument-key:not([aria-pressed=true]):hover,.motion-lane select:hover { border-color:var(--signal); background:var(--btn-hover-bg); }
-.instrument-note,.mod-readout { margin:7px 0 0; color:var(--secondary); font:12px/1.4 Consolas,monospace; }
+.instrument-note,.mod-readout { margin:7px 0 0; color:var(--secondary); font:11px/1.4 "IBM Plex Mono",monospace; }
 .scene-pads { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; margin-top:9px; }
 .scene-pad { position:relative; overflow:hidden; padding:9px 12px; text-align:left; background:var(--osc-bg);
   border:1px solid var(--osc-border); border-bottom-width:3px; border-radius:4px; color:var(--ink); cursor:pointer; touch-action:manipulation; user-select:none; }
@@ -62,7 +48,7 @@ main:has(.filter-routing:focus-within) .sound-module:not(:has(.filter-routing)) 
 .motion-lane { margin:7px 0 2px; padding:7px 0; }
 .motion-lane .instrument-heading,.motion-lane .instrument-note { padding:0 8px; }
 .motion-lane .instrument-heading h3 { margin-right:3px; }
-.motion-lane output { margin-left:auto; font:12px/1.2 Consolas,monospace; color:var(--signal-ink); }
+.motion-lane output { margin-left:auto; font:11px/1.2 "IBM Plex Mono",monospace; color:var(--signal-ink); }
 .motion-grid { height:73px; margin-top:6px; touch-action:none; cursor:crosshair; }
 .motion-cell { display:flex; align-items:flex-end; justify-content:center; position:relative; padding:0 2px 3px;
   background:repeating-linear-gradient(0deg,color-mix(in srgb, var(--ink) 8%, transparent) 0 1px,transparent 1px 25%),var(--waveform-bg); border-top:2px solid transparent; }
@@ -71,13 +57,13 @@ main:has(.filter-routing:focus-within) .sound-module:not(:has(.filter-routing)) 
 .motion-cell[data-unused=true] { opacity:.5; }
 .motion-cell i { height:2px; width:28%; margin-bottom:2px; background:var(--text-muted); }
 .motion-cell b { width:100%; border-top:2px solid var(--signal-ink); background:linear-gradient(var(--signal-ink),color-mix(in srgb, var(--signal) 45%, var(--waveform-bg))); }
-.filter-routing { width:100%; padding:8px; }
+.filter-routing { width:100%; padding:8px; background:transparent; border:0; }
 .filter-routing[data-dragging=true] { border-color:var(--signal); box-shadow:0 0 0 2px color-mix(in srgb, var(--signal) 22%, transparent); }
 .filter-routing[data-dragging=true] .route-dial { background:color-mix(in srgb, var(--signal) 18%, transparent); }
 .mod-sources { display:flex; gap:4px; }
 .mod-sources .instrument-key[data-selected=true] { box-shadow:0 0 0 1px var(--ink); }
 .filter-stage { display:grid; grid-template-columns:minmax(0,1fr) 82px; gap:5px; align-items:center; margin-top:6px; }
-.filter-display { min-width:0; height:112px; }
+.filter-display { min-width:0; height:150px; }
 .route-dial { position:relative; display:flex; justify-content:center; padding-top:12px; align-self:center; }
 .depth-ring { position:absolute; width:78px; height:78px; left:50%; top:-2px; transform:translateX(-50%); color:var(--signal-ink); pointer-events:none; touch-action:none; cursor:ns-resize; }
 .mod-readout { justify-content:space-between; padding-top:5px; border-top:1px solid var(--edge); }
@@ -85,14 +71,19 @@ main:has(.filter-routing:focus-within) .sound-module:not(:has(.filter-routing)) 
 .instrument-module :focus-visible,.motion-lane :focus-visible,.filter-routing :focus-visible,.workspace-switch :focus-visible {
   outline:2px solid var(--signal, var(--accent-amber)); outline-offset:2px;
 }
-@media(max-width:960px) {
-  .skin-trigger > span:not(:last-child),.skin-trigger > div:nth-child(2) { display:none; }
-  .synth-chassis .skin-trigger { min-width:40px; min-height:32px; justify-content:center; }
-}
+
 @media(max-width:700px) {
   .synth-chassis .mobile-levels { display:none; }
   .scene-pads { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media(max-width:370px) {
   .mobile-midi { display:none; }
+}
+
+@media(max-width:767px) {
+  .instrument-key, .motion-lane select { min-height:36px; }
+  .scene-pad { min-height:100px; }
+  .filter-stage { grid-template-columns:minmax(0,1fr) 82px; }
+  .filter-display { height:165px; }
+  .mod-readout { flex-wrap:wrap; gap:5px; font-size:11px; }
 }
